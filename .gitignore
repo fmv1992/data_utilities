@@ -1,0 +1,10 @@
+__pycache__
+wrek_whitelist.txt
+test.bash
+archive/
+todo.txt
+archive/
+*.pyc
+test.py
+.ropeproject
+test*/
