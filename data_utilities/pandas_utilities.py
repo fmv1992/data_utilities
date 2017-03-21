@@ -39,6 +39,8 @@ import zipfile
 import string
 import re
 
+N = 1000
+
 
 def series_to_ascii(series):
     """
@@ -196,7 +198,7 @@ def read_string(string, **kwargs):
 
 
 def dummy_dataframe(
-        n=1000,
+        n=N,
         series_categorical=None,
         series_float=None,
         series_int=None,
@@ -271,6 +273,7 @@ def find_components_of_array(x, y, atol=1e-5, assume_int=False):
     dataframe = pd.concat((x, y), axis=1)
     original_dataframe = dataframe.copy(deep=True)
 
+
     # Sampling procedure should be improved. If columns are sparse frequently
     # they will raise a Singular Matrix error.
     is_not_zero = (dataframe != 0).all(axis=1)
@@ -289,18 +292,15 @@ def find_components_of_array(x, y, atol=1e-5, assume_int=False):
     # Singularity Errors and remove second occurrences to avoid equal
     # columns/variables.
     dataframe = dataframe.loc[(is_not_zero & is_first_occurrence), :].dropna()
-    #  # print(dataframe.head())
-    # raise Exception
 
     nlines, ncols = dataframe.shape
+    nvariables = ncols - 1
     if ncols > nlines:
         raise ValueError(
             "System is under determined: {0:d} variables and {1:d} "
-            "equations.".format(ncols, nlines))
+            "equations.".format(nvariables, nlines))
 
-    nvariables = ncols - 1
     sample = np.random.choice(dataframe.index, nvariables, replace=False)
-    #  # print(dataframe.ix[sample, :])
 
     a = dataframe.ix[sample,
                      0:nvariables]
@@ -329,7 +329,46 @@ def find_components_of_array(x, y, atol=1e-5, assume_int=False):
         return result
 
 
+def statistical_distributions_dataframe(rows=1000, columns=4):
+    """Create an out-of-the-box dataframe with common distrubutions.
+
+    Arguments:
+        n (int): number of rows in the dataframe.
+
+    Returns:
+        dataframe: (pandas.DataFrame): The dataframe of the common statistical
+    distributions.
+
+    Examples:
+        >>> True
+        True
+        >>> # TODO:
+
+
+    """
+    def chisq(): return np.random.chisquare(5, size=rows)
+
+    def stdnorm(): return np.random.standard_normal(size=rows)
+
+    def logistic(): return np.random.logistic(size=rows)
+
+    def rnd(): return np.random.random(size=rows)
+
+    functions = {'chisq': chisq,
+                 'stdnorm': stdnorm,
+                 'logistic': logistic,
+                 'rnd': rnd}
+
+    n_keys = len(functions)
+    data_dictionary = dict()
+    for i, func_key in zip(range(columns), itertools.cycle(functions)):
+        data_dictionary[func_key + '_' +
+                        str(i//n_keys)] = functions[func_key]()
+
+    return pd.DataFrame(
+        data=data_dictionary)
+
+
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
-    # doctest.run_docstring_examples(find_components_of_array, globals())
