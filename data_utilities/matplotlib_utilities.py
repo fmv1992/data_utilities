@@ -1,10 +1,18 @@
-"""Matplotlib auxiliary code.
+"""Matplotlib utilities for common plotting procedures.
 
 All the functions should follow matplotlib, pandas and numpy's guidelines:
+
     Pandas:
         (1) Return a copy of the object; use keyword argument 'inplace' if
         changing is to be done inplace.
 
+    Numpy:
+        (1) Use the 'size' or 'shape' interface to determine the size of
+        arrays.
+
+    This module:
+        (1) Functions should work out of the box whenever possible (for example
+        for creating dataframes).
 
 """
 
@@ -21,7 +29,6 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-# # pylama: skip=1
 # pylama: ignore=W0611,D301
 
 
@@ -116,8 +123,8 @@ def plot_3d(serie):
     if len(y) > SCALE_AXIS_DIST_TRESH:
         # TODO: fix this.
         y = y * SCALE_AXIS_DIST_FACTOR
-    xlabels = [x.title() for x in xlabels]
-    ylabels = [x.title() for x in ylabels]
+    xlabels = [z.title() for z in xlabels]
+    ylabels = [z.title() for z in ylabels]
 
     x_mesh, y_mesh = np.meshgrid(x, y, copy=False)
 
@@ -321,7 +328,7 @@ def histogram_of_dataframe(dataframe,
     Returns:
     Examples:
         >>> import pandas_utilities
-        >>> dummy_df = pandas_utilities.dummy_dataframe(n=200)
+        >>> dummy_df = pandas_utilities.dummy_dataframe(shape=200)
         >>> histogram_of_dataframe(dummy_df, '/tmp/')
     """
     # TODO: modular: do one thing well. Return a tuple of axes. Write a new
@@ -335,6 +342,14 @@ def histogram_of_dataframe(dataframe,
     # TODO: Include minimum and maximum.
     #   minimum: sometimes max is too big and will obliterate minimum from df.
     #   maximum: likewise.
+
+    # What to do with nans?
+    # TODO: Create a statement about nans.
+
+    # Should we cast Series to Dataframe?
+    if isinstance(dataframe, pd.Series):
+        dataframe = pd.DataFrame(dataframe)
+
     object_columns_to_category(dataframe)
     columns = (x for x in dataframe.columns.tolist()
                if dataframe[x].dtype != object)
@@ -356,16 +371,19 @@ def histogram_of_dataframe(dataframe,
                                                               np.bool_):
             # datatype = np.int
             axes = histogram_of_integers(
-                dataframe[column])
+                dataframe[column],
+                **sns_distplot_kwargs)
         elif issubclass(column_dtype, np.float):
             # datatype = np.float
             axes = histogram_of_floats(
-                dataframe[column])
+                dataframe[column],
+                **sns_distplot_kwargs)
         elif issubclass(column_dtype, object):
             if serie.dtype != 'category':
                 continue
             axes = histogram_of_integers(
-                serie.cat.codes)
+                serie.cat.codes,
+                **sns_distplot_kwargs)
             categories_iterator = iter(serie.cat.categories)
             axes.set_xticklabels(
                 map(lambda x: categories_iterator.__next__() if x > 0 else '',
