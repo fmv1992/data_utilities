@@ -1,29 +1,18 @@
-"""
-Pandas utilities for common procedures when managing data set.
+"""Matplotlib utilities for common data management procedures.
 
 All the functions should follow matplotlib, pandas and numpy's guidelines:
+
     Pandas:
         (1) Return a copy of the object; use keyword argument 'inplace' if
         changing is to be done inplace.
 
-All modifications should return a copy of the object.
-All operations should be done on series when possible. If not then dataframe.
+    Numpy:
+        (1) Use the 'size' or 'shape' interface to determine the size of
+        arrays.
 
-Classes:
-    cl1: one line description.
-    cl2: one line description.
-
-Functions:
-    func1: one line description.
-    func2: one line description.
-
-Exceptions:
-    except1: one line description.
-    except2: one line description.
-
-References:
-    [1] - Author, Work.
-    [2] - Author, Work.
+    This module:
+        (1) Functions should work out of the box whenever possible (for example
+        for creating dataframes).
 
 """
 
@@ -198,35 +187,46 @@ def read_string(string, **kwargs):
 
 
 def dummy_dataframe(
-        n=N,
+        shape=None,
         series_categorical=None,
         series_float=None,
         series_int=None,
         series_object=None):
-    """Return a dummy dataframe with different datatype series."""
+    """Create an out-of-the-box dataframe with different datatype series."""
+    # Default value.
+    if shape is None:
+        rows, columns = (N, 4)
+    elif isinstance(shape, int):
+        rows, columns = (shape, 4)
+    elif shape[1] != 4:
+        raise NotImplementedError
+    else:
+        rows, columns = shape
+    # TODO: cover the case of shape as tuple
+
     # Requirements:
     #   a) unique 10 objects when n -> inf
     #   b) 100 objects when n = 10e4
     #   c) 3 objects when n = 3
     data = {}
     if series_categorical is None:
-        n_objs = int(7e-4 * n + 3) if n <= 10000 else 10
+        n_objs = int(7e-4 * rows + 3) if rows <= 10000 else 10
         categories = list(
             itertools.islice(
                 map(lambda x: ''.join(x),
                     itertools.product(string.ascii_lowercase,
                                       string.ascii_lowercase)),
                 n_objs))
-        add_data_cat = {'categorical': np.random.choice(categories, size=n)}
+        add_data_cat = {'categorical': np.random.choice(categories, size=rows)}
         data.update(add_data_cat)
     if series_float is None:
-        add_data_float = {'float': np.random.normal(size=n)}
+        add_data_float = {'float': np.random.normal(size=rows)}
         data.update(add_data_float)
     if series_int is None:
-        add_data_int = {'int': np.arange(n)}
+        add_data_int = {'int': np.arange(rows)}
         data.update(add_data_int)
     if series_object is None:
-        add_data_obj = {'object': np.random.choice(categories, size=n)}
+        add_data_obj = {'object': np.random.choice(categories, size=rows)}
         data.update(add_data_obj)
     filtered_series = tuple(
         filter(lambda x: x is not None,
@@ -272,7 +272,6 @@ def find_components_of_array(x, y, atol=1e-5, assume_int=False):
     """
     dataframe = pd.concat((x, y), axis=1)
     original_dataframe = dataframe.copy(deep=True)
-
 
     # Sampling procedure should be improved. If columns are sparse frequently
     # they will raise a Singular Matrix error.
@@ -329,7 +328,7 @@ def find_components_of_array(x, y, atol=1e-5, assume_int=False):
         return result
 
 
-def statistical_distributions_dataframe(rows=1000, columns=4):
+def statistical_distributions_dataframe(shape=None):
     """Create an out-of-the-box dataframe with common distrubutions.
 
     Arguments:
@@ -346,6 +345,13 @@ def statistical_distributions_dataframe(rows=1000, columns=4):
 
 
     """
+    if shape is None:
+        rows, columns = (N, 4)
+    elif isinstance(shape, int):
+        rows, columns = (shape, 4)
+    else:
+        rows, columns = shape
+
     def chisq(): return np.random.chisquare(5, size=rows)
 
     def stdnorm(): return np.random.standard_normal(size=rows)

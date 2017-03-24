@@ -12,7 +12,7 @@ l = 100
 c = 15
 
 
-class FindComponentsOfArray(unittest.TestCase, metaclass=TestMetaClass):
+class FindComponentsOfArray(unittest.TestCase, metaclass=TestMetaClass):  # noqa
 
     """Test class for function of pandas_utilities.
 
@@ -38,8 +38,7 @@ class FindComponentsOfArray(unittest.TestCase, metaclass=TestMetaClass):
         cls.l = l
         cls.c = c
         cls.data = pu.statistical_distributions_dataframe(
-            rows=cls.l,
-            columns=cls.c)
+            shape=(cls.l, cls.c))
 
     def setUp(self):
         """setUp method from unittest."""

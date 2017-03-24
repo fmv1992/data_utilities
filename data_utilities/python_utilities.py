@@ -1,12 +1,12 @@
-u"""Python helper functions."""
+"""Python helper functions."""
 
 import difflib
 import os
 import re
 
 
-def map_strings(set_primary,
-                set_secondary,
+def map_strings(set_keys,
+                set_values,
                 cutoff=0.8,
                 ignore_no_matches=True):
     u"""Map a set of secondary strings to a set of primary strings."""
@@ -16,7 +16,7 @@ def map_strings(set_primary,
     def get_matches(x):
         u"""Helper to get matches."""
         result_list = difflib.get_close_matches(
-            x, set_primary, n=N, cutoff=CUTOFF)
+            x, set_values, n=N, cutoff=CUTOFF)
         if ignore_no_matches:
             if result_list:
                 return result_list[0]
@@ -25,7 +25,7 @@ def map_strings(set_primary,
         else:
             return result_list[0]
     mapper = map(lambda x: (x, get_matches(x)),
-                 set_secondary)
+                 set_keys)
     return dict(mapper)
 
 

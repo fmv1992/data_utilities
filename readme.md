@@ -43,6 +43,12 @@ figure out the best way to to develop the utilities. Use at your own risk :)
 
 # Changelog
 
+#### Version 1.0.0
+
+- Incompatible changes: the two utility functions to create dummy dataframes
+  now use a keyword argument 'shape' instead of 'n' or 'rows' and 'columns' to
+  resemble the numpy interface.
+
 #### Version 0.1.1
 
 - Added a convenience function (`statistical_distributions_dataframe`) of

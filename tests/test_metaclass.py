@@ -33,10 +33,10 @@ class TestMetaClass(type):
 
     def __new__(mcs, name, bases, classdict):
         """__new__ method of metaclass."""
-        def assert_X_from_iterables(self, x=lambda: True, *args):
+        def assert_X_from_iterables(self, x=lambda: True, *args, **kwargs):
             func = getattr(self, x.__name__)
             for i, zipargs in enumerate(zip(*args)):
-                # print('iteration i', i)
+                # print('iteration i:', i)
                 with self.subTest(iteration=i, arguments=zipargs):
                     func(*zipargs)
             return None

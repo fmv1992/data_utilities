@@ -20,4 +20,4 @@
 # User version numbering from here.
 # http://stackoverflow.com/questions/42259098/python-version-numbering-scheme/42259144
 
-__version__ = '0.1.1'
+__version__ = '1.0.0'
