@@ -193,6 +193,7 @@ def dummy_dataframe(
         series_int=None,
         series_object=None):
     """Create an out-of-the-box dataframe with different datatype series."""
+    # TODO: implement a boolean series.
     # Default value.
     if shape is None:
         rows, columns = (N, 4)

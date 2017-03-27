@@ -14,7 +14,7 @@ l = 1000
 c = 20
 
 
-class UtilitiesDataFrames(unittest.TestCase, metaclass=TestMetaClass):  # noqa
+class UtilitiesDataFrames(unittest.TestCase, metaclass=TestMetaClass):
 
     """Test class for functions that create 'out of the shelf' dataframes.
 

@@ -100,8 +100,3 @@ class FindComponentsOfArray(unittest.TestCase, metaclass=TestMetaClass):  # noqa
 if __name__ == "__main__":
     suite = unittest.TestLoader().loadTestsFromTestCase(FindComponentsOfArray)
     unittest.TextTestRunner(verbosity=2).run(suite)
-    # t = FindComponentsOfArray()
-    # print(t)
-    # pprint(t)
-    # pprint(dir(t))
-    # pass

@@ -16,7 +16,6 @@ All the functions should follow matplotlib, pandas and numpy's guidelines:
 
 """
 
-from pprint import pprint
 import itertools
 import os
 import random
@@ -148,8 +147,6 @@ def plot_3d(serie):
              dx=0.5, dy=0.5, dz=z_values,
              color=colors)
 
-    # print(x)
-    # print(y)
     # ax.autoscale_view()
     # ax.view_init(-64, 47)
     # TODO: the newxt two folling lines are key to success.
@@ -158,8 +155,6 @@ def plot_3d(serie):
     ax.set_xlim3d(xy.min(), xy.max())
     # ax.set_xlim3d(x.min(), x.max())
     # ax.set_ylim3d(y.min(), y.max())
-    # print(ax.get_xlim3d())
-    # print(ax.get_ylim3d())
     # ax.set_zlim3d(0, 16)
 
     return ax
@@ -169,7 +164,7 @@ def label_container(axes,
                     containers=None,
                     string_formatting=None,
                     label_height_increment=0.01):
-    u"""Attach text labels to axes.
+    """Attach text labels to axes.
 
     Arguments:
         axes (matplotlib.axes.Axes): Axes in which text labels will be added.
@@ -218,34 +213,58 @@ def label_container(axes,
     return None
 
 
-def histogram_of_categorical(x,
-                             label_containers=False,
-                             normalized_to_one=False,
+def histogram_of_categorical(a,
                              *args,
                              **sns_distplot_kwargs):
-    """Plot a histogram of categorical with sane defauts."""
-    pass
+    """Plot a histogram of categorical with sane defauts.
 
+    Arguments:
+        a (pd.Series): Categorical series to create a histogram plot.
+    Returns:
+        matplotlib.axes.Axes: the plotted axes.
 
-def histogram_of_floats(x,
-                        label_containers=False,
-                        normalized_to_one=False,
-                        *args,
-                        **sns_distplot_kwargs):
-    """Plot a histogram of float with sane defauts."""
-    axes = sns.distplot(
-        x,
-        *args,
-        **sns_distplot_kwargs)
-    if label_containers:
-        label_container(axes,
-                        string_formatting='{0:1.1%}')
+    Examples:
+        >>> import pandas_utilities as pu
+        >>> cat_serie = pu.dummy_dataframe().categorical
+        >>> axes = histogram_of_categorical(cat_serie, kde=False)
+        >>> plt.show()
+
+    """
+    # Create a dictionary of labels from categories.
+    labels = dict(enumerate(a.cat.categories))
+    # Pass the arguments to the histogram of integers function.
+    axes = histogram_of_integers(a.cat.codes, *args, **sns_distplot_kwargs)
+    # Restore the labels.
+    new_labels = tuple(map(
+        lambda x: labels[x] if x in labels.keys() else '',
+        axes.get_xticks()))
+    axes.set_xticklabels(new_labels)
     return axes
 
 
-def histogram_of_integers(x,
-                          label_containers=False,
-                          normalized_to_one=False,
+def histogram_of_floats(a,
+                        *args,
+                        **sns_distplot_kwargs):
+    """Plot a histogram of floats with sane defauts.
+
+    Arguments:
+        x (pd.Series): Float series to create a histogram plot.
+    Returns:
+        matplotlib.axes.Axes: the plotted axes.
+
+    Examples:
+        >>> import pandas_utilities as pu
+        >>> float_serie = pu.dummy_dataframe().float
+        >>> axes = histogram_of_floats(float_serie)
+    """
+    axes = sns.distplot(
+        a,
+        *args,
+        **sns_distplot_kwargs)
+    return axes
+
+
+def histogram_of_integers(a,
                           *args,
                           **sns_distplot_kwargs):
     """Plot a histogram of integers with sane defauts.
@@ -255,35 +274,34 @@ def histogram_of_integers(x,
     Examples:
 
     """
-    # TODO: this function is still in experimental mode.
-    # print("Function not stable yet!".upper())
-
+    # If there are various different integers plot them as float.
     THRESHOLD_TO_CONSIDER_FLOAT = 100
-    unique = np.unique(x).shape[0]
+    unique = np.unique(a).shape[0]
     if unique > THRESHOLD_TO_CONSIDER_FLOAT:
         return histogram_of_floats(
-            x,
-            normalized_to_one=normalized_to_one,
+            a,
             *args,
             **sns_distplot_kwargs)
+
     # TODO: Cover the case of less than treshold number of integers but with a
     # lot of spacing between them such as (0, 1, 2, 3, 5500, 15000).
-    if x.max() - x.min() > THRESHOLD_TO_CONSIDER_FLOAT:
-        unique_values = np.sort(x.unique())
+    #
+    # An algorithm is needed to find all the numbers that are contiguous and
+    # block them in groups. Then split the x axis between those contiguous
+    # blocks.
+    # TODO: implement such algorithm.
+    if a.max() - a.min() > THRESHOLD_TO_CONSIDER_FLOAT:
+        unique_values = np.sort(a.unique())
         mask_values = dict(zip(unique_values, range(len(unique_values))))
-        x = x.map(mask_values)
-    if normalized_to_one:
-        weights = np.ones_like(x)/len(x)
-    else:
-        weights = None
-    xlabels = np.arange(x.min() - 2,
-                        x.max() + 3)
-    # Put default
+        a = a.map(mask_values)
+    xlabels = np.arange(a.min() - 2,
+                        a.max() + 3)
+
+    # Specify default options for histogram.
     if 'hist_kws' not in sns_distplot_kwargs:
         sns_distplot_kwargs['hist_kws'] = dict()
         hist_kws = sns_distplot_kwargs['hist_kws']
     DEFAULT_HIST_KWARGS = {
-                    'weights': weights,
                     'align': 'mid',
                     'rwidth': 0.5}
     # Update kwargs to matplotlib histogram which were not specified.
@@ -291,23 +309,30 @@ def histogram_of_integers(x,
                              hist_kws.keys(),
                              DEFAULT_HIST_KWARGS.keys()):
             hist_kws[absent_key] = DEFAULT_HIST_KWARGS[absent_key]
+
+    xlabels = np.arange(a.min() - 2,
+                        a.max() + 3)
+
     axes = sns.distplot(
-        x,
+        a,
         bins=xlabels - 0.5,
         *args,
         **sns_distplot_kwargs)
+
     axes.set_xticks(xlabels)
     # If it is the case of having mapped the values.
     try:
         mask_values
-        x = x.map({v: k for k, v in mask_values.items()})
+        a = a.map({v: k for k, v in mask_values.items()})
         xlabels = np.concatenate((
-            np.arange(x.min() - 2, x.min() - 1),
-            np.sort(np.unique(x)),
-            np.arange(x.max() + 1, x.max() + 3)))
+            np.arange(a.min() - 2, a.min()),
+            np.sort(np.unique(a)),
+            np.arange(a.max() + 1, a.max() + 3)))
     except NameError:
         pass
-    if max(x) >= 100:
+
+    # Apply rotation to labels if they are numerous.
+    if max(a) >= 100:
         rotation = -45
     else:
         rotation = 0
@@ -317,79 +342,145 @@ def histogram_of_integers(x,
 
 
 def histogram_of_dataframe(dataframe,
-                           output_path,
+                           output_path=None,
                            normalize=True,
                            weights=None,
                            *args,
                            **sns_distplot_kwargs):
     """Draw a histogram for each column of the dataframe.
 
+    Provide a quick summary of each series in the dataframe:
+         - Draw a histogram for each column of the dataframe using the seaborn
+         'distplot' function.
+         - Create an artist box with some summary statistics:
+            - max
+            - min
+            - average
+            - nans
+            - n
+
+    The dataframe may contain nans.
+
+    This function assumes that the input dataframe has already received
+    treatment such as outlier treatment.
+
     Arguments:
+        dataframe (pandas.DataFrame): The dataframe whose columns will be
+        plotted.
+        output_folder (str): The outputh path to place the plotted histograms.
+        If None then no file is written.
+        normalize (bool): If the histograms should normalize so that the bin
+        heights add up to 1.
+        weights (list): The list of numpy.array weights to weight each of the
+        histogram entry.
+
     Returns:
+        tuple: a tuple containing a figure and an axes for each dataframe.
+
     Examples:
         >>> import pandas_utilities
         >>> dummy_df = pandas_utilities.dummy_dataframe(shape=200)
         >>> histogram_of_dataframe(dummy_df, '/tmp/')
+
     """
-    # TODO: modular: do one thing well. Return a tuple of axes. Write a new
-    # function to save a collection of axes to different figures. Remove
-    # output_path.
+    # This function assumes that the dataframe has received treatment. If there
+    # is an object column then raise exceptions. However nan's are welcome as
+    # they are part of the informative box.
+    if (dataframe.dtypes == object).sum() > 0:
+        raise TypeError("Dataframe must not have object columns:\n{0}",
+                        dataframe.dtypes)
 
-    # TODO: stick to an interface. It would be good to use the same interface
-    # as seaborn.
+    list_of_figures = list()
 
-    # Implement weight argument.
-    # TODO: Include minimum and maximum.
-    #   minimum: sometimes max is too big and will obliterate minimum from df.
-    #   maximum: likewise.
+    # Define the standard alignement for the histogram.
+    hist_kwargs = {'align': 'mid'}
 
-    # What to do with nans?
-    # TODO: Create a statement about nans.
-
-    # Should we cast Series to Dataframe?
-    if isinstance(dataframe, pd.Series):
-        dataframe = pd.DataFrame(dataframe)
-
-    object_columns_to_category(dataframe)
-    columns = (x for x in dataframe.columns.tolist()
-               if dataframe[x].dtype != object)
-    for column in columns:
-        hist_kwargs = {
-                    'align': 'mid',
-                    }
-        serie = dataframe[column].copy(deep=True)
+    # Iterate over columns.
+    for i, column in enumerate(dataframe.columns):
         fig, axes = plt.subplots(nrows=1, ncols=1)
+        series = dataframe[column]
+
+        # Since numpy dtypes seem not to be organized in a hierarchy of data
+        # types (eg int8, int32 etc are instances of a int) we resort to a
+        # string representation of data types.
+        series_str_dtype = str(series.dtype)
+
+        # TODO: review necessity of this.
         if normalize:
-            weights = np.ones_like(serie)/len(serie)
+            weights = np.ones_like(series)/len(series)
             hist_kwargs.update({'weights': weights})
-        try:
-            column_dtype = np.dtype(dataframe[column]).type
-        except TypeError:
-            column_dtype = type(None)
-        # TODO: create a differente procedure for bool.
-        if issubclass(column_dtype, np.integer) or issubclass(column_dtype,
-                                                              np.bool_):
-            # datatype = np.int
+
+        # .
+        # ├── categorical (x)
+        # └── number
+        #     ├── bool
+        #     ├── float
+        #     └── int
+        if series_str_dtype == 'category':
+            # Map category to integers and do an integer plot.
             axes = histogram_of_integers(
-                dataframe[column],
+                series.cat.codes,
                 **sns_distplot_kwargs)
-        elif issubclass(column_dtype, np.float):
-            # datatype = np.float
-            axes = histogram_of_floats(
-                dataframe[column],
-                **sns_distplot_kwargs)
-        elif issubclass(column_dtype, object):
-            if serie.dtype != 'category':
-                continue
-            axes = histogram_of_integers(
-                serie.cat.codes,
-                **sns_distplot_kwargs)
-            categories_iterator = iter(serie.cat.categories)
+            # Revert labels to category names.
+            categories_iterator = iter(series.cat.categories)
             axes.set_xticklabels(
                 map(lambda x: categories_iterator.__next__() if x > 0 else '',
                     map(lambda x: x.get_height(),
                         axes.patches)))
+        # .
+        # ├── categorical
+        # └── number (x)
+        #     ├── bool
+        #     ├── float
+        #     └── int
+        #
+        # Series with nans cannot be passed to sns.distplot. So this should be
+        # sent separetely to add_summary_statistics_textbox
+        elif ('bool' in series_str_dtype or 'int' in series_str_dtype or
+              'float' in series_str_dtype):
+            # Null values if passed to seaborn.distplot raise ValueError.
+            series_not_null = series[~series.isnull()]
+            # .
+            # ├── categorical
+            # └── number
+            #     ├── bool (x)
+            #     ├── float
+            #     └── int
+            if 'bool' in series_str_dtype:
+                # TODO: implement.
+                pass
 
+            # .
+            # ├── categorical
+            # └── number
+            #     ├── bool
+            #     ├── float (x)
+            #     └── int
+            if 'float' in series_str_dtype:
+                axes = histogram_of_floats(
+                    series_not_null,
+                    **sns_distplot_kwargs)
+
+            # .
+            # ├── categorical
+            # └── number
+            #     ├── bool
+            #     ├── float
+            #     └── int (x)
+            if 'int' in series_str_dtype:
+                axes = histogram_of_integers(
+                    series_not_null,
+                    **sns_distplot_kwargs)
+
+            # Add summary statistics for all numeric cases.
+            text = add_summary_statistics_textbox(series, axes)
+
+        # If it is neither a number nor a categorical data type raise error.
+        else:
+            raise TypeError("Datatype {0} not covered in this"
+                            " function".format(series_str_dtype))
+
+        # Adjust figure size.
         PATCHES_LEN = len(axes.patches)
         PATCHES_STRIDE = 0.2
         FIGSIZE = fig.get_size_inches()
@@ -397,15 +488,125 @@ def histogram_of_dataframe(dataframe,
             FIGSIZE[0] + PATCHES_LEN * PATCHES_STRIDE,
             FIGSIZE[1]
         )
-        fig.tight_layout()
-        fig.savefig(
-            os.path.join(
-                output_path,
-                '{0}'.format(column)) + '.png',
-            dpi=300)
-        fig.clf()
-        plt.close('all')
-    return None
+
+        list_of_figures.append(fig)
+
+        # Save the plotting.
+        if output_path is not None:
+            fig.tight_layout()
+            fig.savefig(
+                os.path.join(
+                    output_path,
+                    '{0}'.format(column)) + '.png',
+                dpi=300)
+
+    return tuple(list_of_figures)
+
+
+def add_summary_statistics_textbox(series,
+                                   axes,
+                                   include_mean=True,
+                                   include_max=True,
+                                   include_min=True,
+                                   include_n=True,
+                                   include_nans=True,
+                                   include_stddevs=True,
+                                   include_stddevp=False):
+    """Add a summary statistic textbox to your figure."""
+    mean = series.mean()
+    summary_max = series.max()
+    summary_min = series.min()
+    n = series.shape[0]
+    nans = series.isnull().sum()
+    stddevs = series.std(ddof=1)
+    stddevp = series.std(ddof=0)
+
+    # TODO: remove the divide by zero warning.
+    metrics = np.fromiter(
+        (x for x in
+         (mean, summary_max, summary_min, stddevs, stddevp)
+         if x != 0),
+        dtype=float)
+    min_order = np.floor(np.log10(np.abs(metrics))).min()
+    if abs(min_order) == float('inf'):
+        min_order = 0
+    min_order = np.int(min_order)
+    expo = 10 ** min_order
+
+    # TODO: numbers and figures should have the same order of magnitude.
+    # That is, avoid:
+    # mean: 1e7
+    # std:  1e5
+    # max:  1e9
+    # Float.
+    text_mean = ('mean = {0:1.2f}' + 'e{1:d}').format(mean/expo, min_order)
+    text_max = ('max = {0:1.2f}' + 'e{1:d}').format(summary_max/expo, min_order)
+    text_min = ('min = {0:1.2f}' + 'e{1:d}').format(summary_min/expo, min_order)
+    text_stddevp = ('stddevp = {0:1.2f}' + 'e{1:d}').format(stddevp/expo,
+                                                            min_order)
+    # Integers.
+    text_n = 'n = {0:d}'.format(n)
+    text_nans = 'nans = {0:d} ({1:1.1%} of n)'.format(nans, nans/n)
+
+    text = (text_mean, text_max, text_min, text_n, text_nans, text_stddevp)
+
+    # This session of the code finds the best placement of the text box. It
+    # works by finding a sequence of patches that are either above half the y
+    # axis or below it. If it finds such a sequences then it places the box
+    # halfway of the first patch of this sequence.
+    # This minimizes the chances of having it placed in an unsuitable positon.
+    n_bins = len(axes.patches)
+    stride = axes.patches[0].get_width()
+    hist_xlim = (axes.patches[0].get_x(), axes.patches[0].get_x() + n_bins *
+                 stride)
+    x0 = hist_xlim[0]
+    y_half = axes.get_ylim()[1] / 2
+    fraction_of_patches_to_halt = 1/4
+    contiguous_patches_to_halt = int(n_bins * fraction_of_patches_to_halt)
+    patches_height = (x.get_height() for x in axes.patches)
+    height_greater_than_half = map(lambda x: x > y_half,
+                                   patches_height)
+    state = height_greater_than_half.__next__()
+    seq = 1
+    flipped_on = 1
+    for i, greater in enumerate(height_greater_than_half, 1):
+        if greater == state:
+            seq += 1
+        else:
+            seq = 1
+            state = greater
+            flipped_on = i
+        if seq >= contiguous_patches_to_halt:
+            if greater:
+                y_placement = 0.3  # as a fraction of the ylimits.
+            else:
+                y_placement = 0.95  # as a fraction of the ylimits.
+            # Place the box on the best place: half stride in the patch which
+            # happened to 'flip' (y_half_greater -> y_half_smaller or vice
+            # versa).
+            x_placement = ((i - contiguous_patches_to_halt + flipped_on)
+                           * stride + x0 + 0.5 * stride)
+            break
+    else:
+        # TODO: implement this scenario.
+        raise NotImplementedError("Need to implement the case of not having a "
+                                  "suitable sequence of histogram patches.")
+    axes_ylim = axes.get_ylim()
+    # Correct the placement of the box to absolute units.
+    y_placement = axes_ylim[0] + y_placement * (axes_ylim[1] - axes_ylim[0])
+
+    # Set the box style for the text.
+    props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+
+    # Place the text.
+    text = axes.text(
+        x_placement, y_placement,
+        '\n'.join(text),
+        verticalalignment='top',
+        alpha=0.5,
+        bbox=props)
+
+    return text
 
 
 color = {
@@ -421,4 +622,18 @@ color = {k: (v[0]/255, v[1]/255, v[2]/255) for k, v in color.items()}
 
 if __name__ == '__main__':
     import doctest
-    doctest.testmod()
+    import pandas_utilities as pu
+    # doctest.testmod()
+    # doctest.run_docstring_examples(histogram_of_categorical, globals())
+    # import matplotlib.pyplot as plt
+    # import pandas_utilities as pu
+    # cat_serie = pu.dummy_dataframe().categorical
+    # axes = histogram_of_categorical(cat_serie)
+    # plt.show()
+    # serie = pu.dummy_dataframe(5).int
+    # serie = serie.append(pd.Series(np.arange(5000, 5005)))
+    # axes = histogram_of_integers(serie, kde=False)
+    df = np.concatenate((np.arange(1000, 2000), np.arange(1000, 10005)))
+    df = pd.DataFrame(df)
+    df = object_columns_to_category(df)
+    histogram_of_dataframe(df, '/tmp/', norm_hist=False, kde=False)
