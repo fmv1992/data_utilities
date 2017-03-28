@@ -33,6 +33,8 @@ figure out the best way to to develop the utilities. Use at your own risk :)
 
 # TODO
 
+- Add a boolean column to `dummy_dataframe`.
+
 - Setup TravisCI, add stickers of TravisCI and coverage of functions with
   tests.
 
@@ -40,8 +42,28 @@ figure out the best way to to develop the utilities. Use at your own risk :)
   should be a starter (`size=` or `shape=` arguments).
 
 - Add test to every function.
+    - Current coverage: 42%
+
+- Improved test modules structures. Now all test cases are run from the same
+  data (possibly costly operation).
+
+- Aggregated `dummy_dataframe` and `statistical_distributions_dataframe` in the
+  same constructor.
+
+- Aggregated `dummy_dataframe` and `statistical_distributions_dataframe` tests.
 
 # Changelog
+
+#### Version 1.1.0
+
+- Improved `histogram_of_dataframe` function: added a textbox withs summary
+  statistics.
+
+- Added a boolean column to `dummy_dataframe`.
+
+- Added a test module for matplotlib_utilities.
+
+- Cleaned up the code.
 
 #### Version 1.0.0
 

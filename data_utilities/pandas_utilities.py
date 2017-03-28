@@ -196,14 +196,11 @@ def dummy_dataframe(
     # TODO: implement a boolean series.
     # Default value.
     if shape is None:
-        rows, columns = (N, 4)
+        rows, columns = (N, 5)
     elif isinstance(shape, int):
-        rows, columns = (shape, 4)
-    elif shape[1] != 4:
-        raise NotImplementedError
+        rows, columns = (shape, 5)
     else:
         rows, columns = shape
-    # TODO: cover the case of shape as tuple
 
     # Requirements:
     #   a) unique 10 objects when n -> inf
@@ -218,26 +215,30 @@ def dummy_dataframe(
                     itertools.product(string.ascii_lowercase,
                                       string.ascii_lowercase)),
                 n_objs))
-        add_data_cat = {'categorical': np.random.choice(categories, size=rows)}
-        data.update(add_data_cat)
-    if series_float is None:
-        add_data_float = {'float': np.random.normal(size=rows)}
-        data.update(add_data_float)
-    if series_int is None:
-        add_data_int = {'int': np.arange(rows)}
-        data.update(add_data_int)
-    if series_object is None:
-        add_data_obj = {'object': np.random.choice(categories, size=rows)}
-        data.update(add_data_obj)
-    filtered_series = tuple(
-        filter(lambda x: x is not None,
-               (series_categorical, series_float, series_int, series_object)))
-    dataframe = pd.DataFrame(data=data)
-    dataframe = pd.concat(
-        (dataframe, ) + filtered_series,
-        axis=1)
-    dataframe['categorical'] = dataframe['categorical'].astype('category')
-    return dataframe
+    def f_bool(): return np.random.randint(0, 1 + 1, size=rows, dtype=bool)
+
+    def f_categorical(): return np.random.choice(categories, size=rows)
+
+    def f_float(): return np.random.normal(size=rows)
+
+    def f_int(): return np.arange(rows)
+
+    def f_object(): return np.random.choice(categories, size=rows)
+
+    functions = {
+        'bool': f_bool,
+        'categorical': f_categorical,  # TODO: change to category.
+        'float': f_float,
+        'int': f_int,
+        'object': f_object}
+
+    n_keys = len(functions)
+    data_dictionary = dict()
+    for i, func_key in zip(range(columns), itertools.cycle(functions)):
+        data_dictionary[func_key + '_' +
+                        str(i//n_keys)] = functions[func_key]()
+    return pd.DataFrame(
+        data=data_dictionary)
 
 
 def find_components_of_array(x, y, atol=1e-5, assume_int=False):

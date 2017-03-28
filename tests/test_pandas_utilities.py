@@ -31,7 +31,6 @@ class UtilitiesDataFrames(unittest.TestCase, metaclass=TestMetaClass):  # noqa
     def setUp(self):
         """setUp method from unittest."""
         pass
-
     def test_dummy_dataframe(self):
         """dummy dataframe test."""
         # Function should work 'out of the box'.
@@ -39,7 +38,7 @@ class UtilitiesDataFrames(unittest.TestCase, metaclass=TestMetaClass):  # noqa
 
         # First argument should also be the shape.
         pu.dummy_dataframe(100)
-        pu.dummy_dataframe((100, 4))
+        pu.dummy_dataframe((100, 100))
 
         # Test shapes with integers.
         # Prepare test shapes with integer values.
@@ -54,28 +53,20 @@ class UtilitiesDataFrames(unittest.TestCase, metaclass=TestMetaClass):  # noqa
             self.assertIsInstance,
             map_dummy_dataframe,
             itertools.repeat(pd.DataFrame))
+        del (integer_shapes, integer_borderline_shapes, iterator_of_shapes,
+             map_dummy_dataframe)
 
-        # Test invalid shapes with tuple.
+        # Test shapes with tuples.
         # Prepare test shapes with tuple values.
-        # All numbers from 1 to number of columns except 4.
-        non_accepted_column_values = tuple(set(range(1, c+1)) - set((4,)))
         tuple_shapes = (
             (random.randint(1, l),
-             random.choice(non_accepted_column_values))
-            for x in range(N//2))
+             random.randint(1, c)) for x in range(N//2))
         # Prepare test shapes with tuple borderline values.
-        self.assert_X_from_iterables(
-            self.assertRaises,
-            itertools.repeat(NotImplementedError),
-            itertools.repeat(lambda x: pu.dummy_dataframe(x)),
-            tuple_shapes)
-
-        # Test valid shapes with tuple.
-        # Prepare test shapes with tuple values.
         borderline_value1 = (1, 4)
         borderline_value2 = (0, 4)
-        iterator_of_shapes = (borderline_value1, borderline_value2)
-        # Prepare test shapes with tuple borderline values.
+        tuple_borderline_shapes = (borderline_value1, borderline_value2)
+        iterator_of_shapes = itertools.chain(
+            tuple_shapes, tuple_borderline_shapes)
         map_dummy_dataframe = map(lambda x: pu.dummy_dataframe(x),
                                   iterator_of_shapes)
         self.assert_X_from_iterables(
@@ -90,7 +81,7 @@ class UtilitiesDataFrames(unittest.TestCase, metaclass=TestMetaClass):  # noqa
 
         # First argument should also be the shape.
         pu.statistical_distributions_dataframe(100)
-        pu.statistical_distributions_dataframe((100, 4))
+        pu.statistical_distributions_dataframe((100, 100))
 
         # Test shapes with integers.
         # Prepare test shapes with integer values.
@@ -106,36 +97,26 @@ class UtilitiesDataFrames(unittest.TestCase, metaclass=TestMetaClass):  # noqa
             self.assertIsInstance,
             map_dummy_dataframe,
             itertools.repeat(pd.DataFrame))
+        del (integer_shapes, integer_borderline_shapes, iterator_of_shapes,
+             map_dummy_dataframe)
 
         # Test invalid shapes with tuple.
         # Prepare test shapes with tuple values.
-        # All numbers from 1 to number of columns except 4.
         tuple_shapes = tuple(
             (random.randint(1, l),
-             random.randint(1, c))
-            for x in range(N//2))
-        # Prepare test shapes with tuple borderline values.
-        self.assert_X_from_iterables(
-            self.assertEqual,
-            tuple_shapes,
-            map(lambda x: pu.statistical_distributions_dataframe(x).shape,
-                tuple_shapes))
-
-        # Test valid shapes with tuple.
+             random.randint(1, c)) for x in range(N//2))
         # Prepare test shapes with tuple values.
         borderline_value1 = (1, 4)
         borderline_value2 = (0, 4)
         iterator_of_shapes = (borderline_value1, borderline_value2)
         # Prepare test shapes with tuple borderline values.
-        map_dummy_dataframe = map(
-            lambda x: pu.statistical_distributions_dataframe(x),
-            iterator_of_shapes)
+
+        tuple_borderline_shapes = (borderline_value1, borderline_value2)
+        iterator_of_shapes = itertools.chain(
+            tuple_shapes, tuple_borderline_shapes)
+        map_dummy_dataframe = map(lambda x: pu.statistical_distributions_dataframe(x),
+                                  iterator_of_shapes)
         self.assert_X_from_iterables(
             self.assertIsInstance,
             map_dummy_dataframe,
             itertools.repeat(pd.DataFrame))
-
-
-if __name__ == "__main__":
-    suite = unittest.TestLoader().loadTestsFromTestCase(UtilitiesDataFrames)
-    unittest.TextTestRunner(verbosity=2).run(suite)

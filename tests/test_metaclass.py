@@ -71,7 +71,3 @@ class TestMetaClass(type):
         # METACLASS: set verbosity.
         classdict['verbosity'] = verbosity
         return type.__new__(mcs, name, bases, classdict)
-
-
-if __name__ == '__main__':
-    unittest.main()
