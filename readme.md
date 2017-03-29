@@ -31,37 +31,17 @@ parent module.
 Note: This is a primitive project. Expect backwards incompatible changes as I
 figure out the best way to to develop the utilities. Use at your own risk :)
 
-# TODO
-
-- Add a boolean column to `dummy_dataframe`.
-
-- Setup TravisCI, add stickers of TravisCI and coverage of functions with
-  tests.
-
-- Uniformize interface for generating dummy dataframes. The interface of numpy
-  should be a starter (`size=` or `shape=` arguments).
-
-- Add test to every function.
-    - Current coverage: 42%
-
-- Improved test modules structures. Now all test cases are run from the same
-  data (possibly costly operation).
-
-- Aggregated `dummy_dataframe` and `statistical_distributions_dataframe` in the
-  same constructor.
-
-- Aggregated `dummy_dataframe` and `statistical_distributions_dataframe` tests.
-
 # Changelog
 
 #### Version 1.1.0
 
-- Improved `histogram_of_dataframe` function: added a textbox withs summary
+- Improved `histogram_of_dataframe` function: added a textbox with summary
   statistics.
 
 - Added a boolean column to `dummy_dataframe`.
 
-- Added a test module for matplotlib_utilities.
+- Added a test module for other libraries: `matplotlib_utilities` and
+  `python_utilities`.
 
 - Cleaned up the code.
 
@@ -83,3 +63,25 @@ figure out the best way to to develop the utilities. Use at your own risk :)
 #### Version 0.0.1
 
 - First commit.
+
+# TODO
+
+- Add test to every function.
+    - Current coverage: 42%
+
+- Improved test modules structures. Now all test cases are run from the same
+  data (possibly costly operation).
+
+- Aggregated `dummy_dataframe` and `statistical_distributions_dataframe` in the
+  same constructor.
+
+- Aggregated `dummy_dataframe` and `statistical_distributions_dataframe` tests
+  in the same constructor
+
+- Setup TravisCI, add stickers of TravisCI and coverage of functions with
+  tests.
+
+- ~~Add a boolean column to `dummy_dataframe`.~~
+
+- ~~Uniformize interface for generating dummy dataframes. The interface of numpy
+  should be a starter (`size=` or `shape=` arguments).~~
