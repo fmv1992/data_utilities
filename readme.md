@@ -69,19 +69,19 @@ figure out the best way to to develop the utilities. Use at your own risk :)
 - Add test to every function.
     - Current coverage: 42%
 
-- Improved test modules structures. Now all test cases are run from the same
-  data (possibly costly operation).
-
 - Aggregated `dummy_dataframe` and `statistical_distributions_dataframe` in the
   same constructor.
 
-- Aggregated `dummy_dataframe` and `statistical_distributions_dataframe` tests
-  in the same constructor
-
 - Setup TravisCI, add stickers of TravisCI and coverage of functions with
   tests.
+
+- ~~Improved test modules structures. Now all test cases are run from the same
+  data (possibly costly operation).~~
 
 - ~~Add a boolean column to `dummy_dataframe`.~~
 
 - ~~Uniformize interface for generating dummy dataframes. The interface of numpy
   should be a starter (`size=` or `shape=` arguments).~~
+
+- ~~Aggregated `dummy_dataframe` and `statistical_distributions_dataframe` tests
+  in the same constructor~~

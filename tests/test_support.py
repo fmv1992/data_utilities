@@ -22,9 +22,14 @@ here:
 import unittest
 import inspect
 
+import pandas_utilities as pu
+
+N = 10
+l = 1000
+c = 20
+
 
 class TestMetaClass(type):
-
     """Metaclass for all tests in this module.
 
     This metaclass aims to facilitate iterable assertions (parametrized tests).
@@ -71,3 +76,37 @@ class TestMetaClass(type):
         # METACLASS: set verbosity.
         classdict['verbosity'] = verbosity
         return type.__new__(mcs, name, bases, classdict)
+
+    def __setattr__(self, name, value):
+        """Prevent instances from changing 'non private' attributes.
+
+        If this method is present in the MetaClass level it then prevents
+        instances of changing attributes of the class (shared among all
+        instances).
+
+        If this method is present in the Class level it then prevents instances
+        from changing their own attributes.
+
+        """
+        # Raise error if it is not a private attribute.
+        if not name.startswith('_'):
+            raise ValueError(
+                "Cannot change non-private attribute '{0}' of class "
+                "'{1}'.".format(name, self.__class__))
+        else:
+            super().__setattr__(name, value)
+
+
+class DataUtilitiesTestCase(unittest.TestCase, metaclass=TestMetaClass):
+    """Test class which will parent all other tests.
+
+    It initialize some class constants and possibly costly operations like
+    creating dummy dataframes.
+
+    """
+
+    c = c
+    l = l
+    N = N
+    data = pu.statistical_distributions_dataframe(
+            shape=(l, c))
