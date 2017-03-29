@@ -69,9 +69,6 @@ figure out the best way to to develop the utilities. Use at your own risk :)
 - Add test to every function.
     - Current coverage: 42%
 
-- Aggregated `dummy_dataframe` and `statistical_distributions_dataframe` in the
-  same constructor.
-
 - Setup TravisCI, add stickers of TravisCI and coverage of functions with
   tests.
 
@@ -85,3 +82,7 @@ figure out the best way to to develop the utilities. Use at your own risk :)
 
 - ~~Aggregated `dummy_dataframe` and `statistical_distributions_dataframe` tests
   in the same constructor~~
+
+- ~~Aggregated `dummy_dataframe` and `statistical_distributions_dataframe` in the
+  same constructor.~~
+

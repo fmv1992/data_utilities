@@ -622,18 +622,4 @@ color = {k: (v[0]/255, v[1]/255, v[2]/255) for k, v in color.items()}
 
 if __name__ == '__main__':
     import doctest
-    import pandas_utilities as pu
-    # doctest.testmod()
-    # doctest.run_docstring_examples(histogram_of_categorical, globals())
-    # import matplotlib.pyplot as plt
-    # import pandas_utilities as pu
-    # cat_serie = pu.dummy_dataframe().categorical
-    # axes = histogram_of_categorical(cat_serie)
-    # plt.show()
-    # serie = pu.dummy_dataframe(5).int
-    # serie = serie.append(pd.Series(np.arange(5000, 5005)))
-    # axes = histogram_of_integers(serie, kde=False)
-    df = np.concatenate((np.arange(1000, 2000), np.arange(1000, 10005)))
-    df = pd.DataFrame(df)
-    df = object_columns_to_category(df)
-    histogram_of_dataframe(df, '/tmp/', norm_hist=False, kde=False)
+    doctest.testmod()

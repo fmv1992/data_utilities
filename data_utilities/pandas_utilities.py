@@ -186,61 +186,6 @@ def read_string(string, **kwargs):
         **kwargs)
 
 
-def dummy_dataframe(
-        shape=None,
-        series_categorical=None,
-        series_float=None,
-        series_int=None,
-        series_object=None):
-    """Create an out-of-the-box dataframe with different datatype series."""
-    # TODO: implement a boolean series.
-    # Default value.
-    if shape is None:
-        rows, columns = (N, 5)
-    elif isinstance(shape, int):
-        rows, columns = (shape, 5)
-    else:
-        rows, columns = shape
-
-    # Requirements:
-    #   a) unique 10 objects when n -> inf
-    #   b) 100 objects when n = 10e4
-    #   c) 3 objects when n = 3
-    data = {}
-    if series_categorical is None:
-        n_objs = int(7e-4 * rows + 3) if rows <= 10000 else 10
-        categories = list(
-            itertools.islice(
-                map(lambda x: ''.join(x),
-                    itertools.product(string.ascii_lowercase,
-                                      string.ascii_lowercase)),
-                n_objs))
-    def f_bool(): return np.random.randint(0, 1 + 1, size=rows, dtype=bool)
-
-    def f_categorical(): return np.random.choice(categories, size=rows)
-
-    def f_float(): return np.random.normal(size=rows)
-
-    def f_int(): return np.arange(rows)
-
-    def f_object(): return np.random.choice(categories, size=rows)
-
-    functions = {
-        'bool': f_bool,
-        'categorical': f_categorical,  # TODO: change to category.
-        'float': f_float,
-        'int': f_int,
-        'object': f_object}
-
-    n_keys = len(functions)
-    data_dictionary = dict()
-    for i, func_key in zip(range(columns), itertools.cycle(functions)):
-        data_dictionary[func_key + '_' +
-                        str(i//n_keys)] = functions[func_key]()
-    return pd.DataFrame(
-        data=data_dictionary)
-
-
 def find_components_of_array(x, y, atol=1e-5, assume_int=False):
     """Find the components of x which compose y.
 
@@ -330,6 +275,67 @@ def find_components_of_array(x, y, atol=1e-5, assume_int=False):
         return result
 
 
+def _construct_dataframe(shape, dict_of_functions):
+    """Build a dataframe with a given ship from a dictionary of functions."""
+    rows, columns = shape
+    n_keys = len(dict_of_functions)
+    data_dictionary = dict()
+    for i, func_key in zip(range(columns), itertools.cycle(dict_of_functions)):
+        data_dictionary[func_key + '_' +
+                        str(i//n_keys)] = dict_of_functions[func_key]()
+    return pd.DataFrame(
+        data=data_dictionary)
+
+
+def dummy_dataframe(
+        shape=None,
+        series_categorical=None,
+        series_float=None,
+        series_int=None,
+        series_object=None):
+    """Create an out-of-the-box dataframe with different datatype series."""
+    # TODO: implement a boolean series.
+    # Default value.
+    if shape is None:
+        rows, columns = (N, 5)
+    elif isinstance(shape, int):
+        rows, columns = (shape, 5)
+    else:
+        rows, columns = shape
+
+    # Requirements:
+    #   a) unique 10 objects when n -> inf
+    #   b) 100 objects when n = 10e4
+    #   c) 3 objects when n = 3
+    if series_categorical is None:
+        n_objs = int(7e-4 * rows + 3) if rows <= 10000 else 10
+        categories = list(
+            itertools.islice(
+                map(lambda x: ''.join(x),
+                    itertools.product(string.ascii_lowercase,
+                                      string.ascii_lowercase)),
+                n_objs))
+
+    def f_bool(): return np.random.randint(0, 1 + 1, size=rows, dtype=bool)
+
+    def f_categorical(): return np.random.choice(categories, size=rows)
+
+    def f_float(): return np.random.normal(size=rows)
+
+    def f_int(): return np.arange(rows)
+
+    def f_object(): return np.random.choice(categories, size=rows)
+
+    dict_of_functions = {
+        'bool': f_bool,
+        'categorical': f_categorical,  # TODO: change to category.
+        'float': f_float,
+        'int': f_int,
+        'object': f_object}
+
+    return _construct_dataframe((rows, columns), dict_of_functions)
+
+
 def statistical_distributions_dataframe(shape=None):
     """Create an out-of-the-box dataframe with common distrubutions.
 
@@ -362,19 +368,13 @@ def statistical_distributions_dataframe(shape=None):
 
     def rnd(): return np.random.random(size=rows)
 
-    functions = {'chisq': chisq,
-                 'stdnorm': stdnorm,
-                 'logistic': logistic,
-                 'rnd': rnd}
+    dict_of_functions = {
+        'chisq': chisq,
+        'stdnorm': stdnorm,
+        'logistic': logistic,
+        'rnd': rnd}
 
-    n_keys = len(functions)
-    data_dictionary = dict()
-    for i, func_key in zip(range(columns), itertools.cycle(functions)):
-        data_dictionary[func_key + '_' +
-                        str(i//n_keys)] = functions[func_key]()
-
-    return pd.DataFrame(
-        data=data_dictionary)
+    return _construct_dataframe((rows, columns), dict_of_functions)
 
 
 if __name__ == '__main__':
