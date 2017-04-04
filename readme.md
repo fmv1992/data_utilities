@@ -38,6 +38,12 @@ figure out the best way to to develop the utilities. Use at your own risk :)
 - Improved `histogram_of_dataframe` function: added a textbox with summary
   statistics.
 
+- Added a function to scale axes axis (`scale_axes_axis`).
+
+- Added a colorbar argument to `plot_3d`.
+
+- Label containers now return a list of matplotlib Text objects.
+
 - Added a boolean column to `dummy_dataframe`.
 
 - Added a test module for other libraries: `matplotlib_utilities` and
