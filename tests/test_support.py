@@ -25,8 +25,10 @@ import inspect
 import pandas_utilities as pu
 
 N = 10
+N_GRAPHICAL = 10
 l = 1000
 c = 20
+SAVE_IMAGES = True
 
 
 class TestMetaClass(type):
@@ -88,12 +90,15 @@ class TestMetaClass(type):
         from changing their own attributes.
 
         """
-        # Raise error if it is not a private attribute.
-        if not name.startswith('_'):
-            raise ValueError(
-                "Cannot change non-private attribute '{0}' of class "
-                "'{1}'.".format(name, self.__class__))
-        else:
+        # Disallow the overwritting of attributes.
+        try:
+            getattr(self, name)
+            # Raise error if it is not a private attribute.
+            if not name.startswith('_'):
+                raise ValueError(
+                    "Cannot change non-private attribute '{0}' of class "
+                    "'{1}'.".format(name, self.__class__))
+        except AttributeError:
             super().__setattr__(name, value)
 
 
@@ -108,5 +113,7 @@ class DataUtilitiesTestCase(unittest.TestCase, metaclass=TestMetaClass):
     c = c
     l = l
     N = N
+    N_GRAPHICAL = 10
+    SAVE_IMAGES = SAVE_IMAGES
     data = pu.statistical_distributions_dataframe(
             shape=(l, c))

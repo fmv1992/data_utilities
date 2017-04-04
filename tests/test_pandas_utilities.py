@@ -10,13 +10,8 @@ import pandas_utilities as pu
 from test_support import DataUtilitiesTestCase, TestMetaClass
 
 
-class FindComponentsOfArray(DataUtilitiesTestCase, metaclass=TestMetaClass):  # noqa
-    """Test class for function of pandas_utilities.
-
-    The interface should make easy to specify:
-        - N: the quantity of tests to be run.
-        - l: the length of the arrays.
-        - c: the number of columns to generate each y.
+class FindComponentsOfArray(DataUtilitiesTestCase, metaclass=TestMetaClass):
+    """Test class for find_components_of_array of pandas_utilities.
 
     The tests should cover the case of integer and non integer composition of
     arrays.
@@ -92,11 +87,6 @@ class FindComponentsOfArray(DataUtilitiesTestCase, metaclass=TestMetaClass):  # 
 
 class UtilitiesDataFrames(DataUtilitiesTestCase, metaclass=TestMetaClass):  # noqa
     """Test class for functions that create 'out of the shelf' dataframes.
-
-    The interface should make easy to specify:
-        - N: the quantity of tests to be run.
-        - l: the length of the arrays.
-        - c: the number of columns to generate each y.
 
     The tests should cover issues from extreme cases cases of inputs as well as
     different datatypes.
