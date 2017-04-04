@@ -1,0 +1,18 @@
+language: python
+branches:
+  only:
+    - add_travis_ci
+    # - develop
+    # - master
+    # - testing
+python:
+  - "3.4"
+  - "3.6"
+before_install:
+  - sudo apt-get update
+  - sudo pip3 install --upgrade numpy matplotlib seaborn pandas unidecode scikit-learn
+install:
+    git clone 'https://github.com/fmv1992/data_utilities'
+    cd data_utilities
+script:
+  python3 -m unittest discover -vvv tests/
