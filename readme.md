@@ -5,11 +5,11 @@ data analysis in python.
 
 It depends on:
 
-- Numpy
-- Scipy
-- Pandas
-- Matplotlib
-- Seaborn
+* Numpy
+* Scipy
+* Pandas
+* Matplotlib
+* Seaborn
 
 # Organization and files
 
@@ -35,60 +35,60 @@ figure out the best way to to develop the utilities. Use at your own risk :)
 
 #### Version 1.1.0
 
-- Improved `histogram_of_dataframe` function: added a textbox with summary
+* Improved `histogram_of_dataframe` function: added a textbox with summary
   statistics.
 
-- Added a function to scale axes axis (`scale_axes_axis`).
+* Added a function to scale axes axis (`scale_axes_axis`).
 
-- Added a colorbar argument to `plot_3d`.
+* Added a colorbar argument to `plot_3d`.
 
-- Label containers now return a list of matplotlib Text objects.
+* Label containers now return a list of matplotlib Text objects.
 
-- Added a boolean column to `dummy_dataframe`.
+* Added a boolean column to `dummy_dataframe`.
 
-- Added a test module for other libraries: `matplotlib_utilities` and
+* Added a test module for other libraries: `matplotlib_utilities` and
   `python_utilities`.
 
-- Cleaned up the code.
+* Cleaned up the code.
 
 #### Version 1.0.0
 
-- Incompatible changes: the two utility functions to create dummy dataframes
+* Incompatible changes: the two utility functions to create dummy dataframes
   now use a keyword argument 'shape' instead of 'n' or 'rows' and 'columns' to
   resemble the numpy interface.
 
 #### Version 0.1.1
 
-- Added a convenience function (`statistical_distributions_dataframe`) of
+* Added a convenience function (`statistical_distributions_dataframe`) of
   variable size initialized with some common statistical distributions.
 
-- Added a test module which allows parametrized tests via the `TestMetaClass`.
+* Added a test module which allows parametrized tests via the `TestMetaClass`.
 
-- Added a test module for the `find_components_of_array` function.
+* Added a test module for the `find_components_of_array` function.
 
 #### Version 0.0.1
 
-- First commit.
+* First commit.
 
 # TODO
 
-- Add test to every function.
+* Add test to every function.
     - Current coverage: 42%
 
-- Setup TravisCI, add stickers of TravisCI and coverage of functions with
+* Setup TravisCI, add stickers of TravisCI and coverage of functions with
   tests.
 
-- ~~Improved test modules structures. Now all test cases are run from the same
+* ~~Improved test modules structures. Now all test cases are run from the same
   data (possibly costly operation).~~
 
-- ~~Add a boolean column to `dummy_dataframe`.~~
+* ~~Add a boolean column to `dummy_dataframe`.~~
 
-- ~~Uniformize interface for generating dummy dataframes. The interface of numpy
+* ~~Uniformize interface for generating dummy dataframes. The interface of numpy
   should be a starter (`size=` or `shape=` arguments).~~
 
-- ~~Aggregated `dummy_dataframe` and `statistical_distributions_dataframe` tests
+* ~~Aggregated `dummy_dataframe` and `statistical_distributions_dataframe` tests
   in the same constructor~~
 
-- ~~Aggregated `dummy_dataframe` and `statistical_distributions_dataframe` in the
+* ~~Aggregated `dummy_dataframe` and `statistical_distributions_dataframe` in the
   same constructor.~~
 
