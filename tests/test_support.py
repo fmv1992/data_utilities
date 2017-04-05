@@ -22,7 +22,7 @@ here:
 import unittest
 import inspect
 
-import pandas_utilities as pu
+from data_utilities import pandas_utilities as pu
 
 N = 10
 N_GRAPHICAL = 10

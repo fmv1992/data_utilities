@@ -6,7 +6,7 @@ import random
 import numpy as np
 import pandas as pd
 
-import pandas_utilities as pu
+from data_utilities import pandas_utilities as pu
 from test_support import DataUtilitiesTestCase, TestMetaClass
 
 

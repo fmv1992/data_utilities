@@ -12,7 +12,7 @@ import pandas as pd
 import seaborn as sns
 
 from test_support import DataUtilitiesTestCase, TestMetaClass
-import matplotlib_utilities as mu
+from data_utilities import matplotlib_utilities as mu
 
 
 class TestMatplotlibUtilities(DataUtilitiesTestCase, metaclass=TestMetaClass):

@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/fmv1992/data_utilities.svg?branch=master)](https://travis-ci.org/fmv1992/data_utilities)
+
 # Data Utilities
 
 This module provides some helper functions and conveniences for working with
@@ -10,6 +12,7 @@ It depends on:
 * Pandas
 * Matplotlib
 * Seaborn
+* Scikit-learn
 
 # Organization and files
 
@@ -36,8 +39,11 @@ figure out the best way to to develop the utilities. Use at your own risk :)
 * Add test to every function.
     - Current coverage: XXX%
 
-* Setup TravisCI, add stickers of TravisCI and coverage of functions with
-  tests.
+* Move changelog and todo sections to separate files
+  (https://github.com/pypa/sampleproject)
+
+* ~~Setup TravisCI, add stickers of TravisCI and coverage of functions with
+  tests.~~
 
 # Changelog
 

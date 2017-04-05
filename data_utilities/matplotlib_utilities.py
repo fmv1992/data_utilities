@@ -23,7 +23,7 @@ import random
 
 import sklearn.preprocessing
 from mpl_toolkits.mplot3d import Axes3D
-from pandas_utilities import object_columns_to_category
+from data_utilities.pandas_utilities import object_columns_to_category
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 import matplotlib
