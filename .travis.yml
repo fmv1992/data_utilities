@@ -4,6 +4,7 @@ env:
 branches:
   only:
     - develop
+    - master
 python:
     - "3.4"  # oldest python version supported by numpy
     - "3.6"
@@ -13,4 +14,4 @@ before_install:
 install:
     # - git clone 'https://github.com/fmv1992/data_utilities'
 script:
-    - python3 -m unittest discover -vvv ./tests/
+    - python3 -c "import data_utilities as du; du.test()"
