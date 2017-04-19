@@ -59,6 +59,16 @@ figure out the best way to to develop the utilities. Use at your own risk :)
 
 #### Version 1.2.0
 
+* Other
+    * Stable version uploaded to pypi
+
+#### Version 1.2.1 to 1.2.5
+
+* Other
+    * Development versions uploaded to pypi
+
+#### Version 1.2.0
+
 <!---
 * `matplolib_utilities`
     * A
@@ -71,9 +81,9 @@ figure out the best way to to develop the utilities. Use at your own risk :)
 -->
 
 * Other
-    * Added package to PyPA as "data_utilities" # XXX
+    * Added package to PyPA as `data_utilities`
     * Added a test method to the package:
-        python3 -c "import data_utilities as du; du.test()"
+        python3 -c `import data_utilities as du; du.test()`
 
 #### Version 1.1.0
 
