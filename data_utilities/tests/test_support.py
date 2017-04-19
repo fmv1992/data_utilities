@@ -24,7 +24,7 @@ import inspect
 
 from data_utilities import pandas_utilities as pu
 
-N = 10
+N = 50
 N_GRAPHICAL = 10
 l = 1000
 c = 20
