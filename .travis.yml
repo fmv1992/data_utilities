@@ -13,4 +13,4 @@ before_install:
 install:
     # - git clone 'https://github.com/fmv1992/data_utilities'
 script:
-    - python3 -m unittest discover -vvv ./tests/
+    - python3 -c "import data_utilities as du; du.test()"
