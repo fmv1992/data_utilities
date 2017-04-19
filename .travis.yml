@@ -1,18 +1,16 @@
 language: python
+env:
+    - PYTHONPATH=$PYTHONPATH:/home/travis/build/fmv1992/data_utilities/data_utilities/
 branches:
   only:
-    - add_travis_ci
-    # - develop
-    # - master
-    # - testing
+    - develop
 python:
-  - "3.4"
-  - "3.6"
+    - "3.4"  # oldest python version supported by numpy
+    - "3.6"
 before_install:
-  - sudo apt-get update
-  - sudo pip3 install --upgrade numpy matplotlib seaborn pandas unidecode scikit-learn
+    - sudo apt-get update
+    - pip3 install --upgrade numpy matplotlib seaborn pandas unidecode scikit-learn
 install:
-    git clone 'https://github.com/fmv1992/data_utilities'
-    cd data_utilities
+    # - git clone 'https://github.com/fmv1992/data_utilities'
 script:
-  python3 -m unittest discover -vvv tests/
+    - python3 -m unittest discover -vvv ./tests/

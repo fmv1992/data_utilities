@@ -1,3 +1,4 @@
+"""Data analysis helper module written in python."""
 # According to this, a version number is defined by
 #
 # MAJOR.MINOR.PATCH
@@ -20,4 +21,24 @@
 # User version numbering from here.
 # http://stackoverflow.com/questions/42259098/python-version-numbering-scheme/42259144
 
-__version__ = '1.0.0'
+import unittest
+import os
+
+__version__ = '1.2.6'
+
+
+def test(*a, **kw):
+    """Module level test function.
+
+    Run all tests using the unittest module.
+
+    Created based on the same architecture as the scipy test function defined on
+    their __init__.py.
+
+    """
+    base_dir = os.path.dirname(__file__)
+    # TODO: adjust verbosity parameter.
+    text_result = unittest.TextTestRunner(verbosity=100)
+    test_suite = unittest.TestLoader().discover(
+        os.path.join(base_dir, 'tests'))
+    text_result.run(test_suite)
