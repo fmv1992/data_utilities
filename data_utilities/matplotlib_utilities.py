@@ -13,6 +13,7 @@ All the functions should follow matplotlib, pandas and numpy's guidelines:
     This module:
         (1) Functions should work out of the box whenever possible (for example
         for creating dataframes).
+        (2) Keyword arguments should be turned off by default.
 
 """
 
@@ -20,8 +21,11 @@ import itertools
 import os
 import random
 
+import sklearn.preprocessing
 from mpl_toolkits.mplot3d import Axes3D
-from pandas_utilities import object_columns_to_category
+from data_utilities.pandas_utilities import object_columns_to_category
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
@@ -31,14 +35,49 @@ import seaborn as sns
 # pylama: ignore=W0611,D301
 
 
-def plot_3d(serie):
+def scale_axes_axis(axes, scale_xy_axis=False, scale_z_axis=False):
+    """Set axes to the same scale."""
+    if hasattr(axes, 'get_zlim'):
+        dimenesions = 3
+    else:
+        dimenesions = 2
+
+    xlim = tuple(axes.get_xlim3d())
+    ylim = tuple(axes.get_ylim3d())
+    zlim = tuple(axes.get_zlim3d())
+
+    xmean = np.mean(xlim)
+    ymean = np.mean(ylim)
+    zmean = np.mean(zlim)
+
+    # Get the maximum absolute difference between the limits in all 3 axis and
+    # the mean of the respective axis.
+    plot_radius = max(abs(lim - mean_)
+                      for lims, mean_ in ((xlim, xmean),
+                                          (ylim, ymean),
+                                          (zlim, zmean))
+                      for lim in lims)
+
+    # Set the span of the axis to be 2 * plot radius for all the plots.
+    if scale_xy_axis:
+        axes.set_xlim3d([xmean - plot_radius, xmean + plot_radius])
+        axes.set_ylim3d([ymean - plot_radius, ymean + plot_radius])
+    if dimenesions == 3 and scale_z_axis:
+        axes.set_zlim3d([zmean - plot_radius, zmean + plot_radius])
+
+    return None
+
+
+def plot_3d(series,
+            colormap_callable=plt.cm.viridis,
+            include_colorbar=False):
     """Create a 3d-barchart axes for a given 2-level-multi-index series.
 
     Return a 3d axes object given a series with a multiindex with 2
     categorical levels.
 
     Arguments:
-        serie (Series): the 2-level-index series to generate the plot.
+        series (pandas.Series): the 2-level-index series to generate the plot.
 
     Returns:
         matplotlib.axes.Axes: the 3d axis object.
@@ -57,70 +96,70 @@ def plot_3d(serie):
 
     """
     # Create a copy of the list to avoid changing the original.
-    serie = serie.copy(deep=True)
-    serie.sort_values(inplace=True, ascending=False)
+    series = series.copy(deep=True)
+    series.sort_values(inplace=True, ascending=False)
     # Set constants.
     # TODO: Make graphs on the same scale effective.
-    # View:
-    # http://stackoverflow.com/questions/13685386/matplotlib-equal-unit-length-with-equal-aspect-ratio-z-axis-is-not-equal-to  # noqa
+    # View: http://stackoverflow.com/questions/13685386/matplotlib-equal-unit-length-with-equal-aspect-ratio-z-axis-is-not-equal-to  # noqa
     SCALE_AXIS_DIST_FACTOR = 1  # This seemingly changes de width of the bar.
     SCALE_AXIS_DIST_TRESH = 1
     # Some groupby objects will produce a dataframe. Not nice going over duck
     # typing but oh well...
     # If it is a dataframe with one column then transform it to series.
-    if isinstance(serie, pd.DataFrame) and serie.shape[1] == 1:
-        serie = serie.ix[:, 0]
+    if isinstance(series, pd.DataFrame) and series.shape[1] == 1:
+        series = series.ix[:, 0]
 
     # Error handling phase.
     # Track if index has correct shape.
-    if len(serie.index.levshape) != 2:
+    if len(series.index.levshape) != 2:
         raise ValueError('The index level shape should '
-                         'be 2 and it is {}.'.format(serie.index.levshape))
+                         'be 2 and it is {}.'.format(series.index.levshape))
     # Check for duplicate indexes.
-    if serie.index.duplicated().sum():
-        serie = serie.groupby(level=serie.index.names).sum()
-        if serie.index.duplicated().sum():
-            raise ValueError('Series has duplicate values.')
+    if series.index.duplicated().sum():
+        series = series.groupby(level=series.index.names).sum()
+        if series.index.duplicated().sum():
+            raise ValueError('series has duplicate values.')
 
-    # Handling the index of the received serie.
-    level1_index, level2_index = tuple(zip(*serie.index.get_values()))
+    # Handling the index of the received series.
+    level1_index, level2_index = tuple(zip(*series.index.get_values()))
     level1_index = sorted(set(level1_index))
     level2_index = sorted(set(level2_index))
 
+    # Populate the series with all index combinations, even if they are zero.
     all_index_combinations = tuple(itertools.product(
         level1_index,
         level2_index))
-    index_names = serie.index.names
+    index_names = series.index.names
     new_index = pd.MultiIndex.from_tuples(all_index_combinations,
                                           names=index_names)
-
-    # This new dataframe has all combinations of possible indexes.
-    new_dataframe = pd.Series(0, index=new_index, name=serie.name)
-    serie = (serie + new_dataframe).fillna(0)
+    all_values_series = pd.Series(0, index=new_index, name=series.name)
+    series = (series + all_values_series).fillna(0)
 
     # Generate the z values
     z_values = []
-    for _, group in serie.groupby(level=1):
+    for _, group in series.groupby(level=1):
         z_values.append(group)
     z_values = np.hstack(z_values).ravel()
+    # TODO: transform all of those into z.
+    z = z_values
 
     # Starts manipulating the axes
     fig = plt.gcf()
     ax = fig.add_subplot(111, projection='3d')
 
     # Create the axis and their labels
-    xlabels = serie.index.get_level_values(index_names[0]).unique().tolist()
-    ylabels = serie.index.get_level_values(index_names[1]).unique().tolist()
+    xlabels = series.index.get_level_values(index_names[0]).unique().tolist()
+    ylabels = series.index.get_level_values(index_names[1]).unique().tolist()
     xlabels = [''.join(list(filter(str.isalnum, str(value))))
                for value in xlabels]
     ylabels = [''.join(list(filter(str.isalnum, str(value))))
                for value in ylabels]
     x = np.arange(len(xlabels))
+    # TODO: Check if this rescaling is working properly.
     if len(x) > SCALE_AXIS_DIST_TRESH:
         x = x * SCALE_AXIS_DIST_FACTOR
     y = np.arange(len(ylabels))
     if len(y) > SCALE_AXIS_DIST_TRESH:
-        # TODO: fix this.
         y = y * SCALE_AXIS_DIST_FACTOR
     xlabels = [z.title() for z in xlabels]
     ylabels = [z.title() for z in ylabels]
@@ -130,37 +169,48 @@ def plot_3d(serie):
     ax.w_xaxis.set_ticks(x + 0.5/2.)
     ax.w_yaxis.set_ticks(y + 0.5/2.)
 
-    # TODO: how does one create a scaled figure?
-    # ax.set_aspect('equal', 'datalim')
-    # ax.axis('scaled')
-    ax.set_aspect('equal')
-
     ax.w_xaxis.set_ticklabels(xlabels)
     ax.w_yaxis.set_ticklabels(ylabels)
 
     # Color.
-    values = np.linspace(0.2, 1., x_mesh.ravel().shape[0])
-    colors = plt.cm.Spectral(values)
+    pp_color_values = sklearn.preprocessing.minmax_scale(z)
+    colormap = colormap_callable(pp_color_values)
 
     # Create the 3d plot.
     ax.bar3d(x_mesh.ravel(), y_mesh.ravel(), z_values*0,
              dx=0.5, dy=0.5, dz=z_values,
-             color=colors)
+             color=colormap)
 
-    # ax.autoscale_view()
-    # ax.view_init(-64, 47)
-    # TODO: the newxt two folling lines are key to success.
-    xy = np.concatenate((x, y))
-    ax.set_xlim3d(xy.min(), xy.max())
-    ax.set_xlim3d(xy.min(), xy.max())
-    # ax.set_xlim3d(x.min(), x.max())
-    # ax.set_ylim3d(y.min(), y.max())
-    # ax.set_zlim3d(0, 16)
+    # Set convenient z limits.
+    # From z ticks make it include all extreme values in excess of 0.5 tick.
+    z_min = z.min()
+    z_max = z.max()
+    z_ticks = ax.get_zticks()
+    z_stride = z_ticks[1] - z_ticks[0]
+    z_min_lim = z_min - 0.5 * z_stride
+    z_max_lim = z_max + 0.5 * z_stride
+    if 0 < z_min_lim:
+        z_min_lim = 0
+    elif 0 > z_max_lim:
+        z_max_lim = 0
+    ax.set_zlim3d(z_min_lim, z_max_lim)
+
+    # TODO: allow inclusion of a colorbar.
+    # TODO: how to really add ticks not just labels.
+    # TODO: add border to colorbar.
+    if include_colorbar:
+        scalar_mappable = plt.cm.ScalarMappable(cmap=colormap_callable)
+        scalar_mappable.set_array([min(z), max(z)])
+        scalar_mappable.set_clim(vmin=min(z), vmax=max(z))
+        ticks = np.linspace(z_min, z_max, 5)
+        colorbar = fig.colorbar(scalar_mappable, drawedges=True, ticks=ticks)
+        colorbar.outline.set_visible(True)
 
     return ax
 
 
-def label_container(axes,
+# TODO: containers.
+def label_containers(axes,
                     containers=None,
                     string_formatting=None,
                     label_height_increment=0.01):
@@ -177,16 +227,16 @@ def label_container(axes,
 
     Examples:
         >>> import matplotlib.pyplot as plt
-        >>> from matplotlib_utilities import label_container
+        >>> from matplotlib_utilities import label_containers
         >>> fig = plt.figure(num=0, figsize=(12, 9))
         >>> ax = fig.add_subplot(1,1,1)
         >>> x = range(10)
         >>> y = range(10)
         >>> ax.bar(x, y)
         <Container object of 10 artists>
-        >>> label_container(ax)
+        >>> label_containers(ax)
         >>> fig.tight_layout()
-        >>> fig.savefig('/tmp/{0}.png'.format('label_container'))
+        >>> fig.savefig('/tmp/{0}.png'.format('label_containers'))
 
     """
     # TODO: improve string formatting based on rect height.
@@ -203,14 +253,17 @@ def label_container(axes,
         else:
             string_formatting = '{0:1.1f}'
 
+    bar_labels = []
     height_increment = height.max() * label_height_increment
     for i, rect in enumerate(containers):
         label_height = height[i] + height_increment
-        axes.text(rect.get_x() + rect.get_width()/2.,
-                  label_height,
-                  string_formatting.format(height[i]),
-                  ha='center', va='bottom')
-    return None
+        text = axes.text(
+            rect.get_x() + rect.get_width()/2.,
+            label_height,
+            string_formatting.format(height[i]),
+            ha='center', va='bottom')
+        bar_labels.append(text)
+    return bar_labels
 
 
 def histogram_of_categorical(a,
@@ -473,7 +526,7 @@ def histogram_of_dataframe(dataframe,
                     **sns_distplot_kwargs)
 
             # Add summary statistics for all numeric cases.
-            text = add_summary_statistics_textbox(series, axes)
+            text = add_summary_statistics_textbox(series, axes)  # noqa
 
         # If it is neither a number nor a categorical data type raise error.
         else:
@@ -622,18 +675,5 @@ color = {k: (v[0]/255, v[1]/255, v[2]/255) for k, v in color.items()}
 
 if __name__ == '__main__':
     import doctest
-    import pandas_utilities as pu
     # doctest.testmod()
-    # doctest.run_docstring_examples(histogram_of_categorical, globals())
-    # import matplotlib.pyplot as plt
-    # import pandas_utilities as pu
-    # cat_serie = pu.dummy_dataframe().categorical
-    # axes = histogram_of_categorical(cat_serie)
-    # plt.show()
-    # serie = pu.dummy_dataframe(5).int
-    # serie = serie.append(pd.Series(np.arange(5000, 5005)))
-    # axes = histogram_of_integers(serie, kde=False)
-    df = np.concatenate((np.arange(1000, 2000), np.arange(1000, 10005)))
-    df = pd.DataFrame(df)
-    df = object_columns_to_category(df)
-    histogram_of_dataframe(df, '/tmp/', norm_hist=False, kde=False)
+    doctest.run_docstring_examples(plot_3d, globals())

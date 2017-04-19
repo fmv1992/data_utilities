@@ -19,7 +19,6 @@ All the functions should follow matplotlib, pandas and numpy's guidelines:
 # # pylama:skip=1
 # pylama:ignore=W:ignore=C101
 import itertools
-import unidecode
 import pandas as pd
 import numpy as np
 import encodings
@@ -27,6 +26,14 @@ import io
 import zipfile
 import string
 import re
+
+try:
+    from unidecode import unidecode
+except ImportError:
+    def unidecode(x):
+        """Mock unidecode function."""
+        return x
+
 
 N = 1000
 
@@ -43,7 +50,7 @@ def series_to_ascii(series):
 
     """
     series = series.copy(True)
-    series = series.apply(unidecode.unidecode)
+    series = series.apply(unidecode)
     series = series.str.lower()
     series = series.str.replace('[^a-zA-Z0-9_]', '_')
 
@@ -186,60 +193,6 @@ def read_string(string, **kwargs):
         **kwargs)
 
 
-def dummy_dataframe(
-        shape=None,
-        series_categorical=None,
-        series_float=None,
-        series_int=None,
-        series_object=None):
-    """Create an out-of-the-box dataframe with different datatype series."""
-    # TODO: implement a boolean series.
-    # Default value.
-    if shape is None:
-        rows, columns = (N, 4)
-    elif isinstance(shape, int):
-        rows, columns = (shape, 4)
-    elif shape[1] != 4:
-        raise NotImplementedError
-    else:
-        rows, columns = shape
-    # TODO: cover the case of shape as tuple
-
-    # Requirements:
-    #   a) unique 10 objects when n -> inf
-    #   b) 100 objects when n = 10e4
-    #   c) 3 objects when n = 3
-    data = {}
-    if series_categorical is None:
-        n_objs = int(7e-4 * rows + 3) if rows <= 10000 else 10
-        categories = list(
-            itertools.islice(
-                map(lambda x: ''.join(x),
-                    itertools.product(string.ascii_lowercase,
-                                      string.ascii_lowercase)),
-                n_objs))
-        add_data_cat = {'categorical': np.random.choice(categories, size=rows)}
-        data.update(add_data_cat)
-    if series_float is None:
-        add_data_float = {'float': np.random.normal(size=rows)}
-        data.update(add_data_float)
-    if series_int is None:
-        add_data_int = {'int': np.arange(rows)}
-        data.update(add_data_int)
-    if series_object is None:
-        add_data_obj = {'object': np.random.choice(categories, size=rows)}
-        data.update(add_data_obj)
-    filtered_series = tuple(
-        filter(lambda x: x is not None,
-               (series_categorical, series_float, series_int, series_object)))
-    dataframe = pd.DataFrame(data=data)
-    dataframe = pd.concat(
-        (dataframe, ) + filtered_series,
-        axis=1)
-    dataframe['categorical'] = dataframe['categorical'].astype('category')
-    return dataframe
-
-
 def find_components_of_array(x, y, atol=1e-5, assume_int=False):
     """Find the components of x which compose y.
 
@@ -329,6 +282,67 @@ def find_components_of_array(x, y, atol=1e-5, assume_int=False):
         return result
 
 
+def _construct_dataframe(shape, dict_of_functions):
+    """Build a dataframe with a given ship from a dictionary of functions."""
+    rows, columns = shape
+    n_keys = len(dict_of_functions)
+    data_dictionary = dict()
+    for i, func_key in zip(range(columns), itertools.cycle(dict_of_functions)):
+        data_dictionary[func_key + '_' +
+                        str(i//n_keys)] = dict_of_functions[func_key]()
+    return pd.DataFrame(
+        data=data_dictionary)
+
+
+def dummy_dataframe(
+        shape=None,
+        series_categorical=None,
+        series_float=None,
+        series_int=None,
+        series_object=None):
+    """Create an out-of-the-box dataframe with different datatype series."""
+    # TODO: implement a boolean series.
+    # Default value.
+    if shape is None:
+        rows, columns = (N, 5)
+    elif isinstance(shape, int):
+        rows, columns = (shape, 5)
+    else:
+        rows, columns = shape
+
+    # Requirements:
+    #   a) unique 10 objects when n -> inf
+    #   b) 100 objects when n = 10e4
+    #   c) 3 objects when n = 3
+    if series_categorical is None:
+        n_objs = int(7e-4 * rows + 3) if rows <= 10000 else 10
+        categories = list(
+            itertools.islice(
+                map(lambda x: ''.join(x),
+                    itertools.product(string.ascii_lowercase,
+                                      string.ascii_lowercase)),
+                n_objs))
+
+    def f_bool(): return np.random.randint(0, 1 + 1, size=rows, dtype=bool)
+
+    def f_categorical(): return np.random.choice(categories, size=rows)
+
+    def f_float(): return np.random.normal(size=rows)
+
+    def f_int(): return np.arange(rows)
+
+    def f_object(): return np.random.choice(categories, size=rows)
+
+    dict_of_functions = {
+        'bool': f_bool,
+        'categorical': f_categorical,  # TODO: change to category.
+        'float': f_float,
+        'int': f_int,
+        'object': f_object}
+
+    return _construct_dataframe((rows, columns), dict_of_functions)
+
+
 def statistical_distributions_dataframe(shape=None):
     """Create an out-of-the-box dataframe with common distrubutions.
 
@@ -361,19 +375,13 @@ def statistical_distributions_dataframe(shape=None):
 
     def rnd(): return np.random.random(size=rows)
 
-    functions = {'chisq': chisq,
-                 'stdnorm': stdnorm,
-                 'logistic': logistic,
-                 'rnd': rnd}
+    dict_of_functions = {
+        'chisq': chisq,
+        'stdnorm': stdnorm,
+        'logistic': logistic,
+        'rnd': rnd}
 
-    n_keys = len(functions)
-    data_dictionary = dict()
-    for i, func_key in zip(range(columns), itertools.cycle(functions)):
-        data_dictionary[func_key + '_' +
-                        str(i//n_keys)] = functions[func_key]()
-
-    return pd.DataFrame(
-        data=data_dictionary)
+    return _construct_dataframe((rows, columns), dict_of_functions)
 
 
 if __name__ == '__main__':
