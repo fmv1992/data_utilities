@@ -27,7 +27,7 @@ setup(
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='',  # XXX TODO: correct before pushing
+    version='1.2.6',
 
     description='A data analysis and visualization helper module.',
     long_description=long_description,
@@ -52,17 +52,15 @@ setup(
 
         # Indicate who your project is intended for
         'Intended Audience :: End Users/Desktop',
-        'Topic :: Scientific/Engineering :: Information Analysis'
+        'Topic :: Scientific/Engineering :: Information Analysis',
 
 
         # Pick your license as you wish (should match "license" above)
-        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)'
+        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
 
         # Specify the Python versions you support here. In particular, ensure
         # that you indicate whether you support Python 2, Python 3 or both.
-        'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
     ],
 
@@ -71,7 +69,7 @@ setup(
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
-    packages=find_packages(exclude=['contrib', 'docs']),
+    packages=find_packages(),
 
     # Alternatively, if you want to distribute just a my_module.py, uncomment
     # this:
@@ -87,7 +85,8 @@ setup(
         'pandas',
         'matplotlib',
         'seaborn',
-        'scikit-learn'
+        'scikit-learn',
+        'unidecode',  # TODO: remove this dependence on next releases.
     ],
 
     # List additional groups of dependencies here (e.g. development

@@ -19,7 +19,6 @@ All the functions should follow matplotlib, pandas and numpy's guidelines:
 # # pylama:skip=1
 # pylama:ignore=W:ignore=C101
 import itertools
-import unidecode
 import pandas as pd
 import numpy as np
 import encodings
@@ -27,6 +26,14 @@ import io
 import zipfile
 import string
 import re
+
+try:
+    from unidecode import unidecode
+except ImportError:
+    def unidecode(x):
+        """Mock unidecode function."""
+        return x
+
 
 N = 1000
 
@@ -43,7 +50,7 @@ def series_to_ascii(series):
 
     """
     series = series.copy(True)
-    series = series.apply(unidecode.unidecode)
+    series = series.apply(unidecode)
     series = series.str.lower()
     series = series.str.replace('[^a-zA-Z0-9_]', '_')
 

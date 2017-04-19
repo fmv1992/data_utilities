@@ -1,0 +1,2 @@
+recursive-include data_utilities/tests/ *.py
+include readme.md

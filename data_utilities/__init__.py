@@ -24,7 +24,7 @@
 import unittest
 import os
 
-__version__ = '1.1.0'
+__version__ = '1.2.6'
 
 
 def test(*a, **kw):
@@ -36,7 +36,7 @@ def test(*a, **kw):
     their __init__.py.
 
     """
-    base_dir = os.path.dirname(os.path.dirname(__file__))
+    base_dir = os.path.dirname(__file__)
     # TODO: adjust verbosity parameter.
     text_result = unittest.TextTestRunner(verbosity=100)
     test_suite = unittest.TestLoader().discover(

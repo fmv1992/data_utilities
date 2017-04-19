@@ -37,7 +37,7 @@ figure out the best way to to develop the utilities. Use at your own risk :)
 # TODO
 
 * Add test to every function.
-    - Current coverage: XXX%
+    - Current coverage: 56%
 
 * Move changelog and todo sections to separate files
   (https://github.com/pypa/sampleproject)
@@ -47,8 +47,9 @@ figure out the best way to to develop the utilities. Use at your own risk :)
 
 # Changelog
 
-#### Version XXX
+#### Version 1.2.0
 
+<!---
 * `matplolib_utilities`
     * A
 
@@ -57,9 +58,12 @@ figure out the best way to to develop the utilities. Use at your own risk :)
 
 * `python_utilities`
     * A
+-->
 
 * Other
-    * A
+    * Added package to PyPA as "data_utilities" # XXX
+    * Added a test method to the package:
+        python3 -c "import data_utilities as du; du.test()"
 
 #### Version 1.1.0
 
