@@ -47,6 +47,16 @@ figure out the best way to to develop the utilities. Use at your own risk :)
 
 # Changelog
 
+#### Version 1.2.6
+
+* Other
+    * Stable version uploaded to pypi
+
+#### Version 1.2.1 to 1.2.5
+
+* Other
+    * Development versions uploaded to pypi
+
 #### Version 1.2.0
 
 <!---
