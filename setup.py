@@ -86,7 +86,6 @@ setup(
         'matplotlib',
         'seaborn',
         'scikit-learn',
-        'unidecode',  # TODO: remove this dependence on next releases.
     ],
 
     # List additional groups of dependencies here (e.g. development
