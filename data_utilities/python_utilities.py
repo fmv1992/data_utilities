@@ -1,4 +1,4 @@
-"""Python helper functions."""
+"""Python utility functions."""
 
 import difflib
 import os

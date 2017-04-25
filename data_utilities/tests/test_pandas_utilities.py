@@ -85,7 +85,7 @@ class FindComponentsOfArray(DataUtilitiesTestCase, metaclass=TestMetaClass):
             find_components_map)
 
 
-class UtilitiesDataFrames(DataUtilitiesTestCase, metaclass=TestMetaClass):  # noqa
+class UtilitiesDataFrames(DataUtilitiesTestCase, metaclass=TestMetaClass):
     """Test class for functions that create 'out of the shelf' dataframes.
 
     The tests should cover issues from extreme cases cases of inputs as well as

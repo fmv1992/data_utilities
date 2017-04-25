@@ -51,10 +51,20 @@ figure out the best way to to develop the utilities. Use at your own risk :)
 * Move changelog and todo sections to separate files
   (https://github.com/pypa/sampleproject)
 
+* Create a helper function to allow for easy plotting of 20-30 data points to
+  be easily distinguishable on the map. Cycling thru colors, markers and
+  dash/lines is a good way to start.
+    * http://seaborn.pydata.org/tutorial/color_palettes.html is a good place to
+      start.
+
 * ~~Setup TravisCI, add stickers of TravisCI and coverage of functions with
   tests.~~
 
 # Changelog
+
+#### Version 1.2.7
+
+* Removed dependency with `unidecode` module
 
 #### Version 1.2.6
 
