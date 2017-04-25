@@ -1,4 +1,4 @@
-"""Matplotlib utilities for common data management procedures.
+"""Pandas utilities for common data management procedures.
 
 All the functions should follow matplotlib, pandas and numpy's guidelines:
 
@@ -16,8 +16,6 @@ All the functions should follow matplotlib, pandas and numpy's guidelines:
 
 """
 
-# # pylama:skip=1
-# pylama:ignore=W:ignore=C101
 import itertools
 import pandas as pd
 import numpy as np
@@ -26,16 +24,16 @@ import io
 import zipfile
 import string
 import re
+import warnings
 
 try:
     from unidecode import unidecode
 except ImportError:
+    warnings.warn("No module named unidecode", category=warnings.ImportWarning)
+
     def unidecode(x):
         """Mock unidecode function."""
         return x
-
-
-N = 1000
 
 
 def series_to_ascii(series):
@@ -304,7 +302,7 @@ def dummy_dataframe(
     # TODO: implement a boolean series.
     # Default value.
     if shape is None:
-        rows, columns = (N, 5)
+        rows, columns = (1000, 5)
     elif isinstance(shape, int):
         rows, columns = (shape, 5)
     else:
@@ -361,7 +359,7 @@ def statistical_distributions_dataframe(shape=None):
 
     """
     if shape is None:
-        rows, columns = (N, 4)
+        rows, columns = (1000, 4)
     elif isinstance(shape, int):
         rows, columns = (shape, 4)
     else:
