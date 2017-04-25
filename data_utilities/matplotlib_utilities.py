@@ -211,9 +211,9 @@ def plot_3d(series,
 
 # TODO: containers.
 def label_containers(axes,
-                    containers=None,
-                    string_formatting=None,
-                    label_height_increment=0.01):
+                     containers=None,
+                     string_formatting=None,
+                     label_height_increment=0.01):
     """Attach text labels to axes.
 
     Arguments:
@@ -593,8 +593,10 @@ def add_summary_statistics_textbox(series,
     # max:  1e9
     # Float.
     text_mean = ('mean = {0:1.2f}' + 'e{1:d}').format(mean/expo, min_order)
-    text_max = ('max = {0:1.2f}' + 'e{1:d}').format(summary_max/expo, min_order)
-    text_min = ('min = {0:1.2f}' + 'e{1:d}').format(summary_min/expo, min_order)
+    text_max = ('max = {0:1.2f}' + 'e{1:d}').format(summary_max/expo,
+                                                    min_order)
+    text_min = ('min = {0:1.2f}' + 'e{1:d}').format(summary_min/expo,
+                                                    min_order)
     text_stddevp = ('stddevp = {0:1.2f}' + 'e{1:d}').format(stddevp/expo,
                                                             min_order)
     # Integers.
@@ -662,6 +664,34 @@ def add_summary_statistics_textbox(series,
     return text
 
 
+def list_usable_backends():
+    """List all usable backends for matplotlib.
+
+    Returns:
+        list: a list of usable backends for current environment.
+
+    Examples:
+        >>> import matplotlib_utilities as mu
+        >>> available_backends = mu.list_usable_backends()
+        >>> 'agg' in available_backends
+        True
+
+    """
+    backend_string = ("import matplotlib; matplotlib.use(\"{0}\");"
+                      "import matplotlib.pyplot as plt")
+
+    command_string = 'python3 -c \'{0}\' 2>/dev/null'
+
+    usable_backends = []
+    for backend in matplotlib.rcsetup.all_backends:
+        backend_call = backend_string.format(backend)
+        command_call = command_string.format(backend_call)
+        return_value = os.system(command_call)
+        if return_value == 0:
+            usable_backends.append(backend)
+
+    return usable_backends
+
 color = {
     'standard': (223, 229, 239),
     'gold': (255, 200, 31),
@@ -675,5 +705,5 @@ color = {k: (v[0]/255, v[1]/255, v[2]/255) for k, v in color.items()}
 
 if __name__ == '__main__':
     import doctest
-    # doctest.testmod()
-    doctest.run_docstring_examples(plot_3d, globals())
+    doctest.testmod()
+    # doctest.run_docstring_examples(plot_3d, globals())
