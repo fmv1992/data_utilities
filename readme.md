@@ -64,6 +64,10 @@ figure out the best way to to develop the utilities. Use at your own risk :)
 
 #### Version 1.2.7
 
+* tests: enabled parametrized tests invocations such as:  
+  `python3 -c "import data_utilities as du; du.test(label='fast')"`  
+  `python3 -c "import data_utilities as du; du.test(N=500)"`
+
 * Removed dependency with `unidecode` module
 
 #### Version 1.2.6

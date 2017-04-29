@@ -7,10 +7,12 @@ import numpy as np
 import pandas as pd
 
 from data_utilities import pandas_utilities as pu
-from test_support import DataUtilitiesTestCase, TestMetaClass
+from data_utilities.tests.test_support import (
+    TestDataUtilitiesTestCase, TestMetaClass)
 
 
-class FindComponentsOfArray(DataUtilitiesTestCase, metaclass=TestMetaClass):
+class TestFindComponentsOfArray(TestDataUtilitiesTestCase,
+                                metaclass=TestMetaClass):
     """Test class for find_components_of_array of pandas_utilities.
 
     The tests should cover the case of integer and non integer composition of
@@ -85,7 +87,8 @@ class FindComponentsOfArray(DataUtilitiesTestCase, metaclass=TestMetaClass):
             find_components_map)
 
 
-class UtilitiesDataFrames(DataUtilitiesTestCase, metaclass=TestMetaClass):
+class TestUtilitiesDataFrames(TestDataUtilitiesTestCase,
+                              metaclass=TestMetaClass):
     """Test class for functions that create 'out of the shelf' dataframes.
 
     The tests should cover issues from extreme cases cases of inputs as well as

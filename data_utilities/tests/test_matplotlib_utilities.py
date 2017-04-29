@@ -11,11 +11,14 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-from test_support import DataUtilitiesTestCase, TestMetaClass
+from data_utilities.tests.test_support import (
+    TestDataUtilitiesTestCase, TestMetaClass)
+
 from data_utilities import matplotlib_utilities as mu
 
 
-class TestMatplotlibUtilities(DataUtilitiesTestCase, metaclass=TestMetaClass):
+class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
+                              metaclass=TestMetaClass):
     """Test class for matplotlib_utilitlies."""
 
     @classmethod
