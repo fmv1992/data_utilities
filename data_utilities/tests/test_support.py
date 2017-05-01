@@ -207,6 +207,8 @@ class TestSupport(TestDataUtilitiesTestCase,
         The invocation creates its own separate process.
 
         """
+        # TODO: matplotlib backend with bash script does not use the correct
+        # backend.
         code_string = ('import data_utilities.tests.test_support as dut; '
                        'dut.is_inside_unittest()')
         command_string = 'python3 -c \'{0}\' 2>/dev/null'

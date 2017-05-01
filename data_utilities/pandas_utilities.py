@@ -29,7 +29,7 @@ import warnings
 try:
     from unidecode import unidecode
 except ImportError:
-    warnings.warn("No module named unidecode", category=warnings.ImportWarning)
+    warnings.warn("No module named unidecode", category=ImportWarning)
 
     def unidecode(x):
         """Mock unidecode function."""

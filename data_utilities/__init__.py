@@ -76,8 +76,6 @@ def test(label='full', verbose=1, n_tests=50, n_lines=100, n_columns=10,
     # TODO: implement the label variable.
     # TODO: implement the verbose variable.
 
-    # Initial definitions.
-    text_result = unittest.TextTestRunner(verbosity=100, **kwargs_test_runner)
 
     # Resets values according to arguments:
     test_size_parameters = {
@@ -90,6 +88,9 @@ def test(label='full', verbose=1, n_tests=50, n_lines=100, n_columns=10,
     }
     for attr in test_size_parameters.keys():
         setattr(TestDataUtilitiesTestCase, attr, test_size_parameters[attr])
+
+    # Initial definitions.
+    text_result = unittest.TextTestRunner(verbosity=100, **kwargs_test_runner)
 
     # Filter test cases.
     test_objects = list()
