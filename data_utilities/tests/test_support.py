@@ -54,7 +54,8 @@ def is_inside_unittest():
 class TestMetaClass(type):
     """Metaclass for all tests in this module.
 
-    This metaclass aims to facilitate iterable assertions (parametrized tests).
+    This metaclass aims to facilitate iterable assertions (parametrized tests)
+    with randomized input.
 
     """
 
@@ -72,7 +73,7 @@ class TestMetaClass(type):
         classdict['assert_X_from_iterables'] = assert_X_from_iterables
 
         @property
-        def verbosity(cls):
+        def verbose(cls):
             """Return the verbosity setting of the currently running unittest.
 
             This function 'scans' the frame looking for a 'cls' variable.
@@ -91,12 +92,12 @@ class TestMetaClass(type):
             while frame:
                 cls = frame.f_locals.get('cls')
                 if isinstance(cls, unittest.TestProgram):
-                    return cls.verbosity
+                    return cls.verbose
                 # Proceed to one outer frame.
                 frame = frame.f_back
             return 0
         # METACLASS: set verbosity.
-        classdict['verbosity'] = verbosity
+        classdict['verbose'] = verbose
         return type.__new__(mcs, name, bases, classdict)
 
     def __init__(cls, name, bases, classdict, **kwargs):
@@ -106,7 +107,11 @@ class TestMetaClass(type):
     def __setattr__(self, name, value):
         """Prevent instances from changing 'non private' attributes.
 
-        If this method is present in the Class level it then prevents instances
+        An omission is made if setting the attribute is done outside unittest.
+        That means that the setting is within the module level test function
+        (and thus changing of existing attributes is allowed).
+
+        If this method is present in the class level it then prevents instances
         from changing their own attributes.
 
         """
@@ -131,7 +136,7 @@ class TestMetaClass(type):
 class TestDataUtilitiesTestCase(unittest.TestCase, metaclass=TestMetaClass):
     """Test class which will parent all other tests.
 
-    It initialize some class constants and possibly costly operations like
+    It initializes some class constants and possibly costly operations like
     creating dummy dataframes.
 
     """
@@ -149,30 +154,28 @@ class TestDataUtilitiesTestCase(unittest.TestCase, metaclass=TestMetaClass):
         super().__init__(*args, **kwargs)  # call init from unittest.TestCase
 
     is_inside_unittest = is_inside_unittest()
-    N = 50
-    N_GRAPHICAL = 3
-    l = 100
-    c = 10
-    SAVE_IMAGES = False
-    data = pu.statistical_distributions_dataframe(shape=(l, c))
+    # TODO: rename all caps or all lower ; consistency
+    n_tests = 50
+    n_graphical_tests = 3
+    n_lines = 100
+    n_columns = 10
+    save_images = False
+    maxDiff = None  # TODO: check if it is being utilized
+    data = pu.statistical_distributions_dataframe(shape=(n_lines, n_columns))
 
 
 class TestSupport(TestDataUtilitiesTestCase,
                   metaclass=TestMetaClass):
-    """Test class for matplotlib_utilitlies."""
+    """Test class for test_support."""
 
     @classmethod
     def setUpClass(cls):
-        """setUp method from unittest.
-
-        Initialize random values to be tested and borderline cases.
-
-        """
+        """setUpClass class method from unittest."""
         pass
 
     @classmethod
     def tearDownClass(cls):
-        """setUp method from unittest."""
+        """tearDownClass class method from unittest."""
         pass
 
     def setUp(self):
@@ -191,6 +194,7 @@ class TestSupport(TestDataUtilitiesTestCase,
             self._test_invoking_unittest()
 
     def _test_invoking_unittest(self):
+        """Private method which invokes a python unittest separate process."""
         command_string = 'python3 -m unittest -q {0} 2>/dev/null'.format(
             os.path.abspath(__file__))
         command_call = command_string
@@ -198,6 +202,11 @@ class TestSupport(TestDataUtilitiesTestCase,
         self.assertEqual(return_value, 0)
 
     def _test_invoking_test_function(self):
+        """Private method which invokes the module's test function.
+
+        The invocation creates its own separate process.
+
+        """
         code_string = ('import data_utilities.tests.test_support as dut; '
                        'dut.is_inside_unittest()')
         command_string = 'python3 -c \'{0}\' 2>/dev/null'

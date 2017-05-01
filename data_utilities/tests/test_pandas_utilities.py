@@ -27,15 +27,20 @@ class TestFindComponentsOfArray(TestDataUtilitiesTestCase,
 
     @classmethod
     def setUpClass(cls):
-        """Setup attributes once."""
+        """setUpClass class method from unittest."""
         pass
 
     def setUp(self):
         """setUp method from unittest."""
         pass
 
-    def gen_multipliers(self, amplitude=1500):
-        """Create a tuple of multipliers."""
+    # TODO: transform in a _method.
+    def _gen_multipliers(self, amplitude=1500):
+        """Create a tuple of non-zero multipliers with a given amplitude.
+
+        To be used on test_integer_composition method.
+
+        """
         MULT_AMPLITUDE = 1500
         multipliers_pool = np.concatenate((
             np.arange(1, MULT_AMPLITUDE + 1),
@@ -43,35 +48,42 @@ class TestFindComponentsOfArray(TestDataUtilitiesTestCase,
 
         # Create all the multipliers once in memory.
         multipliers = tuple(
-            np.random.choice(multipliers_pool, size=self.c)
-            * np.random.randint(0, 1+1, size=self.c, dtype=bool)
-            for x in range(self.N))
+            np.random.choice(multipliers_pool, size=self.n_columns)
+            # TODO: some of these arrays are zero only ; in this case there
+            # should be none.
+            * np.random.randint(0, 1+1, size=self.n_columns, dtype=bool)
+            for x in range(self.n_tests))
 
         return multipliers
 
-    def gen_y_from_multipliers(self, multipliers):
-        """Create an iterator of y arrays from multipliers."""
+    # TODO: transform in a _method.
+    def _gen_y_from_multipliers(self, multipliers):
+        """Create an iterator of y arrays from multipliers.
+
+        To be used on test_integer_composition method.
+
+        """
         mask = (multipliers != 0)
 
         y = (self.data.iloc[:, mask] * multipliers[mask]).sum(axis=1)
 
         return y
 
-    def dict_results_from_multipliers(self, multipliers):
+    def _dict_results_from_multipliers(self, multipliers):
         """Create an iterator of dictionaries with answers from multipliers."""
         mask = (multipliers != 0)
         return dict(zip(self.data.columns[mask], multipliers[mask]))
 
     def test_integer_composition(self):
-        """integer composition test."""
+        """Integer composition test."""
         # Setup variables
-        multipliers = self.gen_multipliers()
+        multipliers = self._gen_multipliers()
 
         # Map the multipliers to a generator of ys.
-        y_map = map(self.gen_y_from_multipliers, multipliers)
+        y_map = map(self._gen_y_from_multipliers, multipliers)
 
         # Map the multipliers to a generator of dictionaries.
-        dicts_map = map(self.dict_results_from_multipliers, multipliers)
+        dicts_map = map(self._dict_results_from_multipliers, multipliers)
 
         # Map the y's to a generator of find_components.
         find_components_map = map(
@@ -85,6 +97,10 @@ class TestFindComponentsOfArray(TestDataUtilitiesTestCase,
             self.assertEqual,
             dicts_map,
             find_components_map)
+
+    def test_known_to_fail(self):
+        """TODO."""
+        pass
 
 
 class TestUtilitiesDataFrames(TestDataUtilitiesTestCase,
@@ -105,7 +121,7 @@ class TestUtilitiesDataFrames(TestDataUtilitiesTestCase,
         # Test shapes with integers.
         # Prepare test shapes with integer values.
         integer_shapes = (
-            random.randint(1, self.l) for x in range(self.N//2))
+            random.randint(1, self.n_lines) for x in range(self.n_tests//2))
         # Prepare test shapes with integer borderline values.
         integer_borderline_shapes = range(0, 1 + 1)
         iterator_of_ints = itertools.chain(
@@ -113,8 +129,9 @@ class TestUtilitiesDataFrames(TestDataUtilitiesTestCase,
         # Test shapes with tuples.
         # Prepare test shapes with tuple values.
         tuple_shapes = (
-            (random.randint(1, self.l),
-             random.randint(1, self.c)) for x in range(self.N//2))
+            (random.randint(1, self.n_lines),
+             random.randint(1, self.n_columns)) for x in
+            range(self.n_tests//2))
         # Prepare test shapes with tuple borderline values.
         borderline_value1 = (1, 4)
         borderline_value2 = (0, 4)
@@ -127,6 +144,7 @@ class TestUtilitiesDataFrames(TestDataUtilitiesTestCase,
                                                   iterator_of_tuples)
 
     def _test_off_the_shelf_functions(self, test_function):
+        """Test off the shelf functions."""
         # Function should work 'out of the box'.
         test_function()
 
@@ -142,11 +160,11 @@ class TestUtilitiesDataFrames(TestDataUtilitiesTestCase,
             itertools.repeat(pd.DataFrame))
 
     def test_dummy_dataframe(self):
-        """dummy dataframe test."""
+        """Dummy dataframe test."""
         self._test_off_the_shelf_functions(
             pu.dummy_dataframe)
 
     def test_statistical_distributions_dataframe(self):
-        """statistical distributions dataframe test."""
+        """Statistical distributions dataframe test."""
         self._test_off_the_shelf_functions(
             pu.statistical_distributions_dataframe)

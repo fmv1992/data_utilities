@@ -10,4 +10,5 @@ from data_utilities import python_utilities as pyu
 class TestPythonUtilities(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
     """Test class for python_utilities."""
 
+    pyu
     pass

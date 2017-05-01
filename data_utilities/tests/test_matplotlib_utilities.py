@@ -23,11 +23,13 @@ class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
 
     @classmethod
     def setUpClass(cls):
-        """setUp method from unittest.
+        """setUpClass class method from unittest.
 
-        Initialize random values to be tested and borderline cases.
+        Initialize figure as attributes.
 
         """
+        # TODO: fix the 2 * N//2 != N issue that may happen.
+
         # Single axes 2d figures (no colorbar or other features).
         cls.figures_2d_histogram = cls.generate_test_figures_2d_histogram()
         # Single axes 3d figures (no colorbar or other features).
@@ -35,18 +37,27 @@ class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
 
     @classmethod
     def tearDownClass(cls):
-        """setUp method from unittest."""
-        if cls.SAVE_IMAGES:
+        """tearDownClass class method from unittest.
+
+        Save figures in a temporary folder.
+
+        """
+        # TODO: save figures in temporary folder.
+        if cls.save_images:
             for i, f in enumerate(itertools.chain(cls.figures_2d_histogram,
                                                   cls.figures_3d)):
                 f.savefig('/tmp/teardown_{0}.png'.format(i), dpi=300)
 
     @classmethod
     def generate_test_figures_2d_histogram(cls):
-        """Generate a tuple of 2d figures."""
+        """generate_test_figures_2d_histogram class method.
+
+        Generate a tuple of 2d histogram figures.
+
+        """
         # Create series.
-        iterable_of_series = (pd.Series(np.random.normal(size=cls.l))
-                              for _ in range(cls.N_GRAPHICAL))
+        iterable_of_series = (pd.Series(np.random.normal(size=cls.n_lines))
+                              for _ in range(cls.n_graphical_tests//2))
 
         # Create figures from series.
         figures = tuple(map(
@@ -58,19 +69,28 @@ class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
 
     @classmethod
     def generate_test_figures_2d(cls):
-        """Generate a tuple of 2d figures."""
+        """generate_test_figures_2d class method.
+
+        Generate a tuple of 2d figures.
+
+        """
+        # TODO: implement or delete method
         pass
 
     @classmethod
     def generate_test_figures_3d(cls):
-        """Generate a tuple of 333figures."""
+        """generate_test_figures_3d class method.
+
+        Generate a tuple of 3d figures.
+
+        """
         # Create random shapes for multi index series.
         # Include these scenarios then fill the rest with random values.
         include_3d_shapes = ((1, 1), (20, 20), (1, 100))
         random_3d_shapes = (
-            (random.randint(1, cls.N_GRAPHICAL),
-             random.randint(1, cls.N_GRAPHICAL))
-            for x in range(cls.N_GRAPHICAL - len(include_3d_shapes)))
+            (random.randint(1, 100),
+             random.randint(1, 100))
+            for x in range(cls.n_graphical_tests//2 - len(include_3d_shapes)))
         shapes = tuple(itertools.chain(include_3d_shapes, random_3d_shapes))
 
         # Creates a map of multi index from random shapes tuples.
@@ -96,24 +116,33 @@ class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
 
     @classmethod
     def figure_from_plot_function(cls, plot_function, *plot_3d_args, **kwargs):
-        """Select each figure before calling plot_3d."""
+        """Initialize a figure and call a plot function on it."""
         fig = plt.figure()
         plot_function(*plot_3d_args)
         return fig
 
     def setUp(self):
-        """setUp method from unittest."""
+        """setUp method from unittest.
+
+        Store start time for test method. Running time is computed and
+        displayed in the tearDown method.
+
+        """
         self.start_time = time.time()
 
     def tearDown(self):
-        """tearDown method from unittest."""
+        """tearDown method from unittest.
+
+        Compute and display running time for test method.
+
+        """
         elapsed_time = time.time() - self.start_time
-        print('\t{0:.3f} seconds elapsed\t'.format(elapsed_time),
-              end='',
-              flush=True)
+        if self.verbose:
+            print('\t{0:.3f} seconds elapsed\t'.format(elapsed_time), end='',
+                  flush=True)
 
     def test_plot_3d(self):
-        """plot 3d test."""
+        """Plot 3d test."""
         # Test 3d plots.
         self.assert_X_from_iterables(
             self.assertIsInstance,
@@ -131,7 +160,7 @@ class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
                    "should be 1.".format(len(axes)))
 
     def test_label_containers(self):
-        """Test label_containers function."""
+        """Label containers test."""
         map_label_containers = map(
             mu.label_containers,
             (x.axes[0] for x in self.figures_2d_histogram))

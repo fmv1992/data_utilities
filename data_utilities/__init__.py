@@ -40,7 +40,8 @@ from data_utilities.tests.test_support import TestDataUtilitiesTestCase
 __version__ = '1.2.7'
 
 
-def test(label='full', verbose=1, N=50, lines=100, columns=10, N_GRAPHICAL=3):
+def test(label='full', verbose=1, n_tests=50, n_lines=100, n_columns=10,
+         n_graphical_tests=3, save_images=False, **kwargs_test_runner):
     """Module level test function.
 
     Run tests using the unittest module. Both 'numpy style' and unittest
@@ -61,29 +62,31 @@ def test(label='full', verbose=1, N=50, lines=100, columns=10, N_GRAPHICAL=3):
         time directly.
         lines (int): number of lines of the dataframes of the test data.
         columns (int): number of columns of the dataframes of the test data.
-        N_GRAPHICAL (int): Number of graphical tests to be performed.
+        n_graphical_tests (int): Number of graphical tests to be performed.
+        save_images (bool): True to save images in test folder.
 
     Returns:
         None: no exceptions should be raised if tests are correctly performed.
 
     Examples:
         >>> import data_utilities as du
-        >>> du.test()
+        >>> du.test(verbose=False)
 
     """
     # TODO: implement the label variable.
     # TODO: implement the verbose variable.
 
     # Initial definitions.
-    text_result = unittest.TextTestRunner(verbosity=100)
+    text_result = unittest.TextTestRunner(verbosity=100, **kwargs_test_runner)
 
     # Resets values according to arguments:
     test_size_parameters = {
         'verbose': verbose,
-        'N': N,
-        'lines': lines,
-        'columns': columns,
-        'N_GRAPHICAL': N_GRAPHICAL,
+        'n_tests': n_tests,
+        'n_lines': n_lines,
+        'n_columns': n_columns,
+        'n_graphical_tests': n_graphical_tests,
+        'save_images': save_images,
     }
     for attr in test_size_parameters.keys():
         setattr(TestDataUtilitiesTestCase, attr, test_size_parameters[attr])
