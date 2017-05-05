@@ -41,7 +41,7 @@ __version__ = '1.2.7'
 
 
 def test(label='full', verbose=1, n_tests=50, n_lines=100, n_columns=10,
-         n_graphical_tests=3, save_images=False, **kwargs_test_runner):
+         n_graphical_tests=3, save_figures=False, **kwargs_test_runner):
     """Module level test function.
 
     Run tests using the unittest module. Both 'numpy style' and unittest
@@ -63,7 +63,7 @@ def test(label='full', verbose=1, n_tests=50, n_lines=100, n_columns=10,
         lines (int): number of lines of the dataframes of the test data.
         columns (int): number of columns of the dataframes of the test data.
         n_graphical_tests (int): Number of graphical tests to be performed.
-        save_images (bool): True to save images in test folder.
+        save_figures (bool): True to save images in test folder.
 
     Returns:
         None: no exceptions should be raised if tests are correctly performed.
@@ -84,7 +84,7 @@ def test(label='full', verbose=1, n_tests=50, n_lines=100, n_columns=10,
         'n_lines': n_lines,
         'n_columns': n_columns,
         'n_graphical_tests': n_graphical_tests,
-        'save_images': save_images,
+        'save_figures': save_figures,
     }
     for attr in test_size_parameters.keys():
         setattr(TestDataUtilitiesTestCase, attr, test_size_parameters[attr])

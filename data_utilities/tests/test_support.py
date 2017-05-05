@@ -24,6 +24,7 @@ import inspect
 import os
 
 from data_utilities import pandas_utilities as pu
+import numpy as np
 
 
 def is_inside_unittest():
@@ -153,13 +154,51 @@ class TestDataUtilitiesTestCase(unittest.TestCase, metaclass=TestMetaClass):
         """
         super().__init__(*args, **kwargs)  # call init from unittest.TestCase
 
+    @classmethod
+    def compose_functions(cls,
+                          x,
+                          number_of_compositions=1,
+                          functions=(np.sin, np.exp, np.square, np.polyval,
+                                     np.tan, ),
+                          clip_big_values=True,
+                          clip_value=1e6):
+        """Compose functions from an iterable of functions.
+
+        This is a helper function to cover a more real life scenario of
+        plottings.
+
+        Arguments:
+            x (numpy.array): array for which composed values will be computed.
+            number_of_compositions (int): number of compositions of functions.
+            functions (tuple): an iterable of functions.
+            clip_big_values (bool): whether or not to limit function extremes.
+            clip_value (float): limit values for function composition.
+
+        Returns:
+            y (numpy.array): array of composed functions
+
+        """
+        i = 0
+        y = x
+        while i < number_of_compositions:
+            func = np.random.choice(functions)
+            if func == np.polyval:
+                n_coefs = np.random.randint(0, 10)
+                coefs = np.random.randint(-50, 50, size=n_coefs)
+                y = func(coefs, x)
+            else:
+                y = func(y)
+            if clip_big_values:
+                y = np.clip(y, -clip_value, clip_value)
+            i += 1
+        return y
+
     is_inside_unittest = is_inside_unittest()
-    # TODO: rename all caps or all lower ; consistency
     n_tests = 50
     n_graphical_tests = 3
     n_lines = 100
     n_columns = 10
-    save_images = False
+    save_figures = False
     maxDiff = None  # TODO: check if it is being utilized
     data = pu.statistical_distributions_dataframe(shape=(n_lines, n_columns))
 
