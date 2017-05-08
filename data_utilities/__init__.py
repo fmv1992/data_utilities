@@ -40,7 +40,7 @@ from data_utilities.tests.test_support import TestDataUtilitiesTestCase
 __version__ = '1.2.7'
 
 
-def test(label='full', verbose=1, n_tests=50, n_lines=100, n_columns=10,
+def test(label='fast', verbose=1, n_tests=50, n_lines=100, n_columns=10,
          n_graphical_tests=3, save_figures=False, **kwargs_test_runner):
     """Module level test function.
 
@@ -75,22 +75,39 @@ def test(label='full', verbose=1, n_tests=50, n_lines=100, n_columns=10,
     """
     # TODO: implement the label variable.
     # TODO: implement the verbose variable.
-
-
-    # Resets values according to arguments:
-    test_size_parameters = {
-        'verbose': verbose,
-        'n_tests': n_tests,
-        'n_lines': n_lines,
-        'n_columns': n_columns,
-        'n_graphical_tests': n_graphical_tests,
-        'save_figures': save_figures,
-    }
+    if label == 'fast':
+        test_size_parameters = {
+            'verbose': False,
+            'n_tests': 5,
+            'n_lines': 50,
+            'n_columns': 5,
+            'n_graphical_tests': 3,
+            'save_figures': True,  # TODO: later needs to be false
+        }
+    elif label == 'full':
+        raise NotImplementedError("label == full is not implemented yet.")
+        test_size_parameters = {
+            'verbose': verbose,
+            'n_tests': n_tests,
+            'n_lines': n_lines,
+            'n_columns': n_columns,
+            'n_graphical_tests': n_graphical_tests,
+            'save_figures': save_figures,
+        }
+    else:
+        test_size_parameters = {
+            'verbose': verbose,
+            'n_tests': n_tests,
+            'n_lines': n_lines,
+            'n_columns': n_columns,
+            'n_graphical_tests': n_graphical_tests,
+            'save_figures': save_figures,
+        }
     for attr in test_size_parameters.keys():
         setattr(TestDataUtilitiesTestCase, attr, test_size_parameters[attr])
 
     # Initial definitions.
-    text_result = unittest.TextTestRunner(verbosity=100, **kwargs_test_runner)
+    text_result = unittest.TextTestRunner(verbosity=verbose, **kwargs_test_runner)
 
     # Filter test cases.
     test_objects = list()
