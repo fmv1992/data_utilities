@@ -22,6 +22,8 @@ here:
 import unittest
 import inspect
 import os
+import tempfile
+
 
 from data_utilities import pandas_utilities as pu
 import numpy as np
@@ -105,34 +107,6 @@ class TestMetaClass(type):
         """__init__ method of metaclass."""
         super().__init__(name, bases, classdict)
 
-    def __setattr__(self, name, value):
-        """Prevent instances from changing 'non private' attributes.
-
-        An omission is made if setting the attribute is done outside unittest.
-        That means that the setting is within the module level test function
-        (and thus changing of existing attributes is allowed).
-
-        If this method is present in the class level it then prevents instances
-        from changing their own attributes.
-
-        """
-        try:
-            getattr(self, name)
-            # May raise error if it is not a private attribute. This allows
-            # unittest to change attributes starting with underlines.
-            if not name.startswith('_'):
-                # If used inside the module test raise no exception.
-                if not is_inside_unittest():
-                    super().__setattr__(name, value)
-                # If trying to set an attribute which already exists raise
-                # exception.
-                else:
-                    raise ValueError(
-                        "Cannot change non-private attribute '{0}' of class "
-                        "'{1}'.".format(name, self.__class__))
-        except AttributeError:
-            super().__setattr__(name, value)
-
 
 class TestDataUtilitiesTestCase(unittest.TestCase, metaclass=TestMetaClass):
     """Test class which will parent all other tests.
@@ -153,6 +127,24 @@ class TestDataUtilitiesTestCase(unittest.TestCase, metaclass=TestMetaClass):
 
         """
         super().__init__(*args, **kwargs)  # call init from unittest.TestCase
+
+    def __setattr__(self, name, value):
+        """Prevent instances from changing 'non private' attributes.
+
+        An omission is made if setting the attribute is done outside unittest.
+        That means that the setting is within the module level test function
+        (and thus changing of existing attributes is allowed).
+
+        If this method is present in the class level it then prevents instances
+        from changing their own attributes.
+
+        """
+        if hasattr(self.__class__, name):
+            raise AttributeError(
+                ("Cannot change non-private attribute '{0}' of class '{1}'."
+                 ).format(name, self.__class__))
+        else:
+            super().__setattr__(name, value)
 
     @classmethod
     def compose_functions(cls,
@@ -193,14 +185,18 @@ class TestDataUtilitiesTestCase(unittest.TestCase, metaclass=TestMetaClass):
             i += 1
         return y
 
+    # Goes with 'fast' parameters by default.
     is_inside_unittest = is_inside_unittest()
-    n_tests = 50
+    n_tests = 5
     n_graphical_tests = 3
-    n_lines = 100
-    n_columns = 10
+    n_lines = 50
+    n_columns = 5
     save_figures = False
     maxDiff = None  # TODO: check if it is being utilized
     data = pu.statistical_distributions_dataframe(shape=(n_lines, n_columns))
+
+    # Setup temporary folder to be used.
+    temp_directory = tempfile.TemporaryDirectory(prefix='test_data_utilities_')
 
 
 class TestSupport(TestDataUtilitiesTestCase,
@@ -254,3 +250,23 @@ class TestSupport(TestDataUtilitiesTestCase,
         command_call = command_string.format(code_string)
         return_value = os.system(command_call)
         self.assertEqual(return_value, 0)
+
+    def test___setattr__(self):
+        """Test __setattr__."""
+        from data_utilities.tests.test_matplotlib_utilities import (
+            TestMatplotlibUtilities)
+        # Using self.
+        # Set non existent.
+        self.non_existent_attribute = 1
+        del self.non_existent_attribute
+        # Change existing.
+        with self.assertRaises(AttributeError):
+            self.data = None
+        # Using other dummy tests.
+        m = TestMatplotlibUtilities()
+        m.non_existent_attribute = 1
+        del m.non_existent_attribute
+        try:
+            m.data = None
+        except AttributeError:
+            pass
