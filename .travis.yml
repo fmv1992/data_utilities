@@ -4,6 +4,7 @@ env:
 branches:
   only:
     - develop
+    - master
 python:
     - "3.4"  # oldest python version supported by numpy
     - "3.6"
