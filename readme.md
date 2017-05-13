@@ -45,16 +45,43 @@ figure out the best way to to develop the utilities. Use at your own risk :)
 
 # TODO
 
-* Add test to every function.
-    - Current coverage: 56%
+## Tests
+
+* Add test to every line of code.
+    - Current coverage: 69%
+
+* Output images if `save_figures == True` to a tempfolder
+
+## Other
 
 * Move changelog and todo sections to separate files
   (https://github.com/pypa/sampleproject)
 
-* ~~Setup TravisCI, add stickers of TravisCI and coverage of functions with
-  tests.~~
+* Create a helper function to allow for easy plotting of 20-30 data points to
+  be easily distinguishable on the map. Cycling thru colors, markers and
+  dash/lines is a good way to start.
+    * http://seaborn.pydata.org/tutorial/color_palettes.html is a good place to
+      start.
+
+* Solve all open "XXX"s and "TODO"s
+
+* Add a way to create release versions number unequivocally (instead of doing
+  the analysis of backwards compatibility myself)
+
 
 # Changelog
+
+#### Version 1.2.7
+
+* Greatly improved `matplotlib_utilities` module
+
+* Removed dependency with `unidecode` module
+
+* tests: enabled parametrized tests invocations such as:  
+  `python3 -c "import data_utilities as du; du.test(label='fast')"`  
+  `python3 -c "import data_utilities as du; du.test(N=500)"`
+
+* Add a test for the `test_support` file itself
 
 #### Version 1.2.6
 

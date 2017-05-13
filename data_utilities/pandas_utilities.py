@@ -1,4 +1,4 @@
-"""Matplotlib utilities for common data management procedures.
+"""Pandas utilities for common data management procedures.
 
 All the functions should follow matplotlib, pandas and numpy's guidelines:
 
@@ -16,8 +16,6 @@ All the functions should follow matplotlib, pandas and numpy's guidelines:
 
 """
 
-# # pylama:skip=1
-# pylama:ignore=W:ignore=C101
 import itertools
 import pandas as pd
 import numpy as np
@@ -26,16 +24,16 @@ import io
 import zipfile
 import string
 import re
+import warnings
 
 try:
     from unidecode import unidecode
 except ImportError:
+    warnings.warn("No module named unidecode", category=ImportWarning)
+
     def unidecode(x):
         """Mock unidecode function."""
         return x
-
-
-N = 1000
 
 
 def series_to_ascii(series):
@@ -224,6 +222,12 @@ def find_components_of_array(x, y, atol=1e-5, assume_int=False):
         >>>
 
     """
+    # Borderline cases.
+    # y is comprised of zeros.
+    if np.all(y == 0):
+        return dict()
+
+    # Setup objects.
     dataframe = pd.concat((x, y), axis=1)
     original_dataframe = dataframe.copy(deep=True)
 
@@ -280,6 +284,9 @@ def find_components_of_array(x, y, atol=1e-5, assume_int=False):
         else:
             result = dict(zip(x.columns, solution))
         return result
+    # TODO: calculate error
+    # show error
+    # return
 
 
 def _construct_dataframe(shape, dict_of_functions):
@@ -290,8 +297,8 @@ def _construct_dataframe(shape, dict_of_functions):
     for i, func_key in zip(range(columns), itertools.cycle(dict_of_functions)):
         data_dictionary[func_key + '_' +
                         str(i//n_keys)] = dict_of_functions[func_key]()
-    return pd.DataFrame(
-        data=data_dictionary)
+
+    return pd.DataFrame(data=data_dictionary)
 
 
 def dummy_dataframe(
@@ -304,7 +311,7 @@ def dummy_dataframe(
     # TODO: implement a boolean series.
     # Default value.
     if shape is None:
-        rows, columns = (N, 5)
+        rows, columns = (1000, 5)
     elif isinstance(shape, int):
         rows, columns = (shape, 5)
     else:
@@ -325,7 +332,8 @@ def dummy_dataframe(
 
     def f_bool(): return np.random.randint(0, 1 + 1, size=rows, dtype=bool)
 
-    def f_categorical(): return np.random.choice(categories, size=rows)
+    def f_categorical(): return pd.Series(
+        np.random.choice(categories, size=rows)).astype('category')
 
     def f_float(): return np.random.normal(size=rows)
 
@@ -361,7 +369,7 @@ def statistical_distributions_dataframe(shape=None):
 
     """
     if shape is None:
-        rows, columns = (N, 4)
+        rows, columns = (1000, 4)
     elif isinstance(shape, int):
         rows, columns = (shape, 4)
     else:

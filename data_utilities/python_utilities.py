@@ -1,8 +1,14 @@
-"""Python helper functions."""
+"""Python utility functions."""
 
 import difflib
 import os
 import re
+
+try:
+    from unidecode import unidecode
+    HAS_UNIDECODE_MODULE = True
+except ImportError:
+    HAS_UNIDECODE_MODULE = False
 
 
 def map_strings(set_keys,
@@ -47,6 +53,21 @@ def list_matching_files_in_path(regex_pattern, path):
         if files:
             for f in files:
                 yield os.path.abspath(os.path.join(root, f))
+
+
+def process_string(x,
+                    allow_symbols=False,  # underscore is not a symbol here.
+                    allow_uppercase=False,
+                    has_unidecode_module=HAS_UNIDECODE_MODULE):
+    if has_unidecode_module:
+        x = unidecode(x)
+    if not allow_symbols:
+        x = re.sub('\W', '_', x)
+    if not allow_uppercase:
+        x = x.lower()
+    return x
+
+
 
 
 if __name__ == '__main__':

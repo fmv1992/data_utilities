@@ -11,39 +11,64 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-from test_support import DataUtilitiesTestCase, TestMetaClass
+from data_utilities.tests.test_support import (
+    TestDataUtilitiesTestCase, TestMetaClass)
+
 from data_utilities import matplotlib_utilities as mu
 
 
-class TestMatplotlibUtilities(DataUtilitiesTestCase, metaclass=TestMetaClass):
+class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
+                              metaclass=TestMetaClass):
     """Test class for matplotlib_utilitlies."""
 
     @classmethod
     def setUpClass(cls):
-        """setUp method from unittest.
+        """setUpClass class method from unittest.
 
-        Initialize random values to be tested and borderline cases.
+        Initialize figure as attributes.
 
         """
+        # TODO: fix the 2 * N//2 != N issue that may happen.
+
         # Single axes 2d figures (no colorbar or other features).
         cls.figures_2d_histogram = cls.generate_test_figures_2d_histogram()
         # Single axes 3d figures (no colorbar or other features).
-        cls.figures_3d = cls.generate_test_figures_3d()
+        cls.figures_3d = cls.generate_bar3d_test_figures()
 
     @classmethod
     def tearDownClass(cls):
-        """setUp method from unittest."""
-        if cls.SAVE_IMAGES:
+        """tearDownClass class method from unittest.
+
+        Save figures in a temporary folder.
+
+        """
+        # TODO: save figures in temporary folder.
+        if cls.save_figures:
             for i, f in enumerate(itertools.chain(cls.figures_2d_histogram,
                                                   cls.figures_3d)):
                 f.savefig('/tmp/teardown_{0}.png'.format(i), dpi=300)
 
     @classmethod
     def generate_test_figures_2d_histogram(cls):
-        """Generate a tuple of 2d figures."""
-        # Create series.
-        iterable_of_series = (pd.Series(np.random.normal(size=cls.l))
-                              for _ in range(cls.N_GRAPHICAL))
+        """generate_test_figures_2d_histogram class method.
+
+        Generate a tuple of 2d histogram figures.
+
+        """
+        # Create series. Will be divided by more than //2 when all plots are
+        # ready.
+        def dist_function01(): return np.random.normal(size=cls.n_lines)
+
+        def dist_function02(): return np.random.randint(
+            0,
+            99999) * np.arange(cls.n_lines)
+
+        def dist_function03(): return np.random.randint(
+            0,
+            99999) * np.ones(cls.n_lines)
+        dist_functions = (dist_function01, dist_function02, dist_function03)
+        iterable_of_series = (pd.Series(np.random.choice(dist_functions)())
+                              for _ in range(cls.n_graphical_tests//2))
 
         # Create figures from series.
         figures = tuple(map(
@@ -55,19 +80,28 @@ class TestMatplotlibUtilities(DataUtilitiesTestCase, metaclass=TestMetaClass):
 
     @classmethod
     def generate_test_figures_2d(cls):
-        """Generate a tuple of 2d figures."""
+        """generate_test_figures_2d class method.
+
+        Generate a tuple of 2d figures.
+
+        """
+        # TODO: implement or delete method
         pass
 
     @classmethod
-    def generate_test_figures_3d(cls):
-        """Generate a tuple of 333figures."""
+    def generate_bar3d_test_figures(cls):
+        """Generate bar3d test figures class method.
+
+        Generate a tuple of 3d figures.
+
+        """
         # Create random shapes for multi index series.
         # Include these scenarios then fill the rest with random values.
         include_3d_shapes = ((1, 1), (20, 20), (1, 100))
         random_3d_shapes = (
-            (random.randint(1, cls.N_GRAPHICAL),
-             random.randint(1, cls.N_GRAPHICAL))
-            for x in range(cls.N_GRAPHICAL - len(include_3d_shapes)))
+            (random.randint(1, 100),
+             random.randint(1, 100))
+            for x in range(cls.n_graphical_tests//2 - len(include_3d_shapes)))
         shapes = tuple(itertools.chain(include_3d_shapes, random_3d_shapes))
 
         # Creates a map of multi index from random shapes tuples.
@@ -93,24 +127,33 @@ class TestMatplotlibUtilities(DataUtilitiesTestCase, metaclass=TestMetaClass):
 
     @classmethod
     def figure_from_plot_function(cls, plot_function, *plot_3d_args, **kwargs):
-        """Select each figure before calling plot_3d."""
+        """Initialize a figure and call a plot function on it."""
         fig = plt.figure()
-        plot_function(*plot_3d_args)
+        plot_function(*plot_3d_args, **kwargs)
         return fig
 
     def setUp(self):
-        """setUp method from unittest."""
+        """setUp method from unittest.
+
+        Store start time for test method. Running time is computed and
+        displayed in the tearDown method.
+
+        """
         self.start_time = time.time()
 
     def tearDown(self):
-        """tearDown method from unittest."""
+        """tearDown method from unittest.
+
+        Compute and display running time for test method.
+
+        """
         elapsed_time = time.time() - self.start_time
-        print('\t{0:.3f} seconds elapsed\t'.format(elapsed_time),
-              end='',
-              flush=True)
+        if self.verbose:
+            print('\t{0:.3f} seconds elapsed\t'.format(elapsed_time), end='',
+                  flush=True)
 
     def test_plot_3d(self):
-        """plot 3d test."""
+        """Plot 3d test."""
         # Test 3d plots.
         self.assert_X_from_iterables(
             self.assertIsInstance,
@@ -128,7 +171,7 @@ class TestMatplotlibUtilities(DataUtilitiesTestCase, metaclass=TestMetaClass):
                    "should be 1.".format(len(axes)))
 
     def test_label_containers(self):
-        """Test label_containers function."""
+        """Label containers test."""
         map_label_containers = map(
             mu.label_containers,
             (x.axes[0] for x in self.figures_2d_histogram))
@@ -137,3 +180,94 @@ class TestMatplotlibUtilities(DataUtilitiesTestCase, metaclass=TestMetaClass):
             self.assertIsInstance,
             itertools.chain.from_iterable(map_label_containers),
             itertools.repeat(matplotlib.text.Text))
+
+    def test_histogram_of_integers(self):
+        """Histogram of integers test.
+
+        Test non contiguous blocks of data.
+
+        """
+        # Test some borderline cases for histogram of integers.
+        borderline_integer_sequence = (
+            itertools.chain(range(-10000, -9995),
+                            range(-10, 10),
+                            range(100, 110),
+                            range(10000, 10010)),
+            itertools.chain(range(-500, -490),
+                            range(500, 510),
+                            range(1000, 1010),),
+            itertools.chain(range(10),
+                            range(100000, 100005),),
+        )
+        borderline_integer_sequence = tuple(map(tuple,
+                                                borderline_integer_sequence))
+
+        # Initialize auxiliar functions.
+        def dist_plot_no_kde(fig, a):
+            ax = fig.gca()
+            mu.histogram_of_integers(a, kde=False, ax=ax)
+            return fig
+        # Initialize figures.
+        figures = map(lambda x: plt.figure(),
+                      range(len(borderline_integer_sequence)))
+        # Plot histogram on figures.
+        figures_histogram = tuple(map(
+            dist_plot_no_kde,
+            figures,
+            borderline_integer_sequence))
+
+        self.assert_X_from_iterables(
+            self.assertIsInstance,
+            (x.gca() for x in figures_histogram),
+            itertools.repeat(matplotlib.axes.Axes))
+
+        if self.save_figures:
+            for i, f in enumerate(figures_histogram):
+                f.savefig('/tmp/test_histogram_of_integers_{0}.png'.format(i),
+                          dpi=300)
+
+    def test_add_summary_statistics_textbox(self):
+        """Add summary statistics textbox test."""
+        # Initialize x values.
+        x = np.linspace(-10, 10, self.n_lines)
+
+        # Initialize y values.
+        # Add some borderline cases to y.
+        y_borderline = (pd.Series(np.ones(self.n_lines)),
+                        pd.Series(np.zeros(self.n_lines)))
+        # Add other functions to y.
+        y = map(lambda x, y: pd.Series(self.compose_functions(x, 3)),
+                itertools.repeat(x),
+                range(self.n_graphical_tests - len(y_borderline)))
+        # Join both iterables. Needed in figures and texts.
+        y = tuple(itertools.chain(y_borderline, y))
+
+        # Need to implement its own figures factory because it has to give
+        # series as argument.
+        figures = tuple(map(
+            lambda z: self.figure_from_plot_function(plt.plot, x, z), y))
+
+        texts = map(
+            mu.add_summary_statistics_textbox,
+            y,
+            (x.gca() for x in figures))
+
+        texts = tuple(texts)
+        if not texts:
+            raise Exception("Texts were not created accordingly.")
+
+        # Test this function with:
+        # Scatter plot.
+        # Bar plot.  # TODO
+        self.assert_X_from_iterables(
+            self.assertIsInstance,
+            texts,
+            itertools.repeat(matplotlib.text.Text))
+
+        # TODO: remove this short circ.
+        if self.save_figures or True:
+            for i, f in enumerate(figures):
+                f.savefig(
+                    '/tmp/test_add_summary_statistics_textbox_{0}.png'.format(
+                        i),
+                    dpi=300)

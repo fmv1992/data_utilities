@@ -20,11 +20,12 @@ All the functions should follow matplotlib, pandas and numpy's guidelines:
 import itertools
 import os
 import random
+import warnings
 
-import sklearn.preprocessing
-from mpl_toolkits.mplot3d import Axes3D
 from data_utilities.pandas_utilities import object_columns_to_category
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from mpl_toolkits.mplot3d import Axes3D
+import sklearn.preprocessing
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -36,7 +37,34 @@ import seaborn as sns
 
 
 def scale_axes_axis(axes, scale_xy_axis=False, scale_z_axis=False):
-    """Set axes to the same scale."""
+    """Set axes to the same scale.
+
+    Arguments:
+        axes (matplotlib.axes.Axes): input axes to have its axis scaled.
+        scale_xy_axis (bool): True to scale both x and y axis.
+        scale_z_axis (bool): True to scale z axis.
+
+    Returns:
+        None: axes are scaled inplace.
+
+    Examples:
+        >>> import matplotlib_utilities as mu
+        >>> from mpl_toolkits.mplot3d import Axes3D
+        >>> from mpl_toolkits.mplot3d.art3d import Path3DCollection
+        >>> x = np.arange(0, 5)
+        >>> y = x.copy()
+        >>> xx, yy = np.meshgrid(x, y)
+        >>> z = xx * yy
+        >>> fig = plt.figure()
+        >>> ax = fig.gca(projection='3d')
+        >>> isinstance(ax.scatter3D(xx, yy, z), Path3DCollection)
+        True
+        >>> mu.scale_axes_axis(ax, scale_xy_axis=True, scale_z_axis=False)
+        >>> fig.tight_layout()
+        >>> fig.savefig('/tmp/doctest_{0}.png'.format('scale_axes_axis'),     \
+            dpi=500)
+
+    """
     if hasattr(axes, 'get_zlim'):
         dimenesions = 3
     else:
@@ -78,6 +106,9 @@ def plot_3d(series,
 
     Arguments:
         series (pandas.Series): the 2-level-index series to generate the plot.
+        colormap_callable (matplotlib.colors.ListedColormap): Colormap object
+        generated from a list of colors.
+        include_colorbar (bool): True to include a colorbar.
 
     Returns:
         matplotlib.axes.Axes: the 3d axis object.
@@ -90,7 +121,7 @@ def plot_3d(series,
             tuple(itertools.product(range(6), list('abc'))),                  \
         names=('x1', 'x2'))
         >>> s = pd.Series(data=np.arange(18), index=s_index)
-        >>> ax = plot_3d(s)
+        >>> ax = plot_3d(s, include_colorbar=True)
         >>> fig.tight_layout()
         >>> fig.savefig('/tmp/{0}.png'.format('plot3d'), dpi=500)
 
@@ -99,10 +130,6 @@ def plot_3d(series,
     series = series.copy(deep=True)
     series.sort_values(inplace=True, ascending=False)
     # Set constants.
-    # TODO: Make graphs on the same scale effective.
-    # View: http://stackoverflow.com/questions/13685386/matplotlib-equal-unit-length-with-equal-aspect-ratio-z-axis-is-not-equal-to  # noqa
-    SCALE_AXIS_DIST_FACTOR = 1  # This seemingly changes de width of the bar.
-    SCALE_AXIS_DIST_TRESH = 1
     # Some groupby objects will produce a dataframe. Not nice going over duck
     # typing but oh well...
     # If it is a dataframe with one column then transform it to series.
@@ -136,12 +163,12 @@ def plot_3d(series,
     series = (series + all_values_series).fillna(0)
 
     # Generate the z values
-    z_values = []
+    z_list = []
     for _, group in series.groupby(level=1):
-        z_values.append(group)
-    z_values = np.hstack(z_values).ravel()
-    # TODO: transform all of those into z.
-    z = z_values
+        z_list.append(group)
+    z_list = np.hstack(z_list).ravel()
+    z = z_list
+    del z_list
 
     # Starts manipulating the axes
     fig = plt.gcf()
@@ -155,21 +182,12 @@ def plot_3d(series,
     ylabels = [''.join(list(filter(str.isalnum, str(value))))
                for value in ylabels]
     x = np.arange(len(xlabels))
-    # TODO: Check if this rescaling is working properly.
-    if len(x) > SCALE_AXIS_DIST_TRESH:
-        x = x * SCALE_AXIS_DIST_FACTOR
     y = np.arange(len(ylabels))
-    if len(y) > SCALE_AXIS_DIST_TRESH:
-        y = y * SCALE_AXIS_DIST_FACTOR
     xlabels = [z.title() for z in xlabels]
     ylabels = [z.title() for z in ylabels]
-
-    x_mesh, y_mesh = np.meshgrid(x, y, copy=False)
-
+    # Adjust tick posistions and labels.
     ax.w_xaxis.set_ticks(x + 0.5/2.)
     ax.w_yaxis.set_ticks(y + 0.5/2.)
-
-    ax.w_xaxis.set_ticklabels(xlabels)
     ax.w_yaxis.set_ticklabels(ylabels)
 
     # Color.
@@ -177,8 +195,9 @@ def plot_3d(series,
     colormap = colormap_callable(pp_color_values)
 
     # Create the 3d plot.
-    ax.bar3d(x_mesh.ravel(), y_mesh.ravel(), z_values*0,
-             dx=0.5, dy=0.5, dz=z_values,
+    x_mesh, y_mesh = np.meshgrid(x, y, copy=False)
+    ax.bar3d(x_mesh.ravel(), y_mesh.ravel(), z*0,
+             dx=0.5, dy=0.5, dz=z,
              color=colormap)
 
     # Set convenient z limits.
@@ -195,25 +214,29 @@ def plot_3d(series,
         z_max_lim = 0
     ax.set_zlim3d(z_min_lim, z_max_lim)
 
-    # TODO: allow inclusion of a colorbar.
-    # TODO: how to really add ticks not just labels.
-    # TODO: add border to colorbar.
     if include_colorbar:
         scalar_mappable = plt.cm.ScalarMappable(cmap=colormap_callable)
         scalar_mappable.set_array([min(z), max(z)])
         scalar_mappable.set_clim(vmin=min(z), vmax=max(z))
         ticks = np.linspace(z_min, z_max, 5)
         colorbar = fig.colorbar(scalar_mappable, drawedges=True, ticks=ticks)
+        # Add border to the colorbar.
         colorbar.outline.set_visible(True)
-
+        colorbar.outline.set_edgecolor('black')
+        mpl_params = matplotlib.rc_params()
+        colorbar.outline.set_linewidth(mpl_params['lines.linewidth'])
+        # Add ticks to the colorbar.
+        colorbar.ax.yaxis.set_tick_params(
+            width=mpl_params['ytick.major.width'],
+            size=mpl_params['ytick.major.size'])
     return ax
 
 
-# TODO: containers.
 def label_containers(axes,
-                    containers=None,
-                    string_formatting=None,
-                    label_height_increment=0.01):
+                     containers=None,
+                     string_formatting=None,
+                     label_height_increment=0.01,
+                     adjust_yaxis_limit=True):
     """Attach text labels to axes.
 
     Arguments:
@@ -221,9 +244,11 @@ def label_containers(axes,
         containers (list): List of matplotlib.container.Container objects.
         string_fomratting (str): string that will be passed to str.format
         function.
+        label_height_increment (float): height to increment the label to avoid
+        coincidence with bar's top line.
 
     Returns:
-        None
+        list: list of text objects generated by the axes.text method.
 
     Examples:
         >>> import matplotlib.pyplot as plt
@@ -232,29 +257,35 @@ def label_containers(axes,
         >>> ax = fig.add_subplot(1,1,1)
         >>> x = range(10)
         >>> y = range(10)
-        >>> ax.bar(x, y)
-        <Container object of 10 artists>
-        >>> label_containers(ax)
+        >>> isinstance(ax.bar(x, y), matplotlib.container.Container)
+        True
+        >>> isinstance(label_containers(ax), list)
+        True
         >>> fig.tight_layout()
         >>> fig.savefig('/tmp/{0}.png'.format('label_containers'))
 
     """
-    # TODO: improve string formatting based on rect height.
     if containers is None:
         containers = axes.containers[0]
     height = np.fromiter(
         (x.get_height() for x in containers), float)
     if string_formatting is None:
-        # Set standards strings for integers and floats.
-        # TODO: Add a standard formatting for percentages.
         if np.all(np.equal(np.mod(height, 1), 0)):
             string_formatting = '{0:d}'
             height = height.astype('int')
         else:
             string_formatting = '{0:1.1f}'
 
-    bar_labels = []
     height_increment = height.max() * label_height_increment
+
+    # Adjust y axis limit to avoid text out of chart area.
+    if adjust_yaxis_limit:
+        y0, y1 = axes.get_ylim()
+        y1 += 2 * height_increment
+        axes.set_ylim(y0, y1)
+
+    # Plot the labels.
+    bar_labels = []
     for i, rect in enumerate(containers):
         label_height = height[i] + height_increment
         text = axes.text(
@@ -273,14 +304,19 @@ def histogram_of_categorical(a,
 
     Arguments:
         a (pd.Series): Categorical series to create a histogram plot.
+
     Returns:
         matplotlib.axes.Axes: the plotted axes.
 
     Examples:
         >>> import pandas_utilities as pu
-        >>> cat_serie = pu.dummy_dataframe().categorical
+        >>> cat_serie = pu.dummy_dataframe().categorical_0
+        >>> fig = plt.figure()
         >>> axes = histogram_of_categorical(cat_serie, kde=False)
-        >>> plt.show()
+        >>> isinstance(axes, matplotlib.axes.Axes)
+        True
+        >>> fig.savefig('/tmp/doctest_{0}.png'.format(                        \
+        'histogram_of_categorical'), dpi=500)
 
     """
     # Create a dictionary of labels from categories.
@@ -301,14 +337,21 @@ def histogram_of_floats(a,
     """Plot a histogram of floats with sane defauts.
 
     Arguments:
-        x (pd.Series): Float series to create a histogram plot.
+        a (pd.Series): Float series to create a histogram plot.
+
     Returns:
         matplotlib.axes.Axes: the plotted axes.
 
     Examples:
         >>> import pandas_utilities as pu
-        >>> float_serie = pu.dummy_dataframe().float
-        >>> axes = histogram_of_floats(float_serie)
+        >>> float_serie = pu.dummy_dataframe().float_0
+        >>> fig = plt.figure()
+        >>> axes = histogram_of_floats(float_serie, kde=False)
+        >>> isinstance(axes, matplotlib.axes.Axes)
+        True
+        >>> fig.savefig('/tmp/doctest_{0}.png'.format(                        \
+        'histogram_of_floats'), dpi=500)
+
     """
     axes = sns.distplot(
         a,
@@ -323,10 +366,26 @@ def histogram_of_integers(a,
     """Plot a histogram of integers with sane defauts.
 
     Arguments:
+        a (pd.Series): Integer series to create a histogram plot.
+
     Returns:
+        matplotlib.axes.Axes: the plotted axes.
+
     Examples:
+        >>> import pandas_utilities as pu
+        >>> int_serie = pu.dummy_dataframe().int_0
+        >>> fig = plt.figure()
+        >>> axes = histogram_of_integers(int_serie, kde=False)
+        >>> isinstance(axes, matplotlib.axes.Axes)
+        True
+        >>> fig.savefig('/tmp/doctest_{0}.png'.format(                        \
+        'histogram_of_ints'), dpi=500)
 
     """
+    # Data transformation:
+    if not isinstance(a, pd.Series):
+        a = pd.Series(a)
+
     # If there are various different integers plot them as float.
     THRESHOLD_TO_CONSIDER_FLOAT = 100
     unique = np.unique(a).shape[0]
@@ -336,19 +395,11 @@ def histogram_of_integers(a,
             *args,
             **sns_distplot_kwargs)
 
-    # TODO: Cover the case of less than treshold number of integers but with a
-    # lot of spacing between them such as (0, 1, 2, 3, 5500, 15000).
-    #
-    # An algorithm is needed to find all the numbers that are contiguous and
-    # block them in groups. Then split the x axis between those contiguous
-    # blocks.
-    # TODO: implement such algorithm.
+    # Mask values if the range between maximum and minimum is too big.
     if a.max() - a.min() > THRESHOLD_TO_CONSIDER_FLOAT:
         unique_values = np.sort(a.unique())
         mask_values = dict(zip(unique_values, range(len(unique_values))))
         a = a.map(mask_values)
-    xlabels = np.arange(a.min() - 2,
-                        a.max() + 3)
 
     # Specify default options for histogram.
     if 'hist_kws' not in sns_distplot_kwargs:
@@ -396,7 +447,6 @@ def histogram_of_integers(a,
 
 def histogram_of_dataframe(dataframe,
                            output_path=None,
-                           normalize=True,
                            weights=None,
                            *args,
                            **sns_distplot_kwargs):
@@ -420,10 +470,8 @@ def histogram_of_dataframe(dataframe,
     Arguments:
         dataframe (pandas.DataFrame): The dataframe whose columns will be
         plotted.
-        output_folder (str): The outputh path to place the plotted histograms.
+        output_path (str): The outputh path to place the plotted histograms.
         If None then no file is written.
-        normalize (bool): If the histograms should normalize so that the bin
-        heights add up to 1.
         weights (list): The list of numpy.array weights to weight each of the
         histogram entry.
 
@@ -431,23 +479,29 @@ def histogram_of_dataframe(dataframe,
         tuple: a tuple containing a figure and an axes for each dataframe.
 
     Examples:
-        >>> import pandas_utilities
-        >>> dummy_df = pandas_utilities.dummy_dataframe(shape=200)
-        >>> histogram_of_dataframe(dummy_df, '/tmp/')
+        >>> from data_utilities import pandas_utilities as pu
+        >>> from data_utilities import matplotlib_utilities as mu
+        >>> dummy_df = pu.dummy_dataframe(shape=200)
+        >>> df_columns = tuple(x for x in dummy_df.columns if 'object_'       \
+        not in x)
+        >>> dummy_df = dummy_df.loc[:, df_columns]
+        >>> isinstance(mu.histogram_of_dataframe(dummy_df, '/tmp/'), tuple)
+        True
 
     """
     # This function assumes that the dataframe has received treatment. If there
     # is an object column then raise exceptions. However nan's are welcome as
     # they are part of the informative box.
     if (dataframe.dtypes == object).sum() > 0:
-        raise TypeError("Dataframe must not have object columns:\n{0}",
+        raise TypeError("Dataframe must not have object columns:\n{0:d}.",
                         dataframe.dtypes)
+    n_nulls = dataframe.isnull().sum().sum()
+    if n_nulls > 0:
+        warnings.warn("Dataframe has {0:d} null values.".format(n_nulls),
+                      UserWarning)
+        del n_nulls
 
     list_of_figures = list()
-
-    # Define the standard alignement for the histogram.
-    hist_kwargs = {'align': 'mid'}
-
     # Iterate over columns.
     for i, column in enumerate(dataframe.columns):
         fig, axes = plt.subplots(nrows=1, ncols=1)
@@ -458,11 +512,6 @@ def histogram_of_dataframe(dataframe,
         # string representation of data types.
         series_str_dtype = str(series.dtype)
 
-        # TODO: review necessity of this.
-        if normalize:
-            weights = np.ones_like(series)/len(series)
-            hist_kwargs.update({'weights': weights})
-
         # .
         # ├── categorical (x)
         # └── number
@@ -470,16 +519,9 @@ def histogram_of_dataframe(dataframe,
         #     ├── float
         #     └── int
         if series_str_dtype == 'category':
-            # Map category to integers and do an integer plot.
-            axes = histogram_of_integers(
-                series.cat.codes,
-                **sns_distplot_kwargs)
-            # Revert labels to category names.
-            categories_iterator = iter(series.cat.categories)
-            axes.set_xticklabels(
-                map(lambda x: categories_iterator.__next__() if x > 0 else '',
-                    map(lambda x: x.get_height(),
-                        axes.patches)))
+            axes = histogram_of_categorical(
+                series, **sns_distplot_kwargs)
+
         # .
         # ├── categorical
         # └── number (x)
@@ -500,8 +542,9 @@ def histogram_of_dataframe(dataframe,
             #     ├── float
             #     └── int
             if 'bool' in series_str_dtype:
-                # TODO: implement.
-                pass
+                axes = histogram_of_categorical(
+                    series_not_null.astype('category'),
+                    **sns_distplot_kwargs)
 
             # .
             # ├── categorical
@@ -565,7 +608,86 @@ def add_summary_statistics_textbox(series,
                                    include_nans=True,
                                    include_stddevs=True,
                                    include_stddevp=False):
-    """Add a summary statistic textbox to your figure."""
+    """Add a summary statistic textbox to your figure.
+
+    Arguments:
+        series (pd.Series): Series to have summary statistics computed on.
+        axes (matplotlib.axes.Axes): axes which will receive the text.
+        various inclues (bool): To include or not to include various summary
+        statistics.
+
+    Returns:
+        matplotlib.text.Text: The drawed text object.
+
+    Examples:
+        >>> import pandas_utilities as pu
+        >>> serie = pu.dummy_dataframe().int_0
+        >>> fig = plt.figure()
+        >>> axes = histogram_of_integers(serie, kde=False)
+        >>> text = add_summary_statistics_textbox(serie, axes)
+        >>> fig.savefig('/tmp/doctest_{0}.png'.format(                        \
+        'add_summary_statistics_textbox'), dpi=500)
+
+    """
+    def find_best_placement_for_summary_in_histogram(axes):
+        """Find the best placement for summary in histogram.
+
+        Arguments:
+            axes (matplotlib.axes.Axes): histogram axes with the patches
+            properties.
+
+        Returns:
+            tuple: A tuple with the (x, y) coordinates for box placement.
+
+        """
+        # Find best position for the text box.
+        #
+        # This session of the code finds the best placement of the text box. It
+        # works by finding a sequence of patches that are either above half the
+        # y axis or below it. If it finds such a sequences then it places the
+        # box halfway of the first patch of this sequence. This minimizes the
+        # chances of having it placed in an unsuitable positon.
+        n_bins = len(axes.patches)
+        stride = axes.patches[0].get_width()
+        hist_xlim = (axes.patches[0].get_x(), axes.patches[0].get_x() + n_bins
+                     * stride)
+        x0 = hist_xlim[0]
+        y_half = axes.get_ylim()[1] / 2
+        fraction_of_patches_to_halt = 1/4
+        contiguous_patches_to_halt = int(n_bins * fraction_of_patches_to_halt)
+        patches_height = (x.get_height() for x in axes.patches)
+        height_greater_than_half = map(lambda x: x > y_half, patches_height)
+        state = height_greater_than_half.__next__()
+        seq = 1
+        flipped_on = 1
+        for i, greater in enumerate(height_greater_than_half, 1):
+            if greater == state:
+                seq += 1
+            else:
+                seq = 1
+                state = greater
+                flipped_on = i
+            if seq >= contiguous_patches_to_halt:
+                if greater:
+                    y_placement = 0.3  # as a fraction of the ylimits.
+                else:
+                    y_placement = 0.95  # as a fraction of the ylimits.
+                # Place the box on the best place: half stride in the patch
+                # which happened to 'flip' (y_half_greater -> y_half_smaller or
+                # vice versa).
+                x_placement = ((i - contiguous_patches_to_halt + flipped_on) *
+                               stride + x0 + 0.5 * stride)
+                break
+        axes_ylim = axes.get_ylim()
+        # Correct the placement of the box to absolute units.
+        y_placement = axes_ylim[0] + y_placement * (axes_ylim[1] -
+                                                    axes_ylim[0])
+
+        return (x_placement, y_placement)
+
+    if not isinstance(axes, matplotlib.axes.Axes):
+        axes = plt.gca()
+
     mean = series.mean()
     summary_max = series.max()
     summary_min = series.min()
@@ -574,27 +696,31 @@ def add_summary_statistics_textbox(series,
     stddevs = series.std(ddof=1)
     stddevp = series.std(ddof=0)
 
-    # TODO: remove the divide by zero warning.
-    metrics = np.fromiter(
-        (x for x in
-         (mean, summary_max, summary_min, stddevs, stddevp)
-         if x != 0),
-        dtype=float)
-    min_order = np.floor(np.log10(np.abs(metrics))).min()
-    if abs(min_order) == float('inf'):
-        min_order = 0
-    min_order = np.int(min_order)
-    expo = 10 ** min_order
-
-    # TODO: numbers and figures should have the same order of magnitude.
+    # Numbers and figures should have the same order of magnitude.
     # That is, avoid:
     # mean: 1e7
     # std:  1e5
     # max:  1e9
+    metrics = np.fromiter(
+        (x for x in
+         (mean, summary_max, summary_min, stddevs, stddevp)
+         if x != 0),  # Removes the divide by zero warning.
+        dtype=float)
+    if len(metrics) != 0:
+        min_order = np.floor(np.log10(np.abs(metrics))).min()
+        if abs(min_order) == float('inf'):
+            min_order = 0
+    else:
+        min_order = 0
+    min_order = np.int(min_order)
+    expo = 10 ** min_order
+
     # Float.
     text_mean = ('mean = {0:1.2f}' + 'e{1:d}').format(mean/expo, min_order)
-    text_max = ('max = {0:1.2f}' + 'e{1:d}').format(summary_max/expo, min_order)
-    text_min = ('min = {0:1.2f}' + 'e{1:d}').format(summary_min/expo, min_order)
+    text_max = ('max = {0:1.2f}' + 'e{1:d}').format(summary_max/expo,
+                                                    min_order)
+    text_min = ('min = {0:1.2f}' + 'e{1:d}').format(summary_min/expo,
+                                                    min_order)
     text_stddevp = ('stddevp = {0:1.2f}' + 'e{1:d}').format(stddevp/expo,
                                                             min_order)
     # Integers.
@@ -603,50 +729,12 @@ def add_summary_statistics_textbox(series,
 
     text = (text_mean, text_max, text_min, text_n, text_nans, text_stddevp)
 
-    # This session of the code finds the best placement of the text box. It
-    # works by finding a sequence of patches that are either above half the y
-    # axis or below it. If it finds such a sequences then it places the box
-    # halfway of the first patch of this sequence.
-    # This minimizes the chances of having it placed in an unsuitable positon.
-    n_bins = len(axes.patches)
-    stride = axes.patches[0].get_width()
-    hist_xlim = (axes.patches[0].get_x(), axes.patches[0].get_x() + n_bins *
-                 stride)
-    x0 = hist_xlim[0]
-    y_half = axes.get_ylim()[1] / 2
-    fraction_of_patches_to_halt = 1/4
-    contiguous_patches_to_halt = int(n_bins * fraction_of_patches_to_halt)
-    patches_height = (x.get_height() for x in axes.patches)
-    height_greater_than_half = map(lambda x: x > y_half,
-                                   patches_height)
-    state = height_greater_than_half.__next__()
-    seq = 1
-    flipped_on = 1
-    for i, greater in enumerate(height_greater_than_half, 1):
-        if greater == state:
-            seq += 1
-        else:
-            seq = 1
-            state = greater
-            flipped_on = i
-        if seq >= contiguous_patches_to_halt:
-            if greater:
-                y_placement = 0.3  # as a fraction of the ylimits.
-            else:
-                y_placement = 0.95  # as a fraction of the ylimits.
-            # Place the box on the best place: half stride in the patch which
-            # happened to 'flip' (y_half_greater -> y_half_smaller or vice
-            # versa).
-            x_placement = ((i - contiguous_patches_to_halt + flipped_on)
-                           * stride + x0 + 0.5 * stride)
-            break
+    if axes.patches:
+        x_placement, y_placement =                                            \
+            find_best_placement_for_summary_in_histogram(axes)
     else:
-        # TODO: implement this scenario.
-        raise NotImplementedError("Need to implement the case of not having a "
-                                  "suitable sequence of histogram patches.")
-    axes_ylim = axes.get_ylim()
-    # Correct the placement of the box to absolute units.
-    y_placement = axes_ylim[0] + y_placement * (axes_ylim[1] - axes_ylim[0])
+        offset = .1
+        x_placement, y_placement = offset, 1 - offset
 
     # Set the box style for the text.
     props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
@@ -657,10 +745,42 @@ def add_summary_statistics_textbox(series,
         '\n'.join(text),
         verticalalignment='top',
         alpha=0.5,
+        transform=axes.transAxes,  # make it relative to axes coords.
         bbox=props)
 
     return text
 
+
+def list_usable_backends():
+    """List all usable backends for matplotlib.
+
+    Arguments:
+        (empty)
+
+    Returns:
+        list: a list of usable backends for current environment.
+
+    Examples:
+        >>> import matplotlib_utilities as mu
+        >>> available_backends = mu.list_usable_backends()
+        >>> 'agg' in available_backends
+        True
+
+    """
+    backend_string = ("import matplotlib; matplotlib.use(\"{0}\");"
+                      "import matplotlib.pyplot as plt")
+
+    command_string = 'python3 -c \'{0}\' 2>/dev/null'
+
+    usable_backends = []
+    for backend in matplotlib.rcsetup.all_backends:
+        backend_call = backend_string.format(backend)
+        command_call = command_string.format(backend_call)
+        return_value = os.system(command_call)
+        if return_value == 0:
+            usable_backends.append(backend)
+
+    return usable_backends
 
 color = {
     'standard': (223, 229, 239),
@@ -675,5 +795,5 @@ color = {k: (v[0]/255, v[1]/255, v[2]/255) for k, v in color.items()}
 
 if __name__ == '__main__':
     import doctest
-    # doctest.testmod()
-    doctest.run_docstring_examples(plot_3d, globals())
+    doctest.testmod()
+    # doctest.run_docstring_examples(func, globals())
