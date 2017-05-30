@@ -1,5 +1,4 @@
 """Pandas utilities for common data management procedures.
-
 All the functions should follow matplotlib, pandas and numpy's guidelines:
 
     Pandas:
@@ -34,6 +33,26 @@ except ImportError:
     def unidecode(x):
         """Mock unidecode function."""
         return x
+
+
+def categorical_serie_to_binary_dataframe(series, nan_code='nan',
+                                          include_nan=False):
+    """
+    Transform a categorical serie into a binary dataframe.
+
+    Arguments:
+        series (pandas.Series): series TODO.
+
+    Returns:
+        pandas.DataFrame: dataframe TODO.
+
+    """
+    df = pd.DataFrame()
+    for i, uvalue in enumerate(series.unique()):
+        bool_series = pd.Series(series == uvalue)
+        bool_series.name = series.name + '_' + str(i)
+        df = pd.concat((df, bool_series), axis=1)
+    return df
 
 
 def series_to_ascii(series):
@@ -124,7 +143,7 @@ def load_csv_from_zip(zippath, *args, **kwargs):
         zip_file_list = zipfileobj.namelist()
         if len(zip_file_list) == 1:
             with zipfileobj.open(zip_file_list[0], 'r') as csvfile:
-                return pd.read_csv(csvfile, **kwargs)
+                return pd.read_csv(csvfile, *args, **kwargs)
         else:
             raise ValueError('Zipfile conains more than one file.')
 
