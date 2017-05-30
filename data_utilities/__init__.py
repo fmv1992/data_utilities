@@ -46,8 +46,11 @@ def test(label='fast', verbose=1, n_tests=50, n_lines=100, n_columns=10,
 
     Run tests using the unittest module. Both 'numpy style' and unittest
     invocations should work:
+
     `python3 -m unittest discover -vvv data_utilities/tests`
+        (not fully supported as of yet)
     `python3 -c "import data_utilities as du; du.test()"`
+        (fully supported as of yet)
 
     Created based on the same architecture as the scipy test function defined
     on their __init__.py.
@@ -73,6 +76,21 @@ def test(label='fast', verbose=1, n_tests=50, n_lines=100, n_columns=10,
         >>> du.test(verbose=False)
 
     """
+    # TODO: implement the 'fast' label and the default values of variables as
+    # the default argments. So overriding any of them should only change the
+    # changed variable in a simple way.
+
+    # Parse function parameters.
+    function_parameters = {
+        'verbose': verbose,
+        'n_tests': n_tests,
+        'n_lines': n_lines,
+        'n_columns': n_columns,
+        'n_graphical_tests': n_graphical_tests,
+        'save_figures': save_figures,
+    }
+
+    # Enforce label variable.
     # TODO: implement the label variable.
     # TODO: implement the verbose variable.
     if label == 'fast':
@@ -103,8 +121,10 @@ def test(label='fast', verbose=1, n_tests=50, n_lines=100, n_columns=10,
             'n_graphical_tests': n_graphical_tests,
             'save_figures': save_figures,
         }
-    for attr in test_size_parameters.keys():
-        setattr(TestDataUtilitiesTestCase, attr, test_size_parameters[attr])
+
+    # Overwrite parsed variables.
+    for attr in function_parameters.keys():
+        setattr(TestDataUtilitiesTestCase, attr, function_parameters[attr])
 
     # Initial definitions.
     text_result = unittest.TextTestRunner(verbosity=verbose, **kwargs_test_runner)

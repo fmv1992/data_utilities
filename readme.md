@@ -43,6 +43,15 @@ parent module.
 Note: This is a primitive project. Expect backwards incompatible changes as I
 figure out the best way to to develop the utilities. Use at your own risk :)
 
+# Guidelines
+
+* Support first:
+
+        `python3 -c "import data_utilities as du; du.test()"`
+  and then:
+
+        `python3 -m unittest discover -vvv data_utilities/tests`
+
 # TODO
 
 ## Tests
@@ -53,6 +62,12 @@ figure out the best way to to develop the utilities. Use at your own risk :)
 * Output images if `save_figures == True` to a tempfolder
 
 ## Other
+
+* Create a data_parser helper for handling unstructured CSV files
+    * Ideas: identify time series
+    * Enable header regex
+    * Enable footer regex
+    * Parse 'body' of numbers as 'body' of the data.
 
 * Move changelog and todo sections to separate files
   (https://github.com/pypa/sampleproject)
