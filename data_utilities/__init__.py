@@ -40,8 +40,14 @@ from data_utilities.tests.test_support import TestDataUtilitiesTestCase
 __version__ = '1.2.7'
 
 
-def test(label='fast', verbose=1, n_tests=50, n_lines=100, n_columns=10,
-         n_graphical_tests=3, save_figures=False, **kwargs_test_runner):
+def test(label='fast',
+         verbose=False,                 # Must match the default values for
+         n_tests=5,                     # fast label.
+         n_lines=50,
+         n_columns=5,
+         n_graphical_tests=3,
+         save_figures=False,
+         **kwargs_test_runner):
     """Module level test function.
 
     Run tests using the unittest module. Both 'numpy style' and unittest
@@ -100,7 +106,7 @@ def test(label='fast', verbose=1, n_tests=50, n_lines=100, n_columns=10,
             'n_lines': 50,
             'n_columns': 5,
             'n_graphical_tests': 3,
-            'save_figures': True,  # TODO: later needs to be false
+            'save_figures': False,
         }
     elif label == 'full':
         raise NotImplementedError("label == full is not implemented yet.")
