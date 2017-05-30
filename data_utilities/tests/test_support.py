@@ -193,7 +193,17 @@ class TestDataUtilitiesTestCase(unittest.TestCase, metaclass=TestMetaClass):
     n_columns = 5
     save_figures = False
     maxDiff = None  # TODO: check if it is being utilized
-    data = pu.statistical_distributions_dataframe(shape=(n_lines, n_columns))
+
+    @classmethod
+    def update_data(cls):
+        """Update the 'data' attribute.
+
+        Most likely this is set during the execution of data_utilities.test().
+
+        """
+        cls.data = pu.statistical_distributions_dataframe(
+            shape=(cls.n_lines, cls.n_columns))
+        return None
 
     # Setup temporary folder to be used.
     temp_directory = tempfile.TemporaryDirectory(prefix='test_data_utilities_')
@@ -234,7 +244,7 @@ class TestSupport(TestDataUtilitiesTestCase,
                           ).format(
             os.path.abspath(__file__))
         command_call = command_string
-        return_value = os.system(command_call)
+        return_value = os.system(command_call)  # noqa
         # TODO: fix this invoking in virtual environment.
         # Return value is 256 in virtual environments despite my great efforts
         # to understand why.
