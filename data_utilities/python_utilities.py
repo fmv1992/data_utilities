@@ -68,6 +68,20 @@ def process_string(x,
     return x
 
 
+def print_feature(feature, fill_length=79, fill_char='-'):
+    """Print a feature in a nice and consistent way (aesthetics).
+
+    Return None.
+
+    """
+    feature = feature + '   '
+    print('\n',
+          fill_length*'-',
+          '\n{0:{1}<{2}s}\n'.format(feature, fill_char, fill_length),
+          fill_length*'-',
+          sep='')
+    return None
+
 
 
 if __name__ == '__main__':
