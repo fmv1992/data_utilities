@@ -43,21 +43,12 @@ parent module.
 Note: This is a primitive project. Expect backwards incompatible changes as I
 figure out the best way to to develop the utilities. Use at your own risk :)
 
-# Guidelines
-
-* Support first:
-
-        `python3 -c "import data_utilities as du; du.test()"`
-  and then:
-
-        `python3 -m unittest discover -vvv data_utilities/tests`
-
 # TODO
 
 ## Tests
 
 * Add test to every line of code.
-    - Current coverage: 69%
+    - Current coverage: xxx%
 
 * Output images if `save_figures == True` to a tempfolder
 
@@ -78,11 +69,10 @@ figure out the best way to to develop the utilities. Use at your own risk :)
     * http://seaborn.pydata.org/tutorial/color_palettes.html is a good place to
       start.
 
-* Solve all open "XXX"s and "TODO"s
-
 * Add a way to create release versions number unequivocally (instead of doing
   the analysis of backwards compatibility myself)
 
+* Solve all open "XXX"s and "TODO"s
 
 # Changelog
 
@@ -173,3 +163,11 @@ figure out the best way to to develop the utilities. Use at your own risk :)
 
 * First commit.
 
+# Development Guidelines
+
+* Support first the test interface of numpy:
+
+        `python3 -c "import data_utilities as du; du.test()"`
+  and then the unittest interface:
+
+        `python3 -m unittest discover -vvv data_utilities/tests`
