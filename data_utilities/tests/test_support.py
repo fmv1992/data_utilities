@@ -29,6 +29,14 @@ from data_utilities import pandas_utilities as pu
 import numpy as np
 
 
+def setUpModule():
+    """Setup TestDataUtilitiesTestCase 'data' attribute.
+
+    Useful if there is a unittest being run.
+    """
+    TestDataUtilitiesTestCase.update_data()
+
+
 def is_inside_unittest():
     """Test if a function is running from unittest.
 
@@ -139,7 +147,9 @@ class TestDataUtilitiesTestCase(unittest.TestCase, metaclass=TestMetaClass):
         from changing their own attributes.
 
         """
-        if hasattr(self.__class__, name):
+        if name.startswith('_'):
+            super().__setattr__(name, value)
+        elif hasattr(self.__class__, name):
             raise AttributeError(
                 ("Cannot change non-private attribute '{0}' of class '{1}'."
                  ).format(name, self.__class__))

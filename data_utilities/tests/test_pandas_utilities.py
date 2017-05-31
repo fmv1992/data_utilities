@@ -11,6 +11,14 @@ from data_utilities.tests.test_support import (
     TestDataUtilitiesTestCase, TestMetaClass)
 
 
+def setUpModule():
+    """Setup TestDataUtilitiesTestCase 'data' attribute.
+
+    Useful if there is a unittest being run.
+    """
+    TestDataUtilitiesTestCase.update_data()
+
+
 class TestFindComponentsOfArray(TestDataUtilitiesTestCase,
                                 metaclass=TestMetaClass):
     """Test class for find_components_of_array of pandas_utilities.

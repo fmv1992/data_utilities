@@ -138,7 +138,6 @@ def test(label='fast',
 
     # Initial definitions.
     text_result = unittest.TextTestRunner(verbosity=verbose,
-                                          failfast=True,  # TODO: remove this.
                                           **kwargs_test_runner)
 
     # Filter test cases.
