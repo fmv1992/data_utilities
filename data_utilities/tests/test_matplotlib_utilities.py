@@ -17,6 +17,14 @@ from data_utilities.tests.test_support import (
 from data_utilities import matplotlib_utilities as mu
 
 
+def setUpModule():
+    """Setup TestDataUtilitiesTestCase 'data' attribute.
+
+    Useful if there is a unittest being run.
+    """
+    TestDataUtilitiesTestCase.update_data()
+
+
 class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
                               metaclass=TestMetaClass):
     """Test class for matplotlib_utilitlies."""
@@ -181,6 +189,22 @@ class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
             itertools.chain.from_iterable(map_label_containers),
             itertools.repeat(matplotlib.text.Text))
 
+    def test_histogram_of_dataframe(self):
+        """Histogram of dataframe test."""
+        tuple_of_figures_of_histograms = mu.histogram_of_dataframe(self.data)
+
+        self.assertTrue(isinstance(tuple_of_figures_of_histograms, tuple))
+
+        self.assert_X_from_iterables(
+            self.assertIsInstance,
+            tuple_of_figures_of_histograms,
+            itertools.repeat(plt.Figure))
+
+        if self.save_figures:
+            for i, f in enumerate(tuple_of_figures_of_histograms):
+                f.savefig('/tmp/test_histogram_of_dataframe_{0}.png'.format(i),
+                          dpi=300)
+
     def test_histogram_of_integers(self):
         """Histogram of integers test.
 
@@ -271,3 +295,7 @@ class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
                     '/tmp/test_add_summary_statistics_textbox_{0}.png'.format(
                         i),
                     dpi=300)
+
+    def test_list_usable_backends(self):
+        """List usable backends test."""
+        self.assertTrue(isinstance(mu.list_usable_backends(), list))
