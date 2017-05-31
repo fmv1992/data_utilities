@@ -86,6 +86,16 @@ def test(label='fast',
     # the default argments. So overriding any of them should only change the
     # changed variable in a simple way.
 
+    # Default function parameters.
+    default_function_parameters = {
+        'verbose': False,
+        'n_tests': 5,
+        'n_lines': 50,
+        'n_columns': 5,
+        'n_graphical_tests': 3,
+        'save_figures': False,
+    }
+
     # Parse function parameters.
     function_parameters = {
         'verbose': verbose,
@@ -95,14 +105,17 @@ def test(label='fast',
         'n_graphical_tests': n_graphical_tests,
         'save_figures': save_figures,
     }
+    # Update those parameters related to new keyword parameters.
+    function_parameters = {
+        k: v for k, v in function_parameters.items() if
+        v != default_function_parameters[k]}
 
     # Enforce label variable.
-    # TODO: implement the label variable.
-    # TODO: implement the verbose variable.
     if label == 'fast':
-        test_size_parameters = function_parameters.copy()
+        updated_function_parameters = default_function_parameters.copy()
+        updated_function_parameters.update(function_parameters)
     elif label == 'full':
-        test_size_parameters = {
+        updated_function_parameters = {
             'verbose': False,
             'n_tests': 100,
             'n_lines': 500,
@@ -110,19 +123,18 @@ def test(label='fast',
             'n_graphical_tests': 20,
             'save_figures': True,
         }
+        updated_function_parameters.update(function_parameters)
     else:
         raise NotImplementedError(
             "label == '{}' is not implemented yet.".format(label))
 
-
     # Overwrite parsed variables.
-    for attr in function_parameters.keys():
-        if test_size_parameters[attr] != function_parameters[attr]:
-            setattr(TestDataUtilitiesTestCase, attr,
-                    test_size_parameters[attr])
+    for attr in updated_function_parameters.keys():
+        setattr(TestDataUtilitiesTestCase,
+                attr,
+                updated_function_parameters[attr])
     # Update data.
     TestDataUtilitiesTestCase.update_data()
-
 
     # Initial definitions.
     text_result = unittest.TextTestRunner(verbosity=verbose,
