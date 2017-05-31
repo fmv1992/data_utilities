@@ -25,6 +25,7 @@ import os
 import tempfile
 
 
+import data_utilities as du
 from data_utilities import pandas_utilities as pu
 import numpy as np
 
@@ -35,6 +36,25 @@ def setUpModule():
     Useful if there is a unittest being run.
     """
     TestDataUtilitiesTestCase.update_data()
+
+
+def is_inside_recursive_test_call():
+    """Test if a function is running from a call to du.test()."""
+    frame = inspect.currentframe()
+    count_test = 0
+    while frame:
+        # Test breaking condition.
+        if count_test >= 1:
+            return True
+        # Find if there is a breaking condition and update the value.
+        test_function = frame.f_locals.get('test')
+        if (hasattr(test_function, '_testMethodName')) and (
+                test_function._testMethodName ==
+                'test_module_level_test_calls'):
+            count_test += 1
+        # Go to next frame.
+        frame = frame.f_back
+    return False
 
 
 def is_inside_unittest():
@@ -296,3 +316,31 @@ class TestSupport(TestDataUtilitiesTestCase,
             m.data = None
         except AttributeError:
             pass
+
+
+class TestModule(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
+    """Test class for module level tests."""
+
+    def test_module_level_test_calls(self):
+        """Test module level test calls."""
+        # Test the full label.
+        du.test('full',
+                n_graphical_tests=0,
+                save_figures=False)
+        # Test the fast label.
+        du.test('fast',
+                verbose=True,  # Ensure coverage of the 'verbose' line.
+                save_figures=False)
+        # Test any other non implemented label.
+        with self.assertRaises(NotImplementedError):
+            du.test('unnamed_test_mode')
+
+    def test_is_inside_recursive_test_call(self):
+        """Test is_inside_recursive_test_call function."""
+        def _create_stack_depth_1():
+            def _create_stack_depth_2():
+                def _create_stack_depth_3():
+                    return is_inside_recursive_test_call()
+                return _create_stack_depth_3()
+            return _create_stack_depth_2()
+        self.assertFalse(_create_stack_depth_1())

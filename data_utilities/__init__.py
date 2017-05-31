@@ -128,6 +128,13 @@ def test(label='fast',
         raise NotImplementedError(
             "label == '{}' is not implemented yet.".format(label))
 
+    # Avoid recursion in case this function is called from test. Has to come
+    # after the label testing part.
+    # TODO: maybe modifying normal functions just to add a couple of lines to
+    # test coverage is not a good idea.
+    if ts.is_inside_recursive_test_call():
+        return None
+
     # Overwrite parsed variables.
     for attr in updated_function_parameters.keys():
         setattr(TestDataUtilitiesTestCase,
