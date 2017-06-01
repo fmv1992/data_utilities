@@ -23,6 +23,7 @@ import unittest
 import inspect
 import os
 import tempfile
+import warnings
 
 
 import data_utilities as du
@@ -175,6 +176,42 @@ class TestDataUtilitiesTestCase(unittest.TestCase, metaclass=TestMetaClass):
                  ).format(name, self.__class__))
         else:
             super().__setattr__(name, value)
+
+    def create_test_cases(self, *args, container_function=None, **kwargs):
+        """Create a generator from mapping args to a container function.
+
+        This function truncates the args according to n_tests. Likewise it
+        expects the last element of *args to be an infinite iterator to be
+        sliced according to n_tests.
+
+        The args structure should be like this:
+
+        +-------------+------------+-----+-------------+-------------------+
+        | borderline1 | bordeline2 | ... | borderlineN | infinite iterator |
+        +=============+============+=====+=============+===================+
+
+        A warning is raised if n_tests is so small that all borderline values
+        are not used.
+
+        """
+        borderlines = args[:-1]  # May be empty if there is only one arg.
+        last_arg = args[-1]
+
+        # Warn if borderlines are smaller than n_tests.
+        if len(borderlines) < self.n_tests:
+            warnings.warn(
+                'Borderline values (len == {0}) are smaller than n_tests
+                ({1})'.format(len(borderlines), self.n_tests),
+                DataUtilitiesTestWarning)
+
+        # Warn if infinite_iterator is not infinite.
+        # TODO: maybe it is not possible.
+
+        if container_function is not None:
+            return map(lambda x: container_function(x, **kwargs), args)
+        else:
+            return None
+
 
     @classmethod
     def compose_functions(cls,
@@ -347,3 +384,6 @@ class TestModule(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
                 return _create_stack_depth_3()
             return _create_stack_depth_2()
         self.assertFalse(_create_stack_depth_1())
+
+class DataUtilitiesTestWarning(Warning):
+    pass
