@@ -319,7 +319,10 @@ class TestSupport(TestDataUtilitiesTestCase,
 
 
 class TestModule(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
-    """Test class for module level tests."""
+    """Test class for module level tests.
+
+    Test class for module level tests e.g.: data_utilities.test()
+    """
 
     def test_module_level_test_calls(self):
         """Test module level test calls."""

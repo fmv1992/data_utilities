@@ -225,3 +225,40 @@ class TestUtilitiesDataFrames(TestDataUtilitiesTestCase,
         self.assert_X_from_iterables(
             self.assertTrue,
             ((x.dtypes == np.bool).all() for x in df_serie_to_bin))
+
+    def _create_tuple_of_unique_values(self, n_values):
+        """Create a tuple of unique values."""
+        categories = tuple(string.ascii_lowercase)
+        n_categories = len(categories)
+
+        # Count the number of letters neeeded to create a unique repetition.
+        # Maybe there is a better calculation option using log/ln.
+        n_repeats = 0
+        n_values_hold = n_values
+        while n_values_hold > 1:
+            n_values_hold /= n_categories
+            n_repeats += 1
+
+        return tuple(
+            itertools.islice(
+                map(''.join,
+                    itertools.product(categories, repeat=n_repeats)),
+                n_values))
+
+    def test_object_columns_to_category(self):
+        """Object columns to category test."""
+        # Create series of unique values (to be kept as object columns).
+        #
+        # As this operation may be expensive, store the maximum object and
+        # create a copy of this.
+
+        ## TODO: refactor code to easily create an iterable with borderline
+        ## values and non borderline values.
+        ## XXX
+
+        ffobject = self._create_tuple_of_unique_values(int(1e5))
+        # Create dataframe of non-unique object values (to be transformed into
+        # categories).
+        # Create dummy non categorical data (to be kept as numbers).
+        import ipdb; ipdb.set_trace()  # XXX BREAKPOINT
+        raise Exception

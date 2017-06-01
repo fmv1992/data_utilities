@@ -160,7 +160,7 @@ def object_columns_to_category(df, cutoff=0.1, inplace=False):
     Arguments:
         df (pandas.DataFrame): The pandas dataframe with object columns to be
         transformed into categorical.
-        cutoff (float):
+        cutoff (float): TODO
 
     Returns:
         pandas.DataFrame: The input df with object columns transformed into
