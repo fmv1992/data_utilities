@@ -35,7 +35,9 @@ except ImportError:
         return x
 
 
-def categorical_serie_to_binary_dataframe(series, nan_code='nan',
+def categorical_serie_to_binary_dataframe(series,
+                                          nan_code='nan',
+                                          prefix='',
                                           include_nan=False):
     """
     Transform a categorical serie into a binary dataframe.
@@ -49,8 +51,12 @@ def categorical_serie_to_binary_dataframe(series, nan_code='nan',
     """
     df = pd.DataFrame()
     for i, uvalue in enumerate(series.unique()):
+        # Create bool series.
         bool_series = pd.Series(series == uvalue)
-        bool_series.name = series.name + '_' + str(i)
+        # Create a name and rename series.
+        s_name = series.name if series.name else 'unnamed_series'
+        bool_series.name = prefix + s_name + '_' + uvalue
+        # Concatenate series.
         df = pd.concat((df, bool_series), axis=1)
     return df
 

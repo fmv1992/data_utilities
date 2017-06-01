@@ -5,6 +5,7 @@ import random
 
 import numpy as np
 import pandas as pd
+import string
 
 from data_utilities import pandas_utilities as pu
 from data_utilities.tests.test_support import (
@@ -148,8 +149,9 @@ class TestUtilitiesDataFrames(TestDataUtilitiesTestCase,
             tuple_shapes, tuple_borderline_shapes)
 
         # Combine all those iterators on a variable.
-        self.iterator_of_shapes = itertools.chain(iterator_of_ints,
-                                                  iterator_of_tuples)
+        # This iterator_of_shapes
+        self.iterator_of_shapes = tuple(itertools.chain(iterator_of_ints,
+                                                        iterator_of_tuples))
 
     def _test_off_the_shelf_functions(self, test_function):
         """Test off the shelf functions."""
@@ -176,3 +178,50 @@ class TestUtilitiesDataFrames(TestDataUtilitiesTestCase,
         """Statistical distributions dataframe test."""
         self._test_off_the_shelf_functions(
             pu.statistical_distributions_dataframe)
+
+    def test_categorical_serie_to_binary_dataframe(self):
+        """Categorical serie to binary dataframe test."""
+        # Create artificial categorical series.
+        # Define shapes.
+        borderline_shapes = tuple(range(1, min(self.n_tests, 10)))
+        non_borderline_shapes = np.random.randint(
+            1,
+            self.n_lines + 1,
+            size=max(self.n_tests - len(borderline_shapes), 0))
+        shapes = tuple(itertools.chain(borderline_shapes,
+                                       non_borderline_shapes))
+        # Define categories.
+        n_categories = map(
+            lambda x: np.random.randint(
+                1,
+                min(x + 1, 20)),
+            shapes)
+        n_categories = tuple(n_categories)
+        categories = tuple(string.ascii_lowercase)
+        # Define series.
+        all_series = map(
+            lambda x, y: pd.Series(
+                np.random.choice(
+                    np.random.choice(categories, y),
+                    size=x),
+                dtype='category'),
+            shapes,
+            n_categories)
+        all_series = tuple(all_series)
+        # Update categories to categories that actually show up.
+        n_categories_show_up = tuple(
+            len(x.unique()) for x in all_series)
+
+        # Create the dataframes.
+        df_serie_to_bin = tuple(map(
+            pu.categorical_serie_to_binary_dataframe,
+            all_series))
+        # Test the shape.
+        self.assert_X_from_iterables(
+            self.assertEqual,
+            (x.shape[1] for x in df_serie_to_bin),
+            n_categories_show_up)
+        # Thest the content/data type.
+        self.assert_X_from_iterables(
+            self.assertTrue,
+            ((x.dtypes == np.bool).all() for x in df_serie_to_bin))
