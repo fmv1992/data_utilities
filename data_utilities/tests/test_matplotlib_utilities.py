@@ -41,7 +41,11 @@ class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
         # Single axes 2d figures (no colorbar or other features).
         cls.figures_2d_histogram = cls._generate_test_figures_2d_histogram()
         # Single axes 3d figures (no colorbar or other features).
+        ## TODO change `figures_3d` name to bar3d or something
         cls.figures_3d = cls._generate_bar3d_test_figures()
+        ## TODO change `figures_3d` name to bar3d or something
+        cls.figures_3d_scatterplot = cls._generate_scatterplot_test_figures()
+        # Single axes 3d scatter plt.
 
     @classmethod
     def tearDownClass(cls):
@@ -150,6 +154,101 @@ class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
         figures = tuple(map(cls.figure_from_plot_function,
                             itertools.repeat(mu.plot_3d),
                             map_of_series))
+
+        return figures
+
+    @classmethod
+    def _generate_xyz_meshgrid(cls):
+        """Generate a tuple of (x, y, z) meshgrids.
+
+        Generate a tuple of meshgrids. Intended to help
+        _generate_scatterplot_test_figures.
+
+        """
+        n_points = 100
+        x_start = random.randint(0, 1000)
+        x_end = x_start + random.randint(1, 1000)
+        x = np.linspace(x_start, x_end, n_points)
+        y = x / random.randint(1, 100)
+
+        xx, yy = np.meshgrid(x, y)
+
+        zz = np.random.choice((np.sum, np.multiply))(xx, yy)
+
+        zz = cls.compose_functions(zz)
+
+        return (xx, yy, zz)
+
+    @classmethod
+    def _generate_scatterplot_test_figures(cls):
+        """Generate scatter plot test figures class method.
+
+        Generate a tuple of 3d figures.
+
+        """
+        # Test methodology: Create test support.
+
+        # Test methodology: Create test cases.
+        #   Create a test variable from `test = self.create_test_cases()`
+        test = cls.create_test_cases(
+            cls._generate_xyz_meshgrid,
+            is_graphical_test=True)
+
+        # Test methodology: Create test objects from test cases.
+        #   Create test figures, texts, tuples, etc from test cases.
+        test_figures = map(
+            cls.figure_from_plot_function,
+            itertools.repeat(plt.scatter),
+            test,
+            itertools.repeat({'projection': '3d'})
+        )
+        pass
+
+
+        # Test methodology: Run tests.
+        #   Has to invoke `self.assert_X_from_iterables()`
+
+        # Test methodology: Save persistency.
+        #   (Optional) Save figures as needed
+        # if self.save_figures or True:
+        #     for i, f in enumerate(test_figures):
+        #         f.savefig(
+        #             '/tmp/test_add_summary_statistics_textbox_{0}.png'.format(
+        #                 i),
+        #             dpi=300)
+        #######################################################################
+        ##########################   OLD   ####################################
+        #######################################################################
+        # Create random shapes for multi index series.
+        # Include these scenarios then fill the rest with random values.
+        include_3d_shapes = ((1, 1), (20, 20), (1, 100))
+        random_3d_shapes = (
+            (random.randint(1, 100),
+             random.randint(1, 100))
+            for x in range(cls.n_graphical_tests//2 - len(include_3d_shapes)))
+        shapes = tuple(itertools.chain(include_3d_shapes, random_3d_shapes))
+
+        # Creates a map of multi index from random shapes tuples.
+        # TODO: improve readability.
+        map_of_multi_indexes = map(
+            lambda x: pd.MultiIndex.from_tuples(tuple(itertools.product(
+                range(x[0]),
+                (chr(y + ord('a')) for y in range(x[1])))),
+                names=('x1', 'x2')),
+            shapes)
+
+        # Create series from multi indexes.
+        map_of_series = map(lambda x: pd.Series(np.random.normal(size=len(x)),
+                                                index=x),
+                            map_of_multi_indexes)
+
+        # Create figures from series.
+        figures = tuple(map(cls.figure_from_plot_function,
+                            itertools.repeat(mu.plot_3d),
+                            map_of_series))
+        #######################################################################
+        #######################################################################
+        #######################################################################
 
         return figures
 
@@ -331,6 +430,28 @@ class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
 
     def test_scale_axes_axis(self):
         """Scale axes axis test."""
+        # Test methodology: Create test support.
+        #   Create support variables for tests.
+
+        # Test methodology: Create test cases.
+        #   Create a test variable from `test = self.create_test_cases()`
+
+        # Test methodology: Create test objects from test cases.
+        #   Create test figures, texts, tuples, etc from test cases.
+
+        # Test methodology: Run tests.
+        #   Has to invoke `self.assert_X_from_iterables()`
+
+        # Test methodology: Save persistency.
+        #   (Optional) Save figures as needed
+        # if self.save_figures or True:
+        #     for i, f in enumerate(test_figures):
+        #         f.savefig(
+        #             '/tmp/test_add_summary_statistics_textbox_{0}.png'.format(
+        #                 i),
+        #             dpi=300)
         # TODO: implement.
         pass
+        # Test this attribute
+        self.figures_3d_scatterplot
 

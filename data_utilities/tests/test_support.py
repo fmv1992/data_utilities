@@ -229,7 +229,7 @@ class TestDataUtilitiesTestCase(unittest.TestCase, metaclass=TestMetaClass):
 
     @classmethod
     def compose_functions(cls,
-                          x,
+                          x,  # TODO: generalize for *args and enable functions to be more than 1 argument functions.
                           number_of_compositions=1,
                           functions=(np.sin, np.exp, np.square, np.polyval,
                                      np.tan, ),
@@ -422,6 +422,8 @@ class TestModule(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
                 return _create_stack_depth_3()
             return _create_stack_depth_2()
         self.assertFalse(_create_stack_depth_1())
+        return None
+
 
 class DataUtilitiesTestWarning(Warning):
     pass
