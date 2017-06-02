@@ -160,37 +160,57 @@ class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
         plot_function(*plot_3d_args, **kwargs)
         return fig
 
-    def test_plot_3d(self):
-        """Plot 3d test."""
-        # TODO: Comply with `test_structure_for_mu_tests` structure.
-        # Test 3d plots.
+    def test_add_summary_statistics_textbox(self):
+        """Add summary statistics textbox test."""
+        # Test methodology: Create test support.
+        # Initialize x values.
+        x = np.linspace(-10, 10, self.n_lines)
+        # Initilize a random function to generate tests.
+        generate_random_test_function = lambda: self.compose_functions(x, 3)
+
+        # Test methodology: Create test cases.
+        test = self.create_test_cases(
+            generate_random_test_function,
+            np.ones(self.n_lines),  # borderline
+            np.zeros(self.n_lines),  # borderline
+            container_function=pd.Series)
+        test = tuple(test)
+
+        # Test methodology: Create test figures from test cases.
+        test_figures = tuple(map(
+            lambda z: self.figure_from_plot_function(plt.plot, x, z), test))
+
+        # Test methodology: Create test texts from test cases.
+        test_texts = map(
+            mu.add_summary_statistics_textbox,
+            test,
+            (x.gca() for x in test_figures))
+        test_texts = tuple(test_texts)
+        # Check texts.
+        if not test_texts:
+            raise Exception("Texts were not created accordingly.")
+
+        # Test methodology: Run tests.
+        # Test this function with:
+        # Scatter plot.     # Done.
+        # Bar plot.         # TODO
         self.assert_X_from_iterables(
             self.assertIsInstance,
-            # TODO: error prone since colorbars can be added.
-            (fig.get_axes()[0] for fig in self.figures_3d),
-            itertools.repeat(Axes3D))
-        # Test that there is just one axes per figure.
-        for i, figure in enumerate(self.figures_3d):
-            axes = figure.get_axes()
-            if len(axes) != 1:
-                # TODO: colorbar may add a second axes.
-                pass
-                raise ValueError(
-                   "Axes has the wrong number of elements: {0} but "
-                   "should be 1.".format(len(axes)))
-
-    def test_label_containers(self):
-        """Label containers test."""
-        # TODO: Comply with `test_structure_for_mu_tests` structure.
-        map_label_containers = map(
-            mu.label_containers,
-            (x.axes[0] for x in self.figures_2d_histogram))
-
-        self.assert_X_from_iterables(
-            self.assertIsInstance,
-            itertools.chain.from_iterable(map_label_containers),
+            test_texts,
             itertools.repeat(matplotlib.text.Text))
 
+        # TODO: remove this short circ.
+        if self.save_figures or True:
+            for i, f in enumerate(test_figures):
+                f.savefig(
+                    '/tmp/test_add_summary_statistics_textbox_{0}.png'.format(
+                        i),
+                    dpi=300)
+
+    def test_histogram_of_categorical(self):
+        """Histogram of categorical test."""
+        # TODO: implement.
+        pass
     def test_histogram_of_dataframe(self):
         """Histogram of dataframe test."""
         # TODO: Comply with `test_structure_for_mu_tests` structure.
@@ -208,6 +228,10 @@ class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
                 f.savefig('/tmp/test_histogram_of_dataframe_{0}.png'.format(i),
                           dpi=300)
 
+    def test_histogram_of_floats(self):
+        """Histogram of floats test."""
+        # TODO: implement.
+        pass
     def test_histogram_of_integers(self):
         """Histogram of integers test.
 
@@ -270,67 +294,43 @@ class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
                 f.savefig('/tmp/test_histogram_of_integers_{0}.png'.format(i),
                           dpi=300)
 
-    def test_add_summary_statistics_textbox(self):
-        """Add summary statistics textbox test."""
-        # Test methodology: Create test support.
-        # Initialize x values.
-        x = np.linspace(-10, 10, self.n_lines)
-        # Initilize a random function to generate tests.
-        generate_random_test_function = lambda: self.compose_functions(x, 3)
+    def test_label_containers(self):
+        """Label containers test."""
+        # TODO: Comply with `test_structure_for_mu_tests` structure.
+        map_label_containers = map(
+            mu.label_containers,
+            (x.axes[0] for x in self.figures_2d_histogram))
 
-        # Test methodology: Create test cases.
-        test = self.create_test_cases(
-            generate_random_test_function,
-            np.ones(self.n_lines),  # borderline
-            np.zeros(self.n_lines),  # borderline
-            container_function=pd.Series)
-        test = tuple(test)
-
-        # Test methodology: Create test figures from test cases.
-        test_figures = tuple(map(
-            lambda z: self.figure_from_plot_function(plt.plot, x, z), test))
-
-        # Test methodology: Create test texts from test cases.
-        test_texts = map(
-            mu.add_summary_statistics_textbox,
-            test,
-            (x.gca() for x in test_figures))
-        test_texts = tuple(test_texts)
-        # Check texts.
-        if not test_texts:
-            raise Exception("Texts were not created accordingly.")
-
-        # Test methodology: Run tests.
-        # Test this function with:
-        # Scatter plot.     # Done.
-        # Bar plot.         # TODO
         self.assert_X_from_iterables(
             self.assertIsInstance,
-            test_texts,
+            itertools.chain.from_iterable(map_label_containers),
             itertools.repeat(matplotlib.text.Text))
-
-        # TODO: remove this short circ.
-        if self.save_figures or True:
-            for i, f in enumerate(test_figures):
-                f.savefig(
-                    '/tmp/test_add_summary_statistics_textbox_{0}.png'.format(
-                        i),
-                    dpi=300)
 
     def test_list_usable_backends(self):
         """List usable backends test."""
         self.assertTrue(isinstance(mu.list_usable_backends(), list))
+
+    def test_plot_3d(self):
+        """Plot 3d test."""
+        # TODO: Comply with `test_structure_for_mu_tests` structure.
+        # Test 3d plots.
+        self.assert_X_from_iterables(
+            self.assertIsInstance,
+            # TODO: error prone since colorbars can be added.
+            (fig.get_axes()[0] for fig in self.figures_3d),
+            itertools.repeat(Axes3D))
+        # Test that there is just one axes per figure.
+        for i, figure in enumerate(self.figures_3d):
+            axes = figure.get_axes()
+            if len(axes) != 1:
+                # TODO: colorbar may add a second axes.
+                pass
+                raise ValueError(
+                   "Axes has the wrong number of elements: {0} but "
+                   "should be 1.".format(len(axes)))
 
     def test_scale_axes_axis(self):
         """Scale axes axis test."""
         # TODO: implement.
         pass
 
-    def test_histogram_of_categorical(self):
-        """Histogram of categorical test."""
-        # TODO: implement.
-        pass
-    def test_histogram_of_floats(self):
-        """Histogram of floats test."""
-        # TODO: implement.
-        pass
