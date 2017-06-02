@@ -39,9 +39,9 @@ class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
         # TODO: fix the 2 * N//2 != N issue that may happen.
 
         # Single axes 2d figures (no colorbar or other features).
-        cls.figures_2d_histogram = cls.generate_test_figures_2d_histogram()
+        cls.figures_2d_histogram = cls._generate_test_figures_2d_histogram()
         # Single axes 3d figures (no colorbar or other features).
-        cls.figures_3d = cls.generate_bar3d_test_figures()
+        cls.figures_3d = cls._generate_bar3d_test_figures()
 
     @classmethod
     def tearDownClass(cls):
@@ -77,8 +77,8 @@ class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
                   flush=True)
 
     @classmethod
-    def generate_test_figures_2d_histogram(cls):
-        """generate_test_figures_2d_histogram class method.
+    def _generate_test_figures_2d_histogram(cls):
+        """_generate_test_figures_2d_histogram class method.
 
         Generate a tuple of 2d histogram figures.
 
@@ -107,8 +107,8 @@ class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
         return figures
 
     @classmethod
-    def generate_test_figures_2d(cls):
-        """generate_test_figures_2d class method.
+    def _generate_test_figures_2d(cls):
+        """_generate_test_figures_2d class method.
 
         Generate a tuple of 2d figures.
 
@@ -117,7 +117,7 @@ class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
         pass
 
     @classmethod
-    def generate_bar3d_test_figures(cls):
+    def _generate_bar3d_test_figures(cls):
         """Generate bar3d test figures class method.
 
         Generate a tuple of 3d figures.
@@ -320,3 +320,17 @@ class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
     def test_list_usable_backends(self):
         """List usable backends test."""
         self.assertTrue(isinstance(mu.list_usable_backends(), list))
+
+    def test_scale_axes_axis(self):
+        """Scale axes axis test."""
+        # TODO: implement.
+        pass
+
+    def test_histogram_of_categorical(self):
+        """Histogram of categorical test."""
+        # TODO: implement.
+        pass
+    def test_histogram_of_floats(self):
+        """Histogram of floats test."""
+        # TODO: implement.
+        pass
