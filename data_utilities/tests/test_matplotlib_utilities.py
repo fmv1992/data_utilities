@@ -56,6 +56,26 @@ class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
                                                   cls.figures_3d)):
                 f.savefig('/tmp/teardown_{0}.png'.format(i), dpi=300)
 
+    def setUp(self):
+        """setUp method from unittest.
+
+        Store start time for test method. Running time is computed and
+        displayed in the tearDown method.
+
+        """
+        self.start_time = time.time()
+
+    def tearDown(self):
+        """tearDown method from unittest.
+
+        Compute and display running time for test method.
+
+        """
+        elapsed_time = time.time() - self.start_time
+        if self.verbose:
+            print('\t{0:.3f} seconds elapsed\t'.format(elapsed_time), end='',
+                  flush=True)
+
     @classmethod
     def generate_test_figures_2d_histogram(cls):
         """generate_test_figures_2d_histogram class method.
@@ -140,28 +160,9 @@ class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
         plot_function(*plot_3d_args, **kwargs)
         return fig
 
-    def setUp(self):
-        """setUp method from unittest.
-
-        Store start time for test method. Running time is computed and
-        displayed in the tearDown method.
-
-        """
-        self.start_time = time.time()
-
-    def tearDown(self):
-        """tearDown method from unittest.
-
-        Compute and display running time for test method.
-
-        """
-        elapsed_time = time.time() - self.start_time
-        if self.verbose:
-            print('\t{0:.3f} seconds elapsed\t'.format(elapsed_time), end='',
-                  flush=True)
-
     def test_plot_3d(self):
         """Plot 3d test."""
+        # TODO: Comply with `test_structure_for_mu_tests` structure.
         # Test 3d plots.
         self.assert_X_from_iterables(
             self.assertIsInstance,
@@ -180,6 +181,7 @@ class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
 
     def test_label_containers(self):
         """Label containers test."""
+        # TODO: Comply with `test_structure_for_mu_tests` structure.
         map_label_containers = map(
             mu.label_containers,
             (x.axes[0] for x in self.figures_2d_histogram))
@@ -191,6 +193,7 @@ class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
 
     def test_histogram_of_dataframe(self):
         """Histogram of dataframe test."""
+        # TODO: Comply with `test_structure_for_mu_tests` structure.
         tuple_of_figures_of_histograms = mu.histogram_of_dataframe(self.data)
 
         self.assertTrue(isinstance(tuple_of_figures_of_histograms, tuple))
@@ -208,89 +211,107 @@ class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
     def test_histogram_of_integers(self):
         """Histogram of integers test.
 
-        Test non contiguous blocks of data.
+        Test non contiguous blocks of data. The input for the test is a group
+        of non contiguous ranges.
+
+        These ranges are mapped with figures to a function that returns figures
+        with histograms on it.
 
         """
-        # Test some borderline cases for histogram of integers.
-        borderline_integer_sequence = (
-            itertools.chain(range(-10000, -9995),
-                            range(-10, 10),
-                            range(100, 110),
-                            range(10000, 10010)),
-            itertools.chain(range(-500, -490),
-                            range(500, 510),
-                            range(1000, 1010),),
-            itertools.chain(range(10),
-                            range(100000, 100005),),
-        )
-        borderline_integer_sequence = tuple(map(tuple,
-                                                borderline_integer_sequence))
+        # Test methodology: Create test support.
+        generate_random_test_function = lambda: tuple(itertools.chain(
+            range(
+                random.randint(0, 5),
+                random.randint(10, 15)),  # Has a maximum of 15 elements.
+            range(
+                random.randint(10000, 10000+5),
+                random.randint(10000+10, 10000+15))))   # Has a maximum of
+                                                        # 15 elements.
 
-        # Initialize auxiliar functions.
+        # Test methodology: Create test cases.
+        borderline_range01 = tuple(itertools.chain(
+            range(-10000, -9995),
+            range(-10, 10),
+            range(100, 110),
+            range(10000, 10010)))
+        borderline_range02 = tuple(itertools.chain(
+            range(-500, -490),
+            range(500, 510),
+            range(1000, 1010)))
+        borderline_range03 = tuple(itertools.chain(
+            range(10),
+            range(100000, 100005)))
+        test = self.create_test_cases(
+            generate_random_test_function,
+            borderline_range01,
+            borderline_range02,
+            borderline_range03,
+            is_graphical_test=True)
+
+        # Test methodology: Create test figures from test cases.
         def dist_plot_no_kde(fig, a):
             ax = fig.gca()
             mu.histogram_of_integers(a, kde=False, ax=ax)
             return fig
-        # Initialize figures.
-        figures = map(lambda x: plt.figure(),
-                      range(len(borderline_integer_sequence)))
-        # Plot histogram on figures.
-        figures_histogram = tuple(map(
+        test_figures_histogram = tuple(map(
             dist_plot_no_kde,
-            figures,
-            borderline_integer_sequence))
+            itertools.repeat(plt.figure()),
+            test))
 
+        # Test methodology: Run tests.
         self.assert_X_from_iterables(
             self.assertIsInstance,
-            (x.gca() for x in figures_histogram),
+            (x.gca() for x in test_figures_histogram),
             itertools.repeat(matplotlib.axes.Axes))
 
+        # Test methodology: Save persistency.
         if self.save_figures:
-            for i, f in enumerate(figures_histogram):
+            for i, f in enumerate(test_figures_histogram):
                 f.savefig('/tmp/test_histogram_of_integers_{0}.png'.format(i),
                           dpi=300)
 
     def test_add_summary_statistics_textbox(self):
         """Add summary statistics textbox test."""
+        # Test methodology: Create test support.
         # Initialize x values.
         x = np.linspace(-10, 10, self.n_lines)
+        # Initilize a random function to generate tests.
+        generate_random_test_function = lambda: self.compose_functions(x, 3)
 
-        # Initialize y values.
-        # Add some borderline cases to y.
-        y_borderline = (pd.Series(np.ones(self.n_lines)),
-                        pd.Series(np.zeros(self.n_lines)))
-        # Add other functions to y.
-        y = map(lambda x, y: pd.Series(self.compose_functions(x, 3)),
-                itertools.repeat(x),
-                range(self.n_graphical_tests - len(y_borderline)))
-        # Join both iterables. Needed in figures and texts.
-        y = tuple(itertools.chain(y_borderline, y))
+        # Test methodology: Create test cases.
+        test = self.create_test_cases(
+            generate_random_test_function,
+            np.ones(self.n_lines),  # borderline
+            np.zeros(self.n_lines),  # borderline
+            container_function=pd.Series)
+        test = tuple(test)
 
-        # Need to implement its own figures factory because it has to give
-        # series as argument.
-        figures = tuple(map(
-            lambda z: self.figure_from_plot_function(plt.plot, x, z), y))
+        # Test methodology: Create test figures from test cases.
+        test_figures = tuple(map(
+            lambda z: self.figure_from_plot_function(plt.plot, x, z), test))
 
-        texts = map(
+        # Test methodology: Create test texts from test cases.
+        test_texts = map(
             mu.add_summary_statistics_textbox,
-            y,
-            (x.gca() for x in figures))
-
-        texts = tuple(texts)
-        if not texts:
+            test,
+            (x.gca() for x in test_figures))
+        test_texts = tuple(test_texts)
+        # Check texts.
+        if not test_texts:
             raise Exception("Texts were not created accordingly.")
 
+        # Test methodology: Run tests.
         # Test this function with:
-        # Scatter plot.
-        # Bar plot.  # TODO
+        # Scatter plot.     # Done.
+        # Bar plot.         # TODO
         self.assert_X_from_iterables(
             self.assertIsInstance,
-            texts,
+            test_texts,
             itertools.repeat(matplotlib.text.Text))
 
         # TODO: remove this short circ.
         if self.save_figures or True:
-            for i, f in enumerate(figures):
+            for i, f in enumerate(test_figures):
                 f.savefig(
                     '/tmp/test_add_summary_statistics_textbox_{0}.png'.format(
                         i),
