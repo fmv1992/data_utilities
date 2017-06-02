@@ -256,9 +256,9 @@ class TestUtilitiesDataFrames(TestDataUtilitiesTestCase,
         ## values and non borderline values.
         ## XXX
 
-        ffobject = self._create_tuple_of_unique_values(int(1e5))
-        # Create dataframe of non-unique object values (to be transformed into
-        # categories).
-        # Create dummy non categorical data (to be kept as numbers).
-        import ipdb; ipdb.set_trace()  # XXX BREAKPOINT
-        raise Exception
+        ### ### ffobject = self._create_tuple_of_unique_values(int(1e5))
+        ### ### # Create dataframe of non-unique object values (to be transformed into
+        ### ### # categories).
+        ### ### # Create dummy non categorical data (to be kept as numbers).
+        ### ### import ipdb; ipdb.set_trace()  # XXX BREAKPOINT
+        ### ### raise Exception

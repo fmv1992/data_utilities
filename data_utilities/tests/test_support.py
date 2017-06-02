@@ -19,6 +19,7 @@ here:
 """
 
 
+import itertools
 import unittest
 import inspect
 import os
@@ -177,7 +178,11 @@ class TestDataUtilitiesTestCase(unittest.TestCase, metaclass=TestMetaClass):
         else:
             super().__setattr__(name, value)
 
-    def create_test_cases(self, *args, container_function=None, **kwargs):
+    def create_test_cases(self, generate_random_test_function,
+                          *borderline_test_cases,
+                          container_function=None,
+                          is_graphical_test=False,
+                          **container_function_kwargs):
         """Create a generator from mapping args to a container function.
 
         This function truncates the args according to n_tests. Likewise it
@@ -194,23 +199,32 @@ class TestDataUtilitiesTestCase(unittest.TestCase, metaclass=TestMetaClass):
         are not used.
 
         """
-        borderlines = args[:-1]  # May be empty if there is only one arg.
-        last_arg = args[-1]
-
-        # Warn if borderlines are smaller than n_tests.
-        if len(borderlines) < self.n_tests:
-            warnings.warn(
-                'Borderline values (len == {0}) are smaller than n_tests
-                ({1})'.format(len(borderlines), self.n_tests),
-                DataUtilitiesTestWarning)
-
-        # Warn if infinite_iterator is not infinite.
-        # TODO: maybe it is not possible.
-
-        if container_function is not None:
-            return map(lambda x: container_function(x, **kwargs), args)
+        if is_graphical_test:
+            n_tests = self.n_graphical_tests
         else:
-            return None
+            n_tests = self.n_tests
+        # Compute the number of runs for the last test.
+        n_run_last_args = n_tests - len(borderline_test_cases)
+        if n_run_last_args < 0:
+            # Warn if borderlines are smaller than n_tests.
+            warnings.warn(
+                'Borderline values (len == {0}) are smaller than n_tests '
+                '({1})'.format(len(borderline_test_cases), n_tests),
+                DataUtilitiesTestWarning)
+            n_run_last_args = 0
+
+        # Join arguments again.
+        joined_tests = itertools.chain(
+            borderline_test_cases,
+            (generate_random_test_function() for i in range(n_run_last_args)))
+        if container_function is not None:
+            joined_tests_w_container = map(
+                lambda x: container_function(x, **container_function_kwargs),
+                joined_tests)
+        else:
+            joined_tests_w_container = joined_tests
+
+        return joined_tests_w_container
 
 
     @classmethod
@@ -353,6 +367,30 @@ class TestSupport(TestDataUtilitiesTestCase,
             m.data = None
         except AttributeError:
             pass
+
+    def test_structure_for_mu_tests(self):
+        """Test structure for all tests in this module."""
+        # Test methodology: Create test support.
+        #   Create support variables for tests.
+
+        # Test methodology: Create test cases.
+        #   Create a test variable from `test = self.create_test_cases()`
+
+        # Test methodology: Create test objects from test cases.
+        #   Create test figures, texts, tuples, etc from test cases.
+
+        # Test methodology: Run tests.
+        #   Has to invoke `self.assert_X_from_iterables()`
+
+        # Test methodology: Save persistency.
+        #   (Optional) Save figures as needed
+        # if self.save_figures or True:
+        #     for i, f in enumerate(test_figures):
+        #         f.savefig(
+        #             '/tmp/test_add_summary_statistics_textbox_{0}.png'.format(
+        #                 i),
+        #             dpi=300)
+        pass
 
 
 class TestModule(TestDataUtilitiesTestCase, metaclass=TestMetaClass):

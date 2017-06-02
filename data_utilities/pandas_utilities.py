@@ -49,6 +49,7 @@ def categorical_serie_to_binary_dataframe(series,
         pandas.DataFrame: dataframe TODO.
 
     """
+    # Check the pandas crosstabulation function.It may do the same thing.
     df = pd.DataFrame()
     for i, uvalue in enumerate(series.unique()):
         # Create bool series.
