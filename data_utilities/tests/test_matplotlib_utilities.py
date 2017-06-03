@@ -46,6 +46,28 @@ class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
         ## TODO change `figures_3d` name to bar3d or something
         cls.figures_3d_scatterplot = cls._generate_scatterplot_test_figures()
         # Single axes 3d scatter plt.
+        # figures
+        # ├── figures_2d
+        # │   ├── histogram
+        # │   ├── lines
+        # │   └── scatter
+        # └── figures_3d
+        #     ├── bars
+        #     └── scatter
+        # TODO: What does matplotlib utilities need?
+        ##  an all figures attribute.
+        cls.figures = None
+        # TODO: What does matplotlib utilities need?
+        ##  an attribute with 2d figures.
+        cls.figures_2d = None
+        cls.figures_2d_histogram = None
+        cls.figures_2d_lines = None
+        cls.figures_2d_scatter = None
+        # TODO: What does matplotlib utilities need?
+        ##  an attribute with 3d figures.
+        cls.figures_3d = None
+        cls.figures_3d_bars = None
+        cls.figures_3d_scatter = None
 
     @classmethod
     def tearDownClass(cls):

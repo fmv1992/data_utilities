@@ -226,7 +226,6 @@ class TestDataUtilitiesTestCase(unittest.TestCase, metaclass=TestMetaClass):
 
         return joined_tests_w_container
 
-
     @classmethod
     def compose_functions(cls,
                           x,  # TODO: generalize for *args and enable functions to be more than 1 argument functions.
