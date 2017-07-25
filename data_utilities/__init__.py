@@ -31,6 +31,9 @@ module should mimick the development guidelines of its parent module.
 
 import unittest
 
+import numpy as np
+import random
+
 import data_utilities.tests.test_pandas_utilities as tpu
 import data_utilities.tests.test_matplotlib_utilities as tmu
 import data_utilities.tests.test_python_utilities as tpyu
@@ -165,4 +168,10 @@ def test(label='fast',
         test_objects))
     text_result.run(test_suite)
 
+    return None
+
+
+def set_random_seed(SEED):
+    np.random.seed(SEED)
+    random.seed(SEED)
     return None
