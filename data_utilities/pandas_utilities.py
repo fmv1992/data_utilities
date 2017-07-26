@@ -4,6 +4,7 @@ All the functions should follow matplotlib, pandas and numpy's guidelines:
     Pandas:
         (1) Return a copy of the object; use keyword argument 'inplace' if
         changing is to be done inplace.
+        No views of a dataframe shall be returned.
 
     Numpy:
         (1) Use the 'size' or 'shape' interface to determine the size of
@@ -33,6 +34,46 @@ except ImportError:
     def unidecode(x):
         """Mock unidecode function."""
         return x
+
+
+def balance_dataframe(dataframe, column_to_balance, ratio=1):
+    """Balance a given dataframe.
+
+    Balance a given dataframe considering the column_to_balance column. This
+    column must be binary.
+
+    Arguments:
+        dataframe (pandas.DataFrame): datframe to be balanced.
+        column_to_balance (str): column name to be balanced.
+        ratio (float): ratio of the most frequent value to the least frequent
+        value.
+
+    Returns:
+        pandas.DataFrame: the balanced dataframe
+
+    Example:
+        >>> df = pu.dummy_dataframe()
+        >>> df.loc[df.categorical_0 == 'ab', :] = 'ac'
+        >>> df.categorical_0.value_counts()
+        >>> y = pd.DataFrame(x)
+        >>> pu.balance_dataframe(y, y.columns[0]).categorical_0.value_counts()
+
+    """
+    # Store original dataframe index.
+    index = dataframe.index
+    # Count values to enable filtering.
+    value_counts = dataframe[column_to_balance].value_counts(ascending=False)
+    value_counts = value_counts[value_counts > 0]
+    # Unpack most frequent and unfrequent values.
+    vmax, vmin = value_counts.index.tolist()
+    # Create filter based on frequency.
+    samples_min_index = index[dataframe[column_to_balance] == vmin]
+    samples_max_index = index[dataframe[column_to_balance]
+                              == vmax][0:int(ratio * len(samples_min_index))]
+    # Create a view of the filtered dataframe.
+    new_index = np.concatenate((samples_min_index, samples_max_index))
+
+    return dataframe.loc[new_index, :]
 
 
 def categorical_serie_to_binary_dataframe(series, nan_code='nan',
@@ -109,7 +150,7 @@ def discover_csv_encoding(
                         print(one_enc)
                         print(df.loc[:, column].tail(10))
                         print(df.loc[:, column].str.contains(val_string).sum())
-                        print(10*'-')
+                        print(10 * '-')
                         break
                 except KeyError:
                     # raise KeyError(
@@ -188,9 +229,12 @@ def object_columns_to_category(df, cutoff=0.1, inplace=False):
         return df
 
 
-def rename_columns_to_lower(df):
+def rename_columns_to_lower(
+        df,
+        allowed_strings=string.ascii_lowercase + '_' + string.digits):
     u"""Rename columns to lowercase and only the symbol '_'."""
-    allowed_strings = string.ascii_lowercase + '_'
+    if not allowed_strings:
+        allowed_strings = string.ascii_lowercase + '_' + string.digits
     df.columns = list(
         map(lambda x: re.sub(
             '[^' + allowed_strings + ']',
@@ -315,7 +359,7 @@ def _construct_dataframe(shape, dict_of_functions):
     data_dictionary = dict()
     for i, func_key in zip(range(columns), itertools.cycle(dict_of_functions)):
         data_dictionary[func_key + '_' +
-                        str(i//n_keys)] = dict_of_functions[func_key]()
+                        str(i // n_keys)] = dict_of_functions[func_key]()
 
     return pd.DataFrame(data=data_dictionary)
 
