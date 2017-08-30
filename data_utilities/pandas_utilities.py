@@ -26,6 +26,8 @@ import string
 import re
 import warnings
 
+from collections import OrderedDict
+
 try:
     from unidecode import unidecode
 except ImportError:
@@ -453,6 +455,15 @@ def statistical_distributions_dataframe(shape=None):
         'rnd': rnd}
 
     return _construct_dataframe((rows, columns), dict_of_functions)
+
+
+def get_ordered_dict_from_feature_importances(classifier, attributes):
+    v = classifier.feature_importances_
+    k = attributes
+    assert(len(v) == len(k))
+    unordered = tuple(zip(k, v))
+    ordered = sorted(unordered, key=lambda x:x[1], reverse=False)
+    return OrderedDict(ordered)
 
 
 if __name__ == '__main__':
