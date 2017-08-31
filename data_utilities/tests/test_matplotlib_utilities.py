@@ -38,13 +38,13 @@ class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
         """
         # TODO: fix the 2 * N//2 != N issue that may happen.
 
-        # Single axes 2d figures (no colorbar or other features).
-        cls.figures_2d_histogram = cls._generate_test_figures_2d_histogram()
-        # Single axes 3d figures (no colorbar or other features).
-        ## TODO change `figures_3d` name to bar3d or something
-        cls.figures_3d = cls._generate_bar3d_test_figures()
-        ## TODO change `figures_3d` name to bar3d or something
-        cls.figures_3d_scatterplot = cls._generate_scatterplot_test_figures()
+        ### # Single axes 2d figures (no colorbar or other features).
+        ### cls.figures_2d_histogram = cls._generate_test_figures_2d_histogram()
+        ### # Single axes 3d figures (no colorbar or other features).
+        ### ## TODO change `figures_3d` name to bar3d or something
+        ### cls.figures_3d = cls._generate_bar3d_test_figures()
+        ### ## TODO change `figures_3d` name to bar3d or something
+        ### cls.figures_3d_scatterplot = cls._generate_scatterplot_test_figures()
         # Single axes 3d scatter plt.
         # figures
         # ├── figures_2d
@@ -54,20 +54,47 @@ class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
         # └── figures_3d
         #     ├── bars
         #     └── scatter
+        # Figure attributes.
+        #   Dictionaries which:
+        #       keys - complete filenames of the pictures
+        #       values - matplotlib figures
         # TODO: What does matplotlib utilities need?
         ##  an all figures attribute.
-        cls.figures = None
+        cls.figures = []
         # TODO: What does matplotlib utilities need?
         ##  an attribute with 2d figures.
-        cls.figures_2d = None
-        cls.figures_2d_histogram = None
-        cls.figures_2d_lines = None
-        cls.figures_2d_scatter = None
+        cls.figures_2d = []
+        cls.figures_2d_histogram = []
+        cls.figures_2d_lines = []
+        cls.figures_2d_scatter = []
         # TODO: What does matplotlib utilities need?
         ##  an attribute with 3d figures.
-        cls.figures_3d = None
-        cls.figures_3d_bars = None
-        cls.figures_3d_scatter = None
+        cls.figures_3d = []
+        cls.figures_3d_bars = []
+        cls.figures_3d_scatter = []
+
+    @classmethod
+    def generate_support_figures(
+            cls,
+            plt_action,
+            attribute_ref,
+            plt_action_kwargs={}):
+        """Generate support figures to test that modify existing figures.
+
+        Arguments:
+            plt_method: xxx ? method to call on figure ? xxx.
+            attribute_ref (list): attribute list to store generated figures.
+        """
+        attribute_ref = []
+        for i in range(cls.n_graphical_tests):
+            coordinates = cls.create_random_grid()
+            if len(coordinates) == 3:
+                fig, ax = plt.subplots(projection='3d')
+            elif len(coordinates) == 2:
+                fig, ax = plt.subplots()
+            plt_action(*coordinates, **plt_action_kwargs)
+            attribute_ref.append(fig)
+        return None
 
     @classmethod
     def tearDownClass(cls):
@@ -89,7 +116,8 @@ class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
         displayed in the tearDown method.
 
         """
-        self.start_time = time.time()
+        if self.verbose:
+            self.start_time = time.time()
 
     def tearDown(self):
         """tearDown method from unittest.
@@ -97,209 +125,30 @@ class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
         Compute and display running time for test method.
 
         """
-        elapsed_time = time.time() - self.start_time
         if self.verbose:
+            elapsed_time = time.time() - self.start_time
             print('\t{0:.3f} seconds elapsed\t'.format(elapsed_time), end='',
                   flush=True)
-
-    @classmethod
-    def _generate_test_figures_2d_histogram(cls):
-        """_generate_test_figures_2d_histogram class method.
-
-        Generate a tuple of 2d histogram figures.
-
-        """
-        # Create series. Will be divided by more than //2 when all plots are
-        # ready.
-        def dist_function01(): return np.random.normal(size=cls.n_lines)
-
-        def dist_function02(): return np.random.randint(
-            0,
-            99999) * np.arange(cls.n_lines)
-
-        def dist_function03(): return np.random.randint(
-            0,
-            99999) * np.ones(cls.n_lines)
-        dist_functions = (dist_function01, dist_function02, dist_function03)
-        iterable_of_series = (pd.Series(np.random.choice(dist_functions)())
-                              for _ in range(cls.n_graphical_tests//2))
-
-        # Create figures from series.
-        figures = tuple(map(
-            cls.figure_from_plot_function,
-            itertools.repeat(lambda x: sns.distplot(x, kde=False)),
-            iterable_of_series))
-
-        return figures
-
-    @classmethod
-    def _generate_test_figures_2d(cls):
-        """_generate_test_figures_2d class method.
-
-        Generate a tuple of 2d figures.
-
-        """
-        # TODO: implement or delete method
-        pass
-
-    @classmethod
-    def _generate_bar3d_test_figures(cls):
-        """Generate bar3d test figures class method.
-
-        Generate a tuple of 3d figures.
-
-        """
-        # Create random shapes for multi index series.
-        # Include these scenarios then fill the rest with random values.
-        include_3d_shapes = ((1, 1), (20, 20), (1, 100))
-        random_3d_shapes = (
-            (random.randint(1, 100),
-             random.randint(1, 100))
-            for x in range(cls.n_graphical_tests//2 - len(include_3d_shapes)))
-        shapes = tuple(itertools.chain(include_3d_shapes, random_3d_shapes))
-
-        # Creates a map of multi index from random shapes tuples.
-        # TODO: improve readability.
-        map_of_multi_indexes = map(
-            lambda x: pd.MultiIndex.from_tuples(tuple(itertools.product(
-                range(x[0]),
-                (chr(y + ord('a')) for y in range(x[1])))),
-                names=('x1', 'x2')),
-            shapes)
-
-        # Create series from multi indexes.
-        map_of_series = map(lambda x: pd.Series(np.random.normal(size=len(x)),
-                                                index=x),
-                            map_of_multi_indexes)
-
-        # Create figures from series.
-        figures = tuple(map(cls.figure_from_plot_function,
-                            itertools.repeat(mu.plot_3d),
-                            map_of_series))
-
-        return figures
-
-    @classmethod
-    def _generate_xyz_meshgrid(cls):
-        """Generate a tuple of (x, y, z) meshgrids.
-
-        Generate a tuple of meshgrids. Intended to help
-        _generate_scatterplot_test_figures.
-
-        """
-        n_points = 100
-        x_start = random.randint(0, 1000)
-        x_end = x_start + random.randint(1, 1000)
-        x = np.linspace(x_start, x_end, n_points)
-        y = x / random.randint(1, 100)
-
-        xx, yy = np.meshgrid(x, y)
-
-        zz = np.random.choice((np.sum, np.multiply))(xx, yy)
-
-        zz = cls.compose_functions(zz)
-
-        return (xx, yy, zz)
-
-    @classmethod
-    def _generate_scatterplot_test_figures(cls):
-        """Generate scatter plot test figures class method.
-
-        Generate a tuple of 3d figures.
-
-        """
-        # Test methodology: Create test support.
-
-        # Test methodology: Create test cases.
-        #   Create a test variable from `test = self.create_test_cases()`
-        test = cls.create_test_cases(
-            cls._generate_xyz_meshgrid,
-            is_graphical_test=True)
-
-        # Test methodology: Create test objects from test cases.
-        #   Create test figures, texts, tuples, etc from test cases.
-        test_figures = map(
-            cls.figure_from_plot_function,
-            itertools.repeat(plt.scatter),
-            test,
-            itertools.repeat({'projection': '3d'})
-        )
-        pass
-
-
-        # Test methodology: Run tests.
-        #   Has to invoke `self.assert_X_from_iterables()`
-
-        # Test methodology: Save persistency.
-        #   (Optional) Save figures as needed
-        # if self.save_figures or True:
-        #     for i, f in enumerate(test_figures):
-        #         f.savefig(
-        #             '/tmp/test_add_summary_statistics_textbox_{0}.png'.format(
-        #                 i),
-        #             dpi=300)
-        #######################################################################
-        ##########################   OLD   ####################################
-        #######################################################################
-        # Create random shapes for multi index series.
-        # Include these scenarios then fill the rest with random values.
-        include_3d_shapes = ((1, 1), (20, 20), (1, 100))
-        random_3d_shapes = (
-            (random.randint(1, 100),
-             random.randint(1, 100))
-            for x in range(cls.n_graphical_tests//2 - len(include_3d_shapes)))
-        shapes = tuple(itertools.chain(include_3d_shapes, random_3d_shapes))
-
-        # Creates a map of multi index from random shapes tuples.
-        # TODO: improve readability.
-        map_of_multi_indexes = map(
-            lambda x: pd.MultiIndex.from_tuples(tuple(itertools.product(
-                range(x[0]),
-                (chr(y + ord('a')) for y in range(x[1])))),
-                names=('x1', 'x2')),
-            shapes)
-
-        # Create series from multi indexes.
-        map_of_series = map(lambda x: pd.Series(np.random.normal(size=len(x)),
-                                                index=x),
-                            map_of_multi_indexes)
-
-        # Create figures from series.
-        figures = tuple(map(cls.figure_from_plot_function,
-                            itertools.repeat(mu.plot_3d),
-                            map_of_series))
-        #######################################################################
-        #######################################################################
-        #######################################################################
-
-        return figures
-
-    @classmethod
-    def figure_from_plot_function(cls, plot_function, *plot_3d_args, **kwargs):
-        """Initialize a figure and call a plot function on it."""
-        fig = plt.figure()
-        plot_function(*plot_3d_args, **kwargs)
-        return fig
 
     def test_add_summary_statistics_textbox(self):
         """Add summary statistics textbox test."""
         # Test methodology: Create test support.
-        # Initialize x values.
-        x = np.linspace(-10, 10, self.n_lines)
-        # Initilize a random function to generate tests.
-        generate_random_test_function = lambda: self.compose_functions(x, 3)
 
         # Test methodology: Create test cases.
         test = self.create_test_cases(
-            generate_random_test_function,
+            lambda: self.create_random_grid(xy_grid=True)[1],  # get y axis
             np.ones(self.n_lines),  # borderline
             np.zeros(self.n_lines),  # borderline
+            is_graphical_test=True,
             container_function=pd.Series)
         test = tuple(test)
 
         # Test methodology: Create test figures from test cases.
-        test_figures = tuple(map(
-            lambda z: self.figure_from_plot_function(plt.plot, x, z), test))
+        test_figures = []
+        for series in test:
+            figure, axes = plt.subplots()
+            axes.plot(*series)
+            test_figures.append(figure)
 
         # Test methodology: Create test texts from test cases.
         test_texts = map(
@@ -320,8 +169,7 @@ class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
             test_texts,
             itertools.repeat(matplotlib.text.Text))
 
-        # TODO: remove this short circ.
-        if self.save_figures or True:
+        if self.save_figures:
             for i, f in enumerate(test_figures):
                 f.savefig(
                     '/tmp/test_add_summary_statistics_textbox_{0}.png'.format(
@@ -475,5 +323,4 @@ class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
         # TODO: implement.
         pass
         # Test this attribute
-        self.figures_3d_scatterplot
 

@@ -128,6 +128,13 @@ def test(label='fast',
         raise NotImplementedError(
             "label == '{}' is not implemented yet.".format(label))
 
+    # Map a small correction of 'verbose' to 'verbosity' in TextTestRunner.
+    if updated_function_parameters['verbose']:
+        kwargs_test_runner['verbosity'] = 999
+    else:
+        kwargs_test_runner['verbosity'] = 0
+
+
     # Avoid recursion in case this function is called from test. Has to come
     # after the label testing part.
     # TODO: maybe modifying normal functions just to add a couple of lines to
@@ -144,8 +151,7 @@ def test(label='fast',
     TestDataUtilitiesTestCase.update_data()
 
     # Initial definitions.
-    text_result = unittest.TextTestRunner(verbosity=verbose,
-                                          **kwargs_test_runner)
+    text_result = unittest.TextTestRunner(**kwargs_test_runner)
 
     # Filter test cases.
     test_objects = list()

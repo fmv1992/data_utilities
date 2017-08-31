@@ -30,6 +30,7 @@ import warnings
 import data_utilities as du
 from data_utilities import pandas_utilities as pu
 import numpy as np
+from sklearn.preprocessing import MinMaxScaler
 
 
 def setUpModule():
@@ -105,32 +106,35 @@ class TestMetaClass(type):
             return None
         classdict['assert_X_from_iterables'] = assert_X_from_iterables
 
-        @property
-        def verbose(cls):
-            """Return the verbosity setting of the currently running unittest.
+        # TODO: reactivate when unittests are up.
+        # Investigate implications for current parsing/setting of attributes.
+        # @property
+        # def verbose(cls):
+        #     """Return the verbosity setting of the currently running unittest.
 
-            This function 'scans' the frame looking for a 'cls' variable.
+        #     This function 'scans' the frame looking for a 'cls' variable.
 
-            Returns:
-                int: the verbosity level.
+        #     Returns:
+        #         int: the verbosity level.
 
-                0 if this is the __main__ file
-                1 if run with unittests module without verbosity (default in
-                TestProgram)
-                2 if run with unittests module with verbosity
-            """
-            frame = inspect.currentframe()
-            # Scans frames from innermost to outermost for a TestProgram
-            # instance.  This python object has a verbosity defined in it.
-            while frame:
-                cls = frame.f_locals.get('cls')
-                if isinstance(cls, unittest.TestProgram):
-                    return cls.verbose
-                # Proceed to one outer frame.
-                frame = frame.f_back
-            return 0
+        #         0 if this is the __main__ file
+        #         1 if run with unittests module without verbosity (default in
+        #         TestProgram)
+        #         2 if run with unittests module with verbosity
+        #     """
+        #     frame = inspect.currentframe()
+        #     # Scans frames from innermost to outermost for a TestProgram
+        #     # instance.  This python object has a verbosity defined in it.
+        #     while frame:
+        #         cls = frame.f_locals.get('cls')
+        #         if isinstance(cls, unittest.TestProgram):
+        #             return cls.verbose
+        #         # Proceed to one outer frame.
+        #         frame = frame.f_back
+        #     return 0
         # METACLASS: set verbosity.
-        classdict['verbose'] = verbose
+        # classdict['verbose'] = verbose
+
         return type.__new__(mcs, name, bases, classdict)
 
     def __init__(cls, name, bases, classdict, **kwargs):
@@ -177,6 +181,61 @@ class TestDataUtilitiesTestCase(unittest.TestCase, metaclass=TestMetaClass):
                  ).format(name, self.__class__))
         else:
             super().__setattr__(name, value)
+
+    @classmethod
+    def create_random_grid(cls,
+                           x=None,
+                           x_grid=False,
+                           xy_grid=True,
+                           xyz_grid=False,
+                           normalize=True,
+                           maximum_amplitude=50,
+                           compose_functions_kwargs={}):
+        """Create a random grid of values to generate meaningful test cases."""
+        # TODO: what to do when more than one grid is specified?
+        # if xy_grid and xyz_grid:
+        #     raise ValueError('Either specify xy or xyz grid.')
+
+        # Initialize constants.
+        AMPLITUDE = 1000
+        N_POINTS = cls.n_lines
+
+        # Initialize x and y.
+        if x is None:
+            x_min = np.random.randint(-AMPLITUDE, AMPLITUDE)
+            x_max = x_min + np.random.randint(0, AMPLITUDE)
+            x = np.linspace(x_min, x_max, N_POINTS)
+        y = cls.compose_functions(x, **compose_functions_kwargs)
+
+        # Initialize z if needed.
+        if xyz_grid:
+            x , y = np.meshgrid(x, y)
+            z = cls.compose_functions(
+                x + y,
+                **compose_functions_kwargs)
+
+        # Normalize data if needed.
+        if normalize:
+            scaler = MinMaxScaler(feature_range=(0, maximum_amplitude))
+            if xyz_grid:
+                expanded = np.append(x, (y, z))
+            if xy_grid:
+                expanded = np.append(x, y)
+            scaler.fit(expanded.reshape(-1, 1))
+            x = scaler.transform(x.reshape(-1, 1)).flatten()
+            y = scaler.transform(y.reshape(-1, 1)).flatten()
+            if xyz_grid:
+                z = scaler.transform(z.reshape(-1, 1)).flatten()
+
+        # Return the adequate return value.
+        if x_grid:
+            return (x, )
+        if xy_grid:
+            return (x, y)
+        if xyz_grid:
+            return (x, y, z)
+
+
 
     def create_test_cases(self, generate_random_test_function,
                           *borderline_test_cases,
@@ -231,7 +290,7 @@ class TestDataUtilitiesTestCase(unittest.TestCase, metaclass=TestMetaClass):
                           x,  # TODO: generalize for *args and enable functions to be more than 1 argument functions.
                           number_of_compositions=1,
                           functions=(np.sin, np.exp, np.square, np.polyval,
-                                     np.tan, ),
+                                     np.tan, np.copy, np.random.random ),
                           clip_big_values=True,
                           clip_value=1e6):
         """Compose functions from an iterable of functions.
@@ -250,19 +309,20 @@ class TestDataUtilitiesTestCase(unittest.TestCase, metaclass=TestMetaClass):
             y (numpy.array): array of composed functions
 
         """
-        i = 0
         y = x
-        while i < number_of_compositions:
+        while number_of_compositions > 0:
             func = np.random.choice(functions)
             if func == np.polyval:
                 n_coefs = np.random.randint(0, 10)
                 coefs = np.random.randint(-50, 50, size=n_coefs)
                 y = func(coefs, x)
+            elif func == np.random.random:
+                y = func(size=len(x)) - 0.5
             else:
                 y = func(y)
             if clip_big_values:
                 y = np.clip(y, -clip_value, clip_value)
-            i += 1
+            number_of_compositions -= 1
         return y
 
     # Goes with 'fast' parameters by default.
@@ -309,6 +369,19 @@ class TestSupport(TestDataUtilitiesTestCase,
 
     def tearDown(self):
         """tearDown method from unittest."""
+        pass
+
+    def test_create_test_cases(self):
+        """Create test cases test."""
+        self.create_test_cases(np.random.random)
+        # TODO: improve the logic of this test.
+        pass
+
+    def test_create_random_grid(self):
+        """Create random grid test."""
+        self.create_random_grid()
+        self.create_random_grid(xy_grid=False, xyz_grid=True)
+        # TODO: improve the logic of this test.
         pass
 
     def test_test_framework(self):
