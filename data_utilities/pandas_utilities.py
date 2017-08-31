@@ -466,6 +466,41 @@ def get_ordered_dict_from_feature_importances(classifier, attributes):
     return OrderedDict(ordered)
 
 
+def get_numeric_columns(dataframe):
+    numeric_dtypes = ['int16', 'int32', 'int64', 'float16', 'float32',
+                      'float64', 'bool']
+    numeric_columns = (dataframe.dtypes.apply(str).isin(
+        numeric_dtypes) == True)
+    numeric_columns = numeric_columns.index[numeric_columns]
+    return numeric_columns
+
+def split_array_into_n_groups(series, n_groups=100):
+    """Helper function to groupby method of dataframe.
+
+    Input should be a sorted array.
+    """
+    # Check that the array is sorted.
+    assert series.is_monotonic
+
+    alen = len(series)
+    repeat_times = alen // n_groups
+    remainder = alen % n_groups
+
+    repeat_array = np.repeat(np.arange(n_groups), repeat_times)
+    if remainder == 0:
+        combined_array = repeat_array
+    else:
+        remainder_array = np.arange(remainder)
+        combined_array = np.concatenate(
+            (np.stack((repeat_array[:remainder], remainder_array), axis=1).flatten(),
+            repeat_array[remainder:]))
+
+    return pd.DataFrame({series.name: series, 'groups': combined_array}).groupby('groups')
+
+
+
+
+
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
