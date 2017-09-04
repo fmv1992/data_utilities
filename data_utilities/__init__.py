@@ -42,6 +42,8 @@ from data_utilities.tests.test_support import TestDataUtilitiesTestCase
 
 __version__ = '1.2.7'
 
+# pylama: ignore=D406,D407
+
 
 def test(label='fast',
          verbose=False,                 # Must match the default values for
@@ -171,7 +173,16 @@ def test(label='fast',
     return None
 
 
-def set_random_seed(SEED):
-    np.random.seed(SEED)
-    random.seed(SEED)
+def set_random_seed(seed):
+    """Set relevant random seed for all applicable modules.
+
+    Arguments:
+        seed (int): seed the random state of the random module and np.random.
+
+    Returns:
+        None
+
+    """
+    np.random.seed(seed)
+    random.seed(seed)
     return None
