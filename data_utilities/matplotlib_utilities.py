@@ -34,6 +34,7 @@ import pandas as pd
 import seaborn as sns
 
 # pylama: ignore=W0611,D301
+## pylama: ignore=D406,D407  # TODO: add this too
 
 
 def scale_axes_axis(axes, scale_xy_axis=False, scale_z_axis=False):
