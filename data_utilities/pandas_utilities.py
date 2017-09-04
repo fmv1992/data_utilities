@@ -1,4 +1,5 @@
 """Pandas utilities for common data management procedures.
+
 All the functions should follow matplotlib, pandas and numpy's guidelines:
 
     Pandas:
@@ -474,13 +475,13 @@ def get_numeric_columns(dataframe):
     numeric_columns = numeric_columns.index[numeric_columns]
     return numeric_columns
 
-def split_array_into_n_groups(series, n_groups=100):
+def group_sorted_series(series, n_groups=100):
     """Helper function to groupby method of dataframe.
 
     Input should be a sorted array.
     """
     # Check that the array is sorted.
-    assert series.is_monotonic
+    assert series.is_monotonic, "Provided series is not monotonic."
 
     alen = len(series)
     repeat_times = alen // n_groups
