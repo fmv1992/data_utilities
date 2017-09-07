@@ -458,13 +458,6 @@ def statistical_distributions_dataframe(shape=None):
     return _construct_dataframe((rows, columns), dict_of_functions)
 
 
-def get_ordered_dict_from_feature_importances(classifier, attributes):
-    v = classifier.feature_importances_
-    k = attributes
-    assert(len(v) == len(k))
-    unordered = tuple(zip(k, v))
-    ordered = sorted(unordered, key=lambda x:x[1], reverse=False)
-    return OrderedDict(ordered)
 
 
 def get_numeric_columns(dataframe):
@@ -474,6 +467,7 @@ def get_numeric_columns(dataframe):
         numeric_dtypes) == True)
     numeric_columns = numeric_columns.index[numeric_columns]
     return numeric_columns
+
 
 def group_sorted_series(series, n_groups=100):
     """Helper function to groupby method of dataframe.
@@ -497,8 +491,6 @@ def group_sorted_series(series, n_groups=100):
             repeat_array[remainder:]))
 
     return pd.DataFrame({series.name: series, 'groups': combined_array}).groupby('groups')
-
-
 
 
 
