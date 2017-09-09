@@ -26,8 +26,6 @@ import string
 import re
 import warnings
 
-from collections import OrderedDict
-
 try:
     from unidecode import unidecode
 except ImportError:
@@ -179,54 +177,75 @@ def load_csv_from_zip(zippath, *args, **kwargs):
 
 # Section on dataframe/series mutation (with inplace option).
 # -----------------------------------------------------------
-def balance_dataframe(dataframe, column_to_balance=None, ratio=1):
-    """Balance a given dataframe.
+def balance_ndframe(ndframe_obj,
+                    column_to_balance=None,
+                    ratio=1,
+                    inplace=False):
+    """Balance a given ndframe_obj.
 
-    Balance a given dataframe considering the column_to_balance column. This
-    column must be binary.
+    Balance a given ndframe_obj/series considering the column_to_balance
+    column. This column must be binary.
 
     Arguments:
-        dataframe (pandas.DataFrame): datframe to be balanced.
+        ndframe_obj (pandas.ndframe_obj): ndframe_obj/series to be balanced.
         column_to_balance (str): column name to be balanced.
         ratio (float): ratio of the most frequent value to the least frequent
         value.
 
     Returns:
-        pandas.DataFrame: the balanced dataframe
+        pandas.ndframe_obj: the balanced ndframe_obj
 
     Example:
-        >>> from data_utilities import pandas_utilities as pu
         >>> np.random.seed(0)
         >>> series = pd.Series(np.random.choice(list('abc'), size=1000))
-        >>> series[series == 'b'] = 'a'
-        >>> vc = series.value_counts()
-        >>> np.isclose(vc[0] / vc[1], 2, atol=1e-1)
+        >>> series[series == 'c'] = 'a'
+        >>> balanced = balance_ndframe(series)
+        >>> vc = balanced.value_counts()
+        >>> np.isclose(vc[0] / vc[1], 1)
         True
 
     """
-    if column_to_balance is None:
-        column_to_balance = dataframe.name
-    # Store original dataframe index.
-    index = dataframe.index
+    if column_to_balance is not None:
+        series_to_balance = ndframe_obj[column_to_balance]
+    else:
+        series_to_balance = ndframe_obj
+    # Store original ndframe_obj index.
+    index = series_to_balance.index
     # Count values to enable filtering.
-    value_counts = dataframe[column_to_balance].value_counts(ascending=False)
+    value_counts = series_to_balance.value_counts(ascending=False)
     value_counts = value_counts[value_counts > 0]
     # Unpack most frequent and unfrequent values.
     vmax, vmin = value_counts.index.tolist()
     # Create filter based on frequency.
-    samples_min_index = index[dataframe[column_to_balance] == vmin]
-    samples_max_index = index[dataframe[column_to_balance]
-                              == vmax][0:int(ratio * len(samples_min_index))]
-    # Create a view of the filtered dataframe.
-    new_index = np.concatenate((samples_min_index, samples_max_index))
+    samples_min_index = index[series_to_balance == vmin]
+    samples_max_index = index[series_to_balance == vmax]
+    samples_max_balanced_index = index[series_to_balance == vmax][
+        0:int(ratio * len(samples_min_index))]
 
-    return dataframe.loc[new_index, :]
+    # Assert that the given ratio is possible.
+    max_ratio = len(samples_max_index) / len(samples_min_index)
+    calculated_ratio = len(samples_max_balanced_index) / len(samples_min_index)
+    assert ratio <= max_ratio, \
+        'Given ratio is infeasible (given={0}, maximum={1}.'.format(
+            ratio, max_ratio)
+    assert np.isclose(ratio, calculated_ratio, atol=1e-2), \
+        'Calculated ratios differ: (given={0}, calculated={1}.'.format(
+            ratio, calculated_ratio)
+
+    # Create a view of the filtered series_to_balance.
+    new_index = pd.Index(np.concatenate((samples_min_index,
+                                         samples_max_balanced_index)))
+    if inplace:
+        complementar_index = index.drop(new_index)
+        ndframe_obj.index.drop(complementar_index, inplace=True)
+        return None
+    else:
+        return ndframe_obj.loc[new_index].copy()
 
 
 def categorical_serie_to_binary_dataframe(series, nan_code='nan',
                                           include_nan=False):
-    """
-    Transform a categorical serie into a binary dataframe.
+    """Transform a categorical serie into a binary dataframe.
 
     Arguments:
         series (pandas.Series): series TODO.
@@ -456,10 +475,11 @@ def find_components_of_array(x, y, atol=1e-5, assume_int=False):
 
 
 def get_numeric_columns(dataframe):
+    """Get numeric columns from a dataframe."""
     numeric_dtypes = ['int16', 'int32', 'int64', 'float16', 'float32',
                       'float64', 'bool']
-    numeric_columns = (dataframe.dtypes.apply(str).isin(
-        numeric_dtypes) == True)
+    numeric_columns = (
+        dataframe.dtypes.apply(str).isin(numeric_dtypes) == True)  # noqa
     numeric_columns = numeric_columns.index[numeric_columns]
     return numeric_columns
 
@@ -472,7 +492,6 @@ def group_sorted_series_into_n_groups(series, n_groups=100):
     Input should be a sorted array.
 
     Examples:
-
         >>> from data_utilities import pandas_utilities as pu
         >>> from scipy.special import expit
         >>> np.random.seed(0)
@@ -496,17 +515,18 @@ def group_sorted_series_into_n_groups(series, n_groups=100):
     else:
         remainder_array = np.arange(remainder)
         combined_array = np.concatenate(
-            (np.stack((repeat_array[:remainder], remainder_array), axis=1).flatten(),
-            repeat_array[remainder:]))
+            (np.stack(
+                (repeat_array[:remainder], remainder_array), axis=1).flatten(),
+             repeat_array[remainder:]))
 
-    return pd.DataFrame({series.name: series, 'groups': combined_array}).groupby('groups')
+    return pd.DataFrame(
+        {series.name: series, 'groups': combined_array}).groupby('groups')
 
 
 # Section: deprecated functions.
 # ------------------------------
 def series_to_ascii(series):
-    """
-    Change columns to lowercase strings inplace.
+    """Change columns to lowercase strings inplace.
 
     Arguments:
         series (pandas.Series): series to be modified.
