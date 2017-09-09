@@ -95,7 +95,7 @@ class TestMetaClass(type):
         # TODO: maybe this could be just put in the base class instead of in
         # the meta class.
         def assert_X_from_iterables(self, x=lambda: True, *args, **kwargs):
-            func = getattr(self, x.__name__)
+            func = getattr(self, x.__name__, x)
             for i, zipargs in enumerate(zip(*args)):
                 # print('iteration i:', i)
                 with self.subTest(iteration=i, arguments=zipargs):
