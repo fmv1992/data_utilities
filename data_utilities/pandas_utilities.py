@@ -100,6 +100,9 @@ def dummy_dataframe(
         series_int=None,
         series_object=None):
     """Create an out-of-the-box dataframe with different datatype series."""
+    # TODO: rework function. It makes no sense to specify series and all into a
+    # function when one could just append those and create a dataframe.
+
     # TODO: implement a boolean series.
     # Default value.
     if shape is None:
@@ -176,7 +179,7 @@ def load_csv_from_zip(zippath, *args, **kwargs):
 
 # Section on dataframe/series mutation (with inplace option).
 # -----------------------------------------------------------
-def balance_dataframe(dataframe, column_to_balance, ratio=1):
+def balance_dataframe(dataframe, column_to_balance=None, ratio=1):
     """Balance a given dataframe.
 
     Balance a given dataframe considering the column_to_balance column. This
@@ -192,13 +195,17 @@ def balance_dataframe(dataframe, column_to_balance, ratio=1):
         pandas.DataFrame: the balanced dataframe
 
     Example:
-        >>> df = pu.dummy_dataframe()
-        >>> df.loc[df.categorical_0 == 'ab', :] = 'ac'
-        >>> df.categorical_0.value_counts()
-        >>> y = pd.DataFrame(x)
-        >>> pu.balance_dataframe(y, y.columns[0]).categorical_0.value_counts()
+        >>> from data_utilities import pandas_utilities as pu
+        >>> np.random.seed(0)
+        >>> series = pd.Series(np.random.choice(list('abc'), size=1000))
+        >>> series[series == 'b'] = 'a'
+        >>> vc = series.value_counts()
+        >>> np.isclose(vc[0] / vc[1], 2, atol=1e-1)
+        True
 
     """
+    if column_to_balance is None:
+        column_to_balance = dataframe.name
     # Store original dataframe index.
     index = dataframe.index
     # Count values to enable filtering.
@@ -457,10 +464,24 @@ def get_numeric_columns(dataframe):
     return numeric_columns
 
 
-def group_sorted_series(series, n_groups=100):
-    """Helper function to groupby method of dataframe.
+def group_sorted_series_into_n_groups(series, n_groups=100):
+    """Group sorted series into N groups.
+
+    Useful to compute aggregation statistic in the divided groups.
 
     Input should be a sorted array.
+
+    Examples:
+
+        >>> from data_utilities import pandas_utilities as pu
+        >>> from scipy.special import expit
+        >>> np.random.seed(0)
+        >>> x = pd.Series(np.random.normal(size=10000))
+        >>> y_predicted_proba = expit(x.sort_values())
+        >>> gb = pu.group_sorted_series_into_n_groups(y_predicted_proba)
+        >>> gb.mean().iloc[:, 0].is_monotonic
+        True
+
     """
     # Check that the array is sorted.
     assert series.is_monotonic, "Provided series is not monotonic."
