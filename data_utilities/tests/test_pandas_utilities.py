@@ -12,7 +12,7 @@ from data_utilities.tests.test_support import (
 
 
 def setUpModule():
-    """Setup TestDataUtilitiesTestCase 'data' attribute.
+    """Set up TestDataUtilitiesTestCase 'data' attribute.
 
     Useful if there is a unittest being run.
     """
@@ -35,11 +35,11 @@ class TestFindComponentsOfArray(TestDataUtilitiesTestCase,
 
     @classmethod
     def setUpClass(cls):
-        """setUpClass class method from unittest."""
+        """Set up class method from unittest."""
         pass
 
     def setUp(self):
-        """setUp method from unittest."""
+        """Set up method from unittest."""
         pass
 
     # TODO: transform in a _method.
@@ -121,7 +121,7 @@ class TestUtilitiesDataFrames(TestDataUtilitiesTestCase,
     """
 
     def setUp(self):
-        """setUp method from unittest.
+        """Set up method from unittest.
 
         Initialize random values to be tested and borderline cases.
 
@@ -176,3 +176,63 @@ class TestUtilitiesDataFrames(TestDataUtilitiesTestCase,
         """Statistical distributions dataframe test."""
         self._test_off_the_shelf_functions(
             pu.statistical_distributions_dataframe)
+
+
+class TestBalanceNDFrame(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
+    """Test class for balance_ndframe of pandas_utilities."""
+
+    def test(self):
+        """Execute the test for the aforementioned function."""
+        def _get_ratio_from_series(series):
+            vc = series.value_counts()
+            return vc.iloc[0] / vc.iloc[1]
+
+        # Create all series.
+        all_series = (self._get_series() for x in range(self.n_tests//2))
+
+        # Calculate their ratio.
+        all_max_ratios = tuple(map(
+            _get_ratio_from_series,
+            all_series))
+
+        # Create new ratios that are feasible.
+        possible_ratios = tuple(random.random() * x for x in all_max_ratios)
+
+        # Balance the series.
+        all_b_series = tuple(map(pu.balance_ndframe,
+                                 all_series,
+                                 itertools.repeat(None),
+                                 possible_ratios))
+
+        # Calculate their new balanced ratio.
+        all_calculated_ratios = tuple(map(
+            _get_ratio_from_series,
+            all_b_series))
+
+        ratio_comparisons = map(lambda a, b: np.isclose(a, b, atol=1e-2),
+                                all_calculated_ratios,
+                                possible_ratios)
+
+        self.assert_X_from_iterables(
+            self.assertTrue,
+            ratio_comparisons)
+
+    def _get_series(self):
+        """Return series to be tested."""
+        categories = random.choice(((0, 1), ('a', 'b')))
+        bias = np.random.random() * .95
+        array = np.random.choice(categories, size=self.n_lines, p=(bias,
+                                                                   1-bias))
+        return pd.Series(array)
+
+    def _get_dataframe(self):
+        """Return a tuple of (dataframe, column name to be tested)."""
+        df = pu.dummy_dataframe()
+        lines, columns = df.shape
+        categories = random.choice(((0, 1), ('a', 'b')))
+        bias = np.random.random() * .95
+        array = np.random.choice(categories, size=lines, p=(bias, 1-bias))
+        index = df.columns[random.randint(0, columns)]
+        df.loc[:, index] = array
+
+        return (df, index)
