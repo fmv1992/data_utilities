@@ -5,7 +5,6 @@ All the functions should follow matplotlib, pandas and numpy's guidelines:
     Pandas:
         (1) Return a copy of the object; use keyword argument 'inplace' if
         changing is to be done inplace.
-        No views of a dataframe shall be returned.
 
     Numpy:
         (1) Use the 'size' or 'shape' interface to determine the size of
@@ -39,6 +38,144 @@ except ImportError:
         return x
 
 
+# Section on dataframe loading and creating.
+# ------------------------------------------
+def _construct_dataframe(shape, dict_of_functions):
+    """Build a dataframe with a given ship from a dictionary of functions."""
+    rows, columns = shape
+    n_keys = len(dict_of_functions)
+    data_dictionary = dict()
+    for i, func_key in zip(range(columns), itertools.cycle(dict_of_functions)):
+        data_dictionary[func_key + '_' +
+                        str(i // n_keys)] = dict_of_functions[func_key]()
+
+    return pd.DataFrame(data=data_dictionary)
+
+
+def statistical_distributions_dataframe(shape=None):
+    """Create an out-of-the-box dataframe with common distrubutions.
+
+    Arguments:
+        n (int): number of rows in the dataframe.
+
+    Returns:
+        dataframe: (pandas.DataFrame): The dataframe of the common statistical
+    distributions.
+
+    Examples:
+        >>> True
+        True
+        >>> # TODO:
+
+
+    """
+    if shape is None:
+        rows, columns = (1000, 4)
+    elif isinstance(shape, int):
+        rows, columns = (shape, 4)
+    else:
+        rows, columns = shape
+
+    def chisq(): return np.random.chisquare(5, size=rows)
+
+    def stdnorm(): return np.random.standard_normal(size=rows)
+
+    def logistic(): return np.random.logistic(size=rows)
+
+    def rnd(): return np.random.random(size=rows)
+
+    dict_of_functions = {
+        'chisq': chisq,
+        'stdnorm': stdnorm,
+        'logistic': logistic,
+        'rnd': rnd}
+
+    return _construct_dataframe((rows, columns), dict_of_functions)
+
+
+def dummy_dataframe(
+        shape=None,
+        series_categorical=None,
+        series_float=None,
+        series_int=None,
+        series_object=None):
+    """Create an out-of-the-box dataframe with different datatype series."""
+    # TODO: implement a boolean series.
+    # Default value.
+    if shape is None:
+        rows, columns = (1000, 5)
+    elif isinstance(shape, int):
+        rows, columns = (shape, 5)
+    else:
+        rows, columns = shape
+
+    # Requirements:
+    #   a) unique 10 objects when n -> inf
+    #   b) 100 objects when n = 10e4
+    #   c) 3 objects when n = 3
+    if series_categorical is None:
+        n_objs = int(7e-4 * rows + 3) if rows <= 10000 else 10
+        categories = list(
+            itertools.islice(
+                map(lambda x: ''.join(x),
+                    itertools.product(string.ascii_lowercase,
+                                      string.ascii_lowercase)),
+                n_objs))
+
+    def f_bool(): return np.random.randint(0, 1 + 1, size=rows, dtype=bool)
+
+    def f_categorical(): return pd.Series(
+        np.random.choice(categories, size=rows)).astype('category')
+
+    def f_float(): return np.random.normal(size=rows)
+
+    def f_int(): return np.arange(rows)
+
+    def f_object(): return np.random.choice(categories, size=rows)
+
+    dict_of_functions = {
+        'bool': f_bool,
+        'categorical': f_categorical,  # TODO: change to category.
+        'float': f_float,
+        'int': f_int,
+        'object': f_object}
+
+    return _construct_dataframe((rows, columns), dict_of_functions)
+
+
+def read_string(string, **kwargs):
+    u"""Read string and transform to a DataFrame."""
+    try:
+        kwargs['sep']
+    except KeyError:
+        kwargs['sep'] = '\s+'
+    return pd.read_csv(
+        io.StringIO(string),
+        **kwargs)
+
+
+def load_csv_from_zip(zippath, *args, **kwargs):
+    u"""Load a csv file inside a zip file.
+
+    Arguments:
+        zippath (str): a valid file path leading to a zip file with a single
+        csv file in it.
+
+    Returns:
+        DataFrame: a pandas dataframe loaded from the zipfile.
+
+    """
+    with zipfile.ZipFile(zippath, 'r') as zipfileobj:
+        zip_file_list = zipfileobj.namelist()
+        if len(zip_file_list) == 1:
+            with zipfileobj.open(zip_file_list[0], 'r') as csvfile:
+                return pd.read_csv(csvfile, *args, **kwargs)
+        else:
+            raise ValueError('Zipfile conains more than one file.')
+
+
+# Section on dataframe/series mutation (with inplace option).
+# -----------------------------------------------------------
 def balance_dataframe(dataframe, column_to_balance, ratio=1):
     """Balance a given dataframe.
 
@@ -99,99 +236,6 @@ def categorical_serie_to_binary_dataframe(series, nan_code='nan',
     return df
 
 
-def series_to_ascii(series):
-    """
-    Change columns to lowercase strings inplace.
-
-    Arguments:
-        series (pandas.Series): series to be modified.
-
-    Returns:
-        pandas.Series: series with lowercase and no symbols.
-
-    """
-    series = series.copy(True)
-    series = series.apply(unidecode)
-    series = series.str.lower()
-    series = series.str.replace('[^a-zA-Z0-9_]', '_')
-
-    return series
-
-
-def discover_csv_encoding(
-        csvpath,
-        stop_on_first_found_encoding=True,
-        validate_strings=(),):
-    u"""Given a csv file path discover a list of encodings."""
-    ALL_ENCODINGS = set(encodings.aliases.aliases.values())
-    # ALL_ENCODINGS = set(encodings.aliases.aliases.keys())
-    PRIORITY_ENCODINGS = set(['utf-8', 'cp1250'])
-
-    list_of_working_encodings = []
-    with open(csvpath, 'rb') as f:
-        loaded_csv = f.read()
-    for one_enc in PRIORITY_ENCODINGS | ALL_ENCODINGS:
-        try:
-            df = pd.read_csv(
-                io.StringIO(loaded_csv.decode(one_enc)),
-                encoding=one_enc,
-                low_memory=False)
-        # except UnicodeDecodeError:
-            # pass
-        # except LookupError:
-            # pass
-        # TODO: fix this general expression # noqa
-        except Exception:  # noqa
-            continue
-        if validate_strings:
-            for column, val_string in validate_strings:
-                try:
-                    # Sum will be greater than 0 if value is found.
-                    # Thus it will evaluate to false.
-                    # If no value is found then the loop is broken.
-                    if not df.loc[:, column].str.contains(val_string).sum():
-                        print(one_enc)
-                        print(df.loc[:, column].tail(10))
-                        print(df.loc[:, column].str.contains(val_string).sum())
-                        print(10 * '-')
-                        break
-                except KeyError:
-                    # raise KeyError(
-                        # 'the label [{0}] was not found. '
-                        # 'The columns are: {1}'.format(
-                            # column,
-                            # sorted(df.columns.tolist())))
-                    break
-            # If list is exhausted then go inside else statement.
-            else:
-                list_of_working_encodings.append(one_enc)
-        else:
-            list_of_working_encodings.append(one_enc)
-        if stop_on_first_found_encoding and list_of_working_encodings:
-            break
-    return list_of_working_encodings
-
-
-def load_csv_from_zip(zippath, *args, **kwargs):
-    u"""Load a csv file inside a zip file.
-
-    Arguments:
-        zippath (str): a valid file path leading to a zip file with a single
-        csv file in it.
-
-    Returns:
-        DataFrame: a pandas dataframe loaded from the zipfile.
-
-    """
-    with zipfile.ZipFile(zippath, 'r') as zipfileobj:
-        zip_file_list = zipfileobj.namelist()
-        if len(zip_file_list) == 1:
-            with zipfileobj.open(zip_file_list[0], 'r') as csvfile:
-                return pd.read_csv(csvfile, *args, **kwargs)
-        else:
-            raise ValueError('Zipfile conains more than one file.')
-
-
 def object_columns_to_category(df, cutoff=0.1, inplace=False):
     u"""Transform object columns into categorical columns.
 
@@ -246,17 +290,66 @@ def rename_columns_to_lower(
             df.columns))
 
 
-def read_string(string, **kwargs):
-    u"""Read string and transform to a DataFrame."""
-    try:
-        kwargs['sep']
-    except KeyError:
-        kwargs['sep'] = '\s+'
-    return pd.read_csv(
-        io.StringIO(string),
-        **kwargs)
+# Section on csv processing.
+# --------------------------
+def discover_csv_encoding(
+        csvpath,
+        stop_on_first_found_encoding=True,
+        validate_strings=(),):
+    u"""Given a csv file path discover a list of encodings."""
+    ALL_ENCODINGS = set(encodings.aliases.aliases.values())
+    # ALL_ENCODINGS = set(encodings.aliases.aliases.keys())
+    PRIORITY_ENCODINGS = set(['utf-8', 'cp1250'])
+
+    list_of_working_encodings = []
+    with open(csvpath, 'rb') as f:
+        loaded_csv = f.read()
+    for one_enc in PRIORITY_ENCODINGS | ALL_ENCODINGS:
+        try:
+            df = pd.read_csv(
+                io.StringIO(loaded_csv.decode(one_enc)),
+                encoding=one_enc,
+                low_memory=False)
+        # except UnicodeDecodeError:
+            # pass
+        # except LookupError:
+            # pass
+        # TODO: fix this general expression # noqa
+        except Exception:  # noqa
+            continue
+        if validate_strings:
+            for column, val_string in validate_strings:
+                try:
+                    # Sum will be greater than 0 if value is found.
+                    # Thus it will evaluate to false.
+                    # If no value is found then the loop is broken.
+                    if not df.loc[:, column].str.contains(val_string).sum():
+                        print(one_enc)
+                        print(df.loc[:, column].tail(10))
+                        print(df.loc[:, column].str.contains(val_string).sum())
+                        print(10 * '-')
+                        break
+                except KeyError:
+                    # raise KeyError(
+                        # 'the label [{0}] was not found. '
+                        # 'The columns are: {1}'.format(
+                            # column,
+                            # sorted(df.columns.tolist())))
+                    break
+            # If list is exhausted then go inside else statement.
+            else:
+                list_of_working_encodings.append(one_enc)
+        else:
+            list_of_working_encodings.append(one_enc)
+        if stop_on_first_found_encoding and list_of_working_encodings:
+            break
+    return list_of_working_encodings
 
 
+# Section on dataframe derivation
+# -------------------------------
+# (no inplace option, output is clearly from a different from than the initial
+# dataframe).
 def find_components_of_array(x, y, atol=1e-5, assume_int=False):
     """Find the components of x which compose y.
 
@@ -355,111 +448,6 @@ def find_components_of_array(x, y, atol=1e-5, assume_int=False):
     # return
 
 
-def _construct_dataframe(shape, dict_of_functions):
-    """Build a dataframe with a given ship from a dictionary of functions."""
-    rows, columns = shape
-    n_keys = len(dict_of_functions)
-    data_dictionary = dict()
-    for i, func_key in zip(range(columns), itertools.cycle(dict_of_functions)):
-        data_dictionary[func_key + '_' +
-                        str(i // n_keys)] = dict_of_functions[func_key]()
-
-    return pd.DataFrame(data=data_dictionary)
-
-
-def dummy_dataframe(
-        shape=None,
-        series_categorical=None,
-        series_float=None,
-        series_int=None,
-        series_object=None):
-    """Create an out-of-the-box dataframe with different datatype series."""
-    # TODO: implement a boolean series.
-    # Default value.
-    if shape is None:
-        rows, columns = (1000, 5)
-    elif isinstance(shape, int):
-        rows, columns = (shape, 5)
-    else:
-        rows, columns = shape
-
-    # Requirements:
-    #   a) unique 10 objects when n -> inf
-    #   b) 100 objects when n = 10e4
-    #   c) 3 objects when n = 3
-    if series_categorical is None:
-        n_objs = int(7e-4 * rows + 3) if rows <= 10000 else 10
-        categories = list(
-            itertools.islice(
-                map(lambda x: ''.join(x),
-                    itertools.product(string.ascii_lowercase,
-                                      string.ascii_lowercase)),
-                n_objs))
-
-    def f_bool(): return np.random.randint(0, 1 + 1, size=rows, dtype=bool)
-
-    def f_categorical(): return pd.Series(
-        np.random.choice(categories, size=rows)).astype('category')
-
-    def f_float(): return np.random.normal(size=rows)
-
-    def f_int(): return np.arange(rows)
-
-    def f_object(): return np.random.choice(categories, size=rows)
-
-    dict_of_functions = {
-        'bool': f_bool,
-        'categorical': f_categorical,  # TODO: change to category.
-        'float': f_float,
-        'int': f_int,
-        'object': f_object}
-
-    return _construct_dataframe((rows, columns), dict_of_functions)
-
-
-def statistical_distributions_dataframe(shape=None):
-    """Create an out-of-the-box dataframe with common distrubutions.
-
-    Arguments:
-        n (int): number of rows in the dataframe.
-
-    Returns:
-        dataframe: (pandas.DataFrame): The dataframe of the common statistical
-    distributions.
-
-    Examples:
-        >>> True
-        True
-        >>> # TODO:
-
-
-    """
-    if shape is None:
-        rows, columns = (1000, 4)
-    elif isinstance(shape, int):
-        rows, columns = (shape, 4)
-    else:
-        rows, columns = shape
-
-    def chisq(): return np.random.chisquare(5, size=rows)
-
-    def stdnorm(): return np.random.standard_normal(size=rows)
-
-    def logistic(): return np.random.logistic(size=rows)
-
-    def rnd(): return np.random.random(size=rows)
-
-    dict_of_functions = {
-        'chisq': chisq,
-        'stdnorm': stdnorm,
-        'logistic': logistic,
-        'rnd': rnd}
-
-    return _construct_dataframe((rows, columns), dict_of_functions)
-
-
-
-
 def get_numeric_columns(dataframe):
     numeric_dtypes = ['int16', 'int32', 'int64', 'float16', 'float32',
                       'float64', 'bool']
@@ -492,6 +480,28 @@ def group_sorted_series(series, n_groups=100):
 
     return pd.DataFrame({series.name: series, 'groups': combined_array}).groupby('groups')
 
+
+# Section: deprecated functions.
+# ------------------------------
+def series_to_ascii(series):
+    """
+    Change columns to lowercase strings inplace.
+
+    Arguments:
+        series (pandas.Series): series to be modified.
+
+    Returns:
+        pandas.Series: series with lowercase and no symbols.
+
+    """
+    warnings.warn("Function will be deprecated because it is not used.",
+                  category=DeprecationWarning)
+    series = series.copy(True)
+    series = series.apply(unidecode)
+    series = series.str.lower()
+    series = series.str.replace('[^a-zA-Z0-9_]', '_')
+
+    return series
 
 
 if __name__ == '__main__':
