@@ -228,7 +228,7 @@ def balance_ndframe(ndframe_obj,
     assert ratio <= max_ratio, \
         'Given ratio is infeasible (given={0}, maximum={1}.'.format(
             ratio, max_ratio)
-    assert np.isclose(ratio, calculated_ratio, atol=1e-2), \
+    assert np.isclose(ratio, calculated_ratio, rtol=1e-2), \
         'Calculated ratios differ: (given={0}, calculated={1}.'.format(
             ratio, calculated_ratio)
 
