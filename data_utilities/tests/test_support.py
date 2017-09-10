@@ -1,4 +1,4 @@
-"""This module provides support to actual tests.
+"""Support module to actual tests.
 
 The unittest module in python is not so flexible to allow multiple tests with
 different inputs. Aggregating parameters in iterables and using a for loop does
@@ -31,7 +31,7 @@ import numpy as np
 
 
 def setUpModule():
-    """Setup TestDataUtilitiesTestCase 'data' attribute.
+    """Set up TestDataUtilitiesTestCase 'data' attribute.
 
     Useful if there is a unittest being run.
     """
@@ -116,6 +116,7 @@ class TestMetaClass(type):
                 1 if run with unittests module without verbosity (default in
                 TestProgram)
                 2 if run with unittests module with verbosity
+
             """
             frame = inspect.currentframe()
             # Scans frames from innermost to outermost for a TestProgram
@@ -242,24 +243,6 @@ class TestDataUtilitiesTestCase(unittest.TestCase, metaclass=TestMetaClass):
 class TestSupport(TestDataUtilitiesTestCase,
                   metaclass=TestMetaClass):
     """Test class for test_support."""
-
-    @classmethod
-    def setUpClass(cls):
-        """setUpClass class method from unittest."""
-        pass
-
-    @classmethod
-    def tearDownClass(cls):
-        """tearDownClass class method from unittest."""
-        pass
-
-    def setUp(self):
-        """setUp method from unittest."""
-        pass
-
-    def tearDown(self):
-        """tearDown method from unittest."""
-        pass
 
     def test_test_framework(self):
         """Test is_inside_unittest function."""
