@@ -234,7 +234,8 @@ class TestBalanceNDFrame(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
             all_series))
 
         # Create new ratios that are feasible.
-        possible_ratios = tuple(random.random() * x for x in all_max_ratios)
+        possible_ratios = (random.random() * x for x in all_max_ratios)
+        possible_ratios = tuple(x if x >= 1 else 1 for x in possible_ratios)
 
         # Balance the series.
         all_b_series = tuple(map(pu.balance_ndframe,

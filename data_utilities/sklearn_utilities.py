@@ -88,10 +88,11 @@ def execute_ks_2samp_over_time(time_series,
     return pd.Series(data=unzipped[1], index=unzipped[0])
 
 
-def get_ordered_dict_from_feature_importances(classifier, attributes):
+def get_sorted_feature_importances(classifier, attributes):
+    """Return a sorted list of feature importances."""
     v = classifier.feature_importances_
     k = attributes
     assert(len(v) == len(k))
     unordered = tuple(zip(k, v))
-    ordered = sorted(unordered, key=lambda x:x[1], reverse=False)
+    ordered = sorted(unordered, key=lambda x: x[1], reverse=False)
     return ordered
