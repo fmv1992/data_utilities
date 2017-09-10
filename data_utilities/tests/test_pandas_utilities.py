@@ -181,14 +181,52 @@ class TestUtilitiesDataFrames(TestDataUtilitiesTestCase,
 class TestBalanceNDFrame(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
     """Test class for balance_ndframe of pandas_utilities."""
 
-    def test(self):
+    def test_for_dataframe(self):
+        """Execute the test for the aforementioned function."""
+        def _get_ratio_from_dataframe(dataframe, column):
+            vc = dataframe.loc[:, column].value_counts()
+            return vc.iloc[0] / vc.iloc[1]
+
+        # Create all series.
+        all_dataframes = tuple(self._get_dataframe() for x in
+                               range(self.n_tests//2))
+
+        # Calculate their ratio.
+        zipped_dataframes, zipped_columns = zip(*all_dataframes)
+        all_max_ratios = tuple(map(
+            _get_ratio_from_dataframe,
+            zipped_dataframes,
+            zipped_columns))
+
+        # Create new ratios that are feasible.
+        possible_ratios = (random.random() * x for x in all_max_ratios)
+        possible_ratios = tuple(x if x >= 1 else 1 for x in possible_ratios)
+
+        # Balance the series.
+        all_b_dataframes = tuple(map(pu.balance_ndframe,
+                                 zipped_dataframes,
+                                 zipped_columns,
+                                 possible_ratios))
+
+        # Calculate their new balanced ratio.
+        all_calculated_ratios = tuple(map(
+            _get_ratio_from_dataframe,
+            all_b_dataframes,
+            zipped_columns))
+
+        self.assert_X_from_iterables(
+            lambda a, b: np.isclose(a, b, rtol=1e-2),
+            possible_ratios,
+            all_calculated_ratios)
+
+    def test_for_series(self):
         """Execute the test for the aforementioned function."""
         def _get_ratio_from_series(series):
             vc = series.value_counts()
             return vc.iloc[0] / vc.iloc[1]
 
         # Create all series.
-        all_series = (self._get_series() for x in range(self.n_tests//2))
+        all_series = tuple(self._get_series() for x in range(self.n_tests//2))
 
         # Calculate their ratio.
         all_max_ratios = tuple(map(
@@ -209,13 +247,10 @@ class TestBalanceNDFrame(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
             _get_ratio_from_series,
             all_b_series))
 
-        ratio_comparisons = map(lambda a, b: np.isclose(a, b, atol=1e-2),
-                                all_calculated_ratios,
-                                possible_ratios)
-
         self.assert_X_from_iterables(
-            self.assertTrue,
-            ratio_comparisons)
+            lambda a, b: np.isclose(a, b, rtol=1e-2),
+            possible_ratios,
+            all_calculated_ratios)
 
     def _get_series(self):
         """Return series to be tested."""
@@ -232,7 +267,7 @@ class TestBalanceNDFrame(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
         categories = random.choice(((0, 1), ('a', 'b')))
         bias = np.random.random() * .95
         array = np.random.choice(categories, size=lines, p=(bias, 1-bias))
-        index = df.columns[random.randint(0, columns)]
+        index = df.columns[random.randint(0, columns-1)]
         df.loc[:, index] = array
 
         return (df, index)
