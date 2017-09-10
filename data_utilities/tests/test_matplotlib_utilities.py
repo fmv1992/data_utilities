@@ -23,7 +23,7 @@ class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
 
     @classmethod
     def setUpClass(cls):
-        """setUpClass class method from unittest.
+        """Set up class method from unittest.
 
         Initialize figure as attributes.
 
@@ -37,7 +37,7 @@ class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
 
     @classmethod
     def tearDownClass(cls):
-        """tearDownClass class method from unittest.
+        """Tear down class method from unittest.
 
         Save figures in a temporary folder.
 
@@ -133,7 +133,7 @@ class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
         return fig
 
     def setUp(self):
-        """setUp method from unittest.
+        """Set up method from unittest.
 
         Store start time for test method. Running time is computed and
         displayed in the tearDown method.
@@ -142,7 +142,7 @@ class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
         self.start_time = time.time()
 
     def tearDown(self):
-        """tearDown method from unittest.
+        """Tear down method from unittest.
 
         Compute and display running time for test method.
 
