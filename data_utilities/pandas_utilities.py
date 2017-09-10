@@ -205,17 +205,22 @@ def balance_ndframe(ndframe_obj,
         True
 
     """
+    # Set the same object for dataframe input or series input.
     if column_to_balance is not None:
         series_to_balance = ndframe_obj[column_to_balance]
     else:
         series_to_balance = ndframe_obj
+
     # Store original ndframe_obj index.
     index = series_to_balance.index
+
     # Count values to enable filtering.
     value_counts = series_to_balance.value_counts(ascending=False)
     value_counts = value_counts[value_counts > 0]
+
     # Unpack most frequent and unfrequent values.
     vmax, vmin = value_counts.index.tolist()
+
     # Create filter based on frequency.
     samples_min_index = index[series_to_balance == vmin]
     samples_max_index = index[series_to_balance == vmax]
