@@ -34,7 +34,7 @@ import pandas as pd
 import seaborn as sns
 
 # pylama: ignore=W0611,D301
-## pylama: ignore=D406,D407  # TODO: add this too
+# pylama: ignore=D406,D407  # TODO: add this too
 
 
 def scale_axes_axis(axes, scale_xy_axis=False, scale_z_axis=False):
@@ -579,8 +579,8 @@ def histogram_of_dataframe(dataframe,
             #     └── int
             if 'datetime' in series_str_dtype:
                 series_not_null = pd.to_numeric(series_not_null)
-                series = pd.to_numeric(series)  #  TODO XXX to fix add_summ_tbox
-                                                #  on datetime
+                series = pd.to_numeric(series)  # TODO XXX to fix
+                                                # add_summ_tbox on datetime
                 axes = histogram_of_floats(
                     series_not_null,
                     **sns_distplot_kwargs)
@@ -598,7 +598,7 @@ def histogram_of_dataframe(dataframe,
                     **sns_distplot_kwargs)
 
             # Add summary statistics for all numeric cases.
-            text = add_summary_statistics_textbox(series, axes)
+            text = add_summary_statistics_textbox(series, axes)  # noqa
             # TODO: having problems displays text boxes for Coursera Capstone
             # Project.
 
@@ -823,6 +823,7 @@ def list_usable_backends():
             usable_backends.append(backend)
 
     return usable_backends
+
 
 color = {
     'standard': (223, 229, 239),
