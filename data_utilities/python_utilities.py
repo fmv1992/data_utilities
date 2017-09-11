@@ -15,12 +15,12 @@ def map_strings(set_keys,
                 set_values,
                 cutoff=0.8,
                 ignore_no_matches=True):
-    u"""Map a set of secondary strings to a set of primary strings."""
+    """Map a set of secondary strings to a set of primary strings."""
     N = 1
     CUTOFF = cutoff
 
     def get_matches(x):
-        u"""Helper to get matches."""
+        """Help to get matches."""
         result_list = difflib.get_close_matches(
             x, set_values, n=N, cutoff=CUTOFF)
         if ignore_no_matches:
@@ -56,9 +56,10 @@ def list_matching_files_in_path(regex_pattern, path):
 
 
 def process_string(x,
-                    allow_symbols=False,  # underscore is not a symbol here.
-                    allow_uppercase=False,
-                    has_unidecode_module=HAS_UNIDECODE_MODULE):
+                   allow_symbols=False,  # underscore is not a symbol here.
+                   allow_uppercase=False,
+                   has_unidecode_module=HAS_UNIDECODE_MODULE):
+    """Process string to lowercase and underscores only."""
     if has_unidecode_module:
         x = unidecode(x)
     if not allow_symbols:
@@ -81,7 +82,6 @@ def print_feature(feature, fill_length=79, fill_char='-'):
           fill_length*'-',
           sep='')
     return None
-
 
 
 if __name__ == '__main__':
