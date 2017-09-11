@@ -248,6 +248,7 @@ def balance_ndframe(ndframe_obj,
         return ndframe_obj.loc[new_index].copy()
 
 
+# TODO: move this to other section.
 def categorical_serie_to_binary_dataframe(series, nan_code='nan',
                                           include_nan=False):
     """Transform a categorical serie into a binary dataframe.
@@ -526,6 +527,44 @@ def group_sorted_series_into_n_groups(series, n_groups=100):
 
     return pd.DataFrame(
         {series.name: series, 'groups': combined_array}).groupby('groups')
+
+
+def categorize_n_most_frequent(series, n, other_name='other', inplace=False):
+    """Categorize the most frequent values in a series.
+
+    Set the n most frequent occurences in a dataframe and set all other values to 'other.'
+
+    Arguments:
+        series (pandas.Series): series to be modified.
+        n (int): the n most frequent groups to preserve.
+        other_name (str): The name to set to other categories/less frequent categories.
+
+    Examples:
+        >>> import data_utilities as du
+        >>> du.set_random_seed(0)
+        >>> a = np.random.choice(tuple('abcd'),
+        ...     size=10000,
+        ...     p=(0.5, 0.3, 0.1, 0.1))
+        >>> # Category a will amount to ~ 50% of occurences.
+        >>> s1 = pd.Series(a)
+        >>> s2 = categorize_n_most_frequent(s1, 1)
+        >>> vc = s2.value_counts()
+        >>> np.isclose(vc[0] / vc[1], 1.02, atol=1e-2)
+        True
+
+
+    """
+    if inplace:
+        s = series
+    else:
+        s = series.copy(True)
+    # TODO: cover the case of serie which is already categorical.
+    vc = s.value_counts(ascending=True)
+    categories = set(vc[-n:].index)
+    s[~ s.isin(categories)] = other_name
+    s.loc[:] = s.astype('category')
+    if not inplace:
+        return s
 
 
 # Section: deprecated functions.
