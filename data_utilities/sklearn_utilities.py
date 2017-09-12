@@ -2,6 +2,7 @@
 import itertools
 import pickle
 import os
+import hashlib
 
 import numpy as np
 import pandas as pd
@@ -34,6 +35,8 @@ def grid_search_cv(
     # Explore grid.
     grid_results = list()
     for i, one_grid_values in enumerate(itertools.product(*all_values)):
+        one_grid_dict = dict(zip(all_parameters, one_grid_values))
+        calculated_hash = _get_hash_from_dict(one_grid_dict)
         # Recover grids if they exist.
         if persistence_path is not None:
             grid_fname = os.path.join(
@@ -41,10 +44,14 @@ def grid_search_cv(
                 '_'.join(('grid', estimator_name, str(i), '.pickle')))
             if os.path.isfile(grid_fname):
                 with open(grid_fname, 'rb') as f:
-                    grid_results.append(pickle.load(f))
-                print(i)
-                continue
-        one_grid_dict = dict(zip(all_parameters, one_grid_values))
+                    loaded_dict = pickle.load(f)
+                # Compute hash for this grid value.
+                if loaded_dict['hash'] == calculated_hash:
+                    grid_results.append(loaded_dict)
+                    print(i)
+                    continue
+                else:
+                    print('Calcualted hash is different than stored hash for {0}'.format(i))
         estimator.set_params(**one_grid_dict)
         scores = cross_val_score(estimator,
                                  x_train,
@@ -53,6 +60,7 @@ def grid_search_cv(
                                  cv=cv)
         one_grid_result = one_grid_dict
         one_grid_result.update({'scores': scores})
+        one_grid_result.update({'hash': calculated_hash})
         # Save grid.
         if persistence_path is not None:
             with open(grid_fname, 'wb') as f:
@@ -61,6 +69,12 @@ def grid_search_cv(
 
     # Order results.
     return sorted(grid_results, key=lambda x: np.mean(x['scores']))
+
+
+def _get_hash_from_dict(dictionary):
+    md5 = hashlib.md5()
+    md5.update(pickle.dumps(dictionary))
+    return md5.digest()
 
 
 def execute_ks_2samp_over_time(time_series,
@@ -93,5 +107,5 @@ def get_ordered_dict_from_feature_importances(classifier, attributes):
     k = attributes
     assert(len(v) == len(k))
     unordered = tuple(zip(k, v))
-    ordered = sorted(unordered, key=lambda x:x[1], reverse=False)
+    ordered = sorted(unordered, key=lambda x: x[1], reverse=False)
     return ordered
