@@ -560,7 +560,7 @@ def categorize_n_most_frequent(series, n, other_name='other', inplace=False):
         s = series.copy(True)
     # TODO: cover the case of serie which is already categorical.
     vc = s.value_counts(ascending=True)
-    categories = set(vc[-n:].index)
+    categories = set(vc.iloc[-n:].index)
     s[~ s.isin(categories)] = other_name
     s.loc[:] = s.astype('category')
     if not inplace:
