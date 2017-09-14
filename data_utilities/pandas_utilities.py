@@ -554,17 +554,16 @@ def categorize_n_most_frequent(series, n, other_name='other', inplace=False):
 
 
     """
-    if inplace:
-        s = series
-    else:
-        s = series.copy(True)
-    # TODO: cover the case of serie which is already categorical.
-    vc = s.value_counts(ascending=True)
-    categories = set(vc.iloc[-n:].index)
-    s[~ s.isin(categories)] = other_name
-    s.loc[:] = s.astype('category')
     if not inplace:
-        return s
+        series = series.copy(True)
+    else:
+        raise NotImplementedError
+    # TODO: cover the case of serie which is already categorical.
+    vc = series.value_counts(ascending=True)
+    categories = set(vc.iloc[-n:].index)
+    series.loc[~ series.isin(categories)] = other_name
+    if not inplace:
+        return series.astype('category')
 
 
 # Section: deprecated functions.
