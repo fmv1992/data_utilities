@@ -110,3 +110,28 @@ def get_sorted_feature_importances(classifier, attributes):
     unordered = tuple(zip(k, v))
     ordered = sorted(unordered, key=lambda x: x[1], reverse=False)
     return ordered
+
+
+def xgboost_get_feature_importances_from_booster(booster):
+    score_types = ['weight',
+                   'gain',
+                   'cover']
+    score_improved_labels = ['nr_occurences',
+                             'average_gain',
+                             'average_coverge']
+    scores = map(lambda x: booster.get_score(importance_type=x),
+                 score_types)
+    # These are dictionaries with {feature1: value1, f2: v2, ...}.
+    w, g, c = scores
+    indexes = []
+    rows = []
+    for k in w.keys():
+        indexes.append(k)
+        rows.append((w[k], g[k], c[k]))
+    df = pd.DataFrame.from_records(
+        data=rows,
+        index=indexes,
+        columns=score_types)
+    df['frequency'] = df['weight'] / df['weight'].sum()
+
+    return df
