@@ -249,7 +249,9 @@ def balance_ndframe(ndframe_obj,
 
 
 # TODO: move this to other section.
-def categorical_serie_to_binary_dataframe(series, nan_code='nan',
+def categorical_serie_to_binary_dataframe(series,
+                                          keep_original_name=True,
+                                          nan_code='nan',
                                           include_nan=False):
     """Transform a categorical serie into a binary dataframe.
 
@@ -262,8 +264,12 @@ def categorical_serie_to_binary_dataframe(series, nan_code='nan',
     """
     df = pd.DataFrame()
     for i, uvalue in enumerate(series.unique()):
+        if keep_original_name:
+            colname = str(uvalue)
+        else:
+            colname = str(i)
         bool_series = pd.Series(series == uvalue)
-        bool_series.name = series.name + '_' + str(i)
+        bool_series.name = series.name + '_' + colname
         df = pd.concat((df, bool_series), axis=1)
     return df
 
