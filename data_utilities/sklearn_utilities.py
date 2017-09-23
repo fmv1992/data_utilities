@@ -1,8 +1,8 @@
 """Scikit-learn utilities for common machine learning procedures."""
-import itertools
-import pickle
-import os
 import hashlib
+import itertools
+import os
+import pickle
 
 import numpy as np
 import pandas as pd
@@ -10,31 +10,28 @@ import scipy.stats
 
 from sklearn.model_selection import cross_val_score
 
+from data_utilities import python_utilities as pyu
 
-def grid_search_cv(
-        cv,
-        estimator,
-        param_grid,
-        scoring,
-        x_train,
-        y_train,
-        persistence_path=None):
+
+def grid_search_cv(cv,
+                   estimator,
+                   param_grid,
+                   scoring,
+                   x_train,
+                   y_train,
+                   persistence_path=None):
     """Sklearn utilities version of grid search with cross validation."""
     all_parameters = param_grid.keys()
     all_values = param_grid.values()
 
     # Create a nice representation of estimator name.
-    estimator_name = str(type(estimator))
-    estimator_name = (
-        estimator_name[
-            estimator_name.index('\'')+1:
-            estimator_name.index('\'',
-                                 estimator_name.index('\'')+1)])
-    estimator_name = estimator_name.replace('.', '_').lower()
+    estimator_name = get_estimator_name(estimator)
 
     # Explore grid.
     grid_results = list()
+    # Iterate over grid values.
     for i, one_grid_values in enumerate(itertools.product(*all_values)):
+        # Create a dict from values.
         one_grid_dict = dict(zip(all_parameters, one_grid_values))
         calculated_hash = _get_hash_from_dict(one_grid_dict)
         # Recover grids if they exist.
@@ -47,11 +44,12 @@ def grid_search_cv(
                     loaded_dict = pickle.load(f)
                 # Compute hash for this grid value.
                 if loaded_dict['hash'] == calculated_hash:
-                    grid_results.append(loaded_dict)
                     print(i)
+                    grid_results.append(loaded_dict)
                     continue
                 else:
-                    print('Calcualted hash is different than stored hash for {0}'.format(i))
+                    print('Calcualted hash is different than '
+                          'stored hash for {0}'.format(i))
         estimator.set_params(**one_grid_dict)
         scores = cross_val_score(estimator,
                                  x_train,
@@ -112,7 +110,18 @@ def get_sorted_feature_importances(classifier, attributes):
     return ordered
 
 
+def get_estimator_name(estimator):
+    """Get a good representation of estimator name."""
+    # Create a nice representation of estimator name.
+    estimator_name = pyu.process_string(str(estimator)).strip('_')
+    index_last_underscore = (len(estimator_name)
+                             - estimator_name[::-1].index('_'))
+    estimator_name = estimator_name[index_last_underscore:]
+    return estimator_name
+
+
 def xgboost_get_feature_importances_from_booster(booster):
+    """Get a feature importances dataframe from a booster object."""
     score_types = ['weight',
                    'gain',
                    'cover']
@@ -132,6 +141,7 @@ def xgboost_get_feature_importances_from_booster(booster):
         data=rows,
         index=indexes,
         columns=score_types)
+    df.columns = score_improved_labels
     df['frequency'] = df['weight'] / df['weight'].sum()
 
     return df
