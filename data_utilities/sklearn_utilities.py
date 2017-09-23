@@ -3,6 +3,7 @@ import hashlib
 import itertools
 import os
 import pickle
+import multiprocessing
 
 import numpy as np
 import pandas as pd
@@ -13,29 +14,30 @@ from sklearn.model_selection import cross_val_score
 from data_utilities import python_utilities as pyu
 
 
-def grid_search_cv(cv,
-                   estimator,
-                   param_grid,
-                   scoring,
-                   x_train,
-                   y_train,
-                   persistence_path=None):
-    """Sklearn utilities version of grid search with cross validation."""
-    all_parameters = param_grid.keys()
-    all_values = param_grid.values()
+def multiprocessing_grid_search(queue, shared_list):
+    """Explore cross validation grid using multiprocessing."""
+    # scores = cross_val_score(*cross_val_score_args, **cross_val_score_kwargs)
+    # queue.put(scores)
+    while True:
+        # All parameters from cross_val_score, i to compute pickle name and
+        # persistence_path.
+        passed_parameters = queue.get()
+        if passed_parameters is None:
+            break
+        cvs_args, cvs_kwargs, one_grid, i, persistence_path = passed_parameters
+        # Dismember arguments and values.
+        estimator = cvs_args[0]
+        x = cvs_args[1]
+        del cvs_args
 
-    # Create a nice representation of estimator name.
-    estimator_name = get_estimator_name(estimator)
+        # Calculate hash.
+        calculated_hash = _get_hash_from_dict(cvs_kwargs)
 
-    # Explore grid.
-    grid_results = list()
-    # Iterate over grid values.
-    for i, one_grid_values in enumerate(itertools.product(*all_values)):
-        # Create a dict from values.
-        one_grid_dict = dict(zip(all_parameters, one_grid_values))
-        calculated_hash = _get_hash_from_dict(one_grid_dict)
-        # Recover grids if they exist.
+        # Try to unpickle grid if already exists.
         if persistence_path is not None:
+            # Create a nice representation of estimator name.
+            estimator_name = get_estimator_name(estimator)
+
             grid_fname = os.path.join(
                 persistence_path,
                 '_'.join(('grid', estimator_name, str(i), '.pickle')))
@@ -44,27 +46,70 @@ def grid_search_cv(cv,
                     loaded_dict = pickle.load(f)
                 # Compute hash for this grid value.
                 if loaded_dict['hash'] == calculated_hash:
-                    print(i)
-                    grid_results.append(loaded_dict)
+                    shared_list.append(loaded_dict)
                     continue
-                else:
-                    print('Calcualted hash is different than '
-                          'stored hash for {0}'.format(i))
-        estimator.set_params(**one_grid_dict)
-        scores = cross_val_score(estimator,
-                                 x_train,
-                                 y_train,
-                                 scoring=scoring,
-                                 cv=cv)
-        one_grid_result = one_grid_dict
+
+        # Compute cross validation scores.
+        estimator.set_params(**one_grid)
+        scores = cross_val_score(estimator, x, **cvs_kwargs)
+        # Update dictionary.
+        one_grid_result = one_grid
         one_grid_result.update({'scores': scores})
         one_grid_result.update({'hash': calculated_hash})
         # Save grid.
         if persistence_path is not None:
             with open(grid_fname, 'wb') as f:
                 pickle.dump(one_grid_result, f, pickle.HIGHEST_PROTOCOL)
-        grid_results.append(one_grid_result)
+        # Append to main list.
+        shared_list.append(one_grid_result)
 
+
+# TODO: adapt to have the same anatomy of cross_val_score (adding just
+# persistence_path).
+def grid_search_cv(param_grid, *cvs_args, persistence_path=None, **cvs_kwargs):
+    """Sklearn utilities version of grid search with cross validation."""
+    # Dismember arguments and values.
+    if 'n_jobs' in cvs_kwargs.keys():
+        if cvs_kwargs['n_jobs'] == -1:
+            n_workers = multiprocessing.cpu_count()
+        elif cvs_kwargs['n_jobs'] < 0:
+            n_workers = multiprocessing.cpu_count() + 1 + cvs_kwargs['n_jobs']
+        elif cvs_kwargs['n_jobs'] > 0:
+            n_workers = cvs_kwargs['n_jobs']
+    else:
+        n_workers = multiprocessing.cpu_count()
+    all_parameters = param_grid.keys()
+    all_values = param_grid.values()
+
+    # Initialize multiprocessing manager, queue and shared list.
+    mp_manager = multiprocessing.Manager()
+    # Initialize queue.
+    mp_queue = mp_manager.Queue(64)
+    # Initialize shared list.
+    mp_scores_list = mp_manager.list()
+    # Start parallel workers.
+    jobs = []
+    for i in range(n_workers):
+        p = multiprocessing.Process(
+            target=multiprocessing_grid_search,
+            args=(mp_queue, mp_scores_list),
+            kwargs={})
+        p.start()
+        jobs.append(p)
+    # Explore grid.
+    grid_results = list()
+    # Iterate over grid values.
+    for i, one_grid_values in enumerate(itertools.product(*all_values)):
+        # Create a dict from values.
+        one_grid_dict = dict(zip(all_parameters, one_grid_values))
+        # Feed it into the queue.
+        mp_queue.put(
+            (cvs_args, cvs_kwargs, one_grid_dict, i, persistence_path))
+    # Close opened processes.
+    for p in jobs:
+        mp_queue.put(None)
+    for p in jobs:
+        p.join()
     # Order results.
     return sorted(grid_results, key=lambda x: np.mean(x['scores']))
 
