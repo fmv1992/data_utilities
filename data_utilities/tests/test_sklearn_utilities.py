@@ -1,8 +1,9 @@
 """Test sklearn_utilities from this module."""
-
 import os
 import datetime as dt
 import multiprocessing
+import glob
+import unittest
 
 import pandas as pd
 import numpy as np
@@ -28,7 +29,7 @@ class TestGridSearchCV(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
     data_ml_x, data_ml_y = datasets.make_hastie_10_2(
         n_samples=60000, random_state=1)
     small_grid = {'n_estimators': list(range(1, 3)),
-                  'max_depth': [2, 4, 6],
+                  'max_depth': [2, 4],
                   'min_samples_leaf': [.2],
                   'n_jobs': [1, ],
                   }
@@ -44,63 +45,77 @@ class TestGridSearchCV(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
         cls.temp_directory_grid_search_data = os.path.join(
             cls.temp_directory_grid_search, 'data')
         os.mkdir(cls.temp_directory_grid_search_data)
-        # Save data.
+        os.mknod(cls.temp_directory_grid_search_data + '/ppp.pickle')
+        # Create a csv file.
         cls.csv_path = os.path.join(cls.temp_directory_grid_search_data,
                                     'data.csv')
         pd.concat(map(pd.DataFrame,
                       (cls.data_ml_x, cls.data_ml_y)),
                   axis=1).to_csv(cls.csv_path)
 
+    def tearDown(self):
+        all_pickle_files = (
+            glob.glob(os.path.join(self.temp_directory_grid_search,
+                                   '**.pickle'))
+            + glob.glob(os.path.join(self.temp_directory_grid_search,
+                                   '**' + os.sep + '*.pickle')))
+        for remove_pickle in all_pickle_files:
+            os.remove(remove_pickle)
+        # os.system('tree ' + self.temp_directory.name)
 
+    @unittest.skip('Will make timer decorator on next commit')
+    def test_multiparallelism_speed(self):
+        """Test that using more processes speed up grid search."""
+        clf = RandomForestClassifier()
 
-
-    # def test_multiparallelism_speed(self):
-    #     """Test that using more processes speed up grid search."""
-    #     clf = RandomForestClassifier()
-    #     random_forest_grid = {
-    #         'n_estimators': list(range(1, 3)),
-    #         'max_depth': [2, 4, 6],
-    #         'min_samples_leaf': [.2],
-    #     }
-
-    #     all_times = []
-    #     N_RUNS = 3
-    #     for processors in (1, multiprocessing.cpu_count()):
-    #         processor_times = []
-    #         for _ in range(N_RUNS):
-    #             processor_times.append(
-    #                 time_function_call(
-    #                     su.grid_search_cv,
-    #                     random_forest_grid,
-    #                     clf,
-    #                     self.data_ml_x,
-    #                     n_jobs=processors,
-    #                     y=self.data_ml_y,
-    #                     persistence_path=None,
-    #                     scoring='roc_auc',
-    #                     cv=5))
-    #         all_times.append(np.mean(processor_times))
-    #     all_times = np.array(all_times)
-    #     assert all(np.diff(all_times) < 0)
+        all_times = []
+        N_RUNS = 3
+        for processors in (1, multiprocessing.cpu_count()):
+            processor_times = []
+            for _ in range(N_RUNS):
+                processor_times.append(
+                    time_function_call(
+                        su.grid_search_cv,
+                        self.small_grid,
+                        clf,
+                        self.data_ml_x,
+                        n_jobs=processors,
+                        y=self.data_ml_y,
+                        persistence_path=None,
+                        scoring='roc_auc',
+                        cv=5))
+            all_times.append(np.mean(processor_times))
+        all_times = np.array(all_times)
+        assert all(np.diff(all_times) < 0)
     def test_grid_search(self):
-        persistent_grid_obj = su.grid_search.BasePersistentGrid(
+
+        # Initiate a persistent grid search.
+        bpg1 = su.grid_search.BasePersistentGrid(
             persistence_grid_path=os.path.join(self.temp_directory_grid_search,
                                                'bpg.pickle'),
             dataset_path=self.csv_path)
 
         # Do a first run.
         grid = su.grid_search_cv(
-            persistent_grid_obj,
+            bpg1,
             self.small_grid,
             RandomForestClassifier(),
             self.data_ml_x,
             y=self.data_ml_y,
-            n_jobs=1)
-        import pprint
-        pprint.pprint(persistent_grid_obj)
-        pprint.pprint(dict(persistent_grid_obj.mp_data))
-        os.system('tree '+ self.temp_directory.name)
-        p2 = su.grid_search.BasePersistentGrid(
+            cv=10,
+            n_jobs=multiprocessing.cpu_count())
+        del grid, bpg1
+
+        # Do a second run.
+        bpg2 = su.grid_search.BasePersistentGrid(
             persistence_grid_path=os.path.join(self.temp_directory_grid_search,
                                                'bpg.pickle'),
             dataset_path=self.csv_path)
+        grid2 = su.grid_search_cv(
+            bpg2,
+            self.small_grid,
+            RandomForestClassifier(),
+            self.data_ml_x,
+            y=self.data_ml_y,
+            cv=10,
+            n_jobs=multiprocessing.cpu_count())
