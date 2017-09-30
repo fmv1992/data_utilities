@@ -105,12 +105,8 @@ class BasePersistentGrid(object):
     def update(self, estimator, grid, results):
         request_hash = self.compute_request_hash(estimator, grid)
         with self.mp_lock:
-            # print('before dict', self.mp_data)
             self.mp_data[request_hash] = results
-            # print('after dict', self.mp_data)
-            # print('before int', self._mp_n_counter_value)
             self._mp_n_counter_value.value += 1
-            # print('after int', self._mp_n_counter_value)
             if self._mp_n_counter_value.value % self.save_every_n_interations == 0:
                 self.save()
 
@@ -119,7 +115,6 @@ class BasePersistentGrid(object):
 
     def save(self):
         # Store values.
-        # print(type(self.mp_data))
         (_store_manager, _store_lock, _store_data, _store_counter) = (
             self.mp_manager, self.mp_lock, self.mp_data,
             self._mp_n_counter_value)
@@ -127,13 +122,10 @@ class BasePersistentGrid(object):
         del (self.mp_manager, self.mp_lock, self._mp_n_counter_value)
         # Make sure data is pickable.
         self.mp_data = dict(self.mp_data)
-        # print(type(self.mp_data))
         with open(self.persistence_grid_path, 'wb') as f:
             pickle.dump(self, f)
         # Store saved values.
         (self.mp_manager, self.mp_lock, self.mp_data, self._mp_n_counter_value) = (_store_manager, _store_lock, _store_data, _store_counter)
-        # print(self.mp_data, dict(self.mp_data))
-        # print(type(self.mp_data))
 
     def compute_request_hash(self, estimator, grid):
         estimator_hash = self.get_hash(su.get_estimator_name(estimator))
@@ -222,4 +214,3 @@ if __name__ == '__main__':
     bpg = PersistentGrid(
         '../../__/persistent_grid.pickle',
         '../../__/iris_dataset.csv')
-    import ipdb; ipdb.set_trace()  # XXX BREAKPOINT
