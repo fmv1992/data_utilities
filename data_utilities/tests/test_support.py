@@ -178,6 +178,10 @@ class TestDataUtilitiesTestCase(unittest.TestCase, metaclass=TestMetaClass):
             super().__setattr__(name, value)
 
     @classmethod
+    def setUpClass(cls):
+        pass
+
+    @classmethod
     def compose_functions(cls,
                           x,
                           number_of_compositions=1,
