@@ -51,6 +51,9 @@ def multiprocessing_grid_search(queue, shared_list):
 
         # Compute cross validation scores.
         estimator.set_params(**one_grid)
+        # TODO: minimal changes if base.xxx returns then ok
+        pass
+        # else calculate.
         scores = cross_val_score(estimator, x, **cvs_kwargs)
         # Update dictionary.
         one_grid_result = one_grid
@@ -66,8 +69,9 @@ def multiprocessing_grid_search(queue, shared_list):
 
 # TODO: adapt to have the same anatomy of cross_val_score (adding just
 # persistence_path).
-def grid_search_cv(param_grid, *cvs_args, persistence_path=None, **cvs_kwargs):
+def grid_search_cv(persistence_object, *cvs_args, **cvs_kwargs):
     """Sklearn utilities version of grid search with cross validation."""
+    estimator, param_grid = cvs_args
     # Dismember arguments and values.
     if 'n_jobs' in cvs_kwargs.keys():
         if cvs_kwargs['n_jobs'] == -1:
@@ -104,7 +108,7 @@ def grid_search_cv(param_grid, *cvs_args, persistence_path=None, **cvs_kwargs):
         one_grid_dict = dict(zip(all_parameters, one_grid_values))
         # Feed it into the queue.
         mp_queue.put(
-            (cvs_args, cvs_kwargs, one_grid_dict, i, persistence_path))
+            (cvs_args, cvs_kwargs, one_grid_dict, i, persistence_object))
     # Close opened processes.
     for p in jobs:
         mp_queue.put(None)
