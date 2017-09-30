@@ -29,14 +29,10 @@ def multiprocessing_grid_search(queue, shared_list, persistence_object):
         grid, cvs_args, cvs_kwargs = passed_parameters
         estimator, x = cvs_args
         estimator.set_params(**grid)
-        # print(x)
-        # print(estimator)
-        # raise Exception
         del cvs_args
 
         # Check if value was already calculated:
         stored_value = persistence_object.retrieve(estimator, grid)
-        # print('stored:', stored_value)
         if stored_value is None:
             scores = cross_val_score(estimator, x, **cvs_kwargs)
             persistence_object.update(estimator, grid, scores)

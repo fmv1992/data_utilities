@@ -74,7 +74,6 @@ def is_inside_unittest():
     key = 'argv'  # this may be error prone...
     value = 'unittest'
     while frame:
-        # print(frame.f_locals.items())
         frame_argv = frame.f_locals.get(key)
         if frame_argv and value in ''.join(frame_argv):
             return True
@@ -97,7 +96,6 @@ class TestMetaClass(type):
         def assert_X_from_iterables(self, x=lambda: True, *args, **kwargs):
             func = getattr(self, x.__name__, x)
             for i, zipargs in enumerate(zip(*args)):
-                # print('iteration i:', i)
                 with self.subTest(iteration=i, arguments=zipargs):
                     func(*zipargs)
             return None
