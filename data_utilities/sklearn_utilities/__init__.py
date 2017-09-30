@@ -36,6 +36,7 @@ def multiprocessing_grid_search(queue, shared_list, persistence_object):
 
         # Check if value was already calculated:
         stored_value = persistence_object.retrieve(estimator, grid)
+        # print('stored:', stored_value)
         if stored_value is None:
             scores = cross_val_score(estimator, x, **cvs_kwargs)
             persistence_object.update(estimator, grid, scores)
