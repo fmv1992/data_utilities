@@ -88,7 +88,10 @@ class BasePersistentGrid(object):
 
     def _instantiate_shared_attributes(self):
         # Common manager (for other common attributes).
-        self.mp_manager = mp.Manager()
+        try:
+            self.mp_manager
+        except AttributeError:
+            self.mp_manager = mp.Manager()
         # Common lock.
         self.mp_lock = self.mp_manager.Lock()
         # Shared computed values (data).
@@ -115,11 +118,22 @@ class BasePersistentGrid(object):
         pass
 
     def save(self):
-        _store_manager = self.mp_manager
-        del self.mp_manager
+        # Store values.
+        # print(type(self.mp_data))
+        (_store_manager, _store_lock, _store_data, _store_counter) = (
+            self.mp_manager, self.mp_lock, self.mp_data,
+            self._mp_n_counter_value)
+        # Delete values.
+        del (self.mp_manager, self.mp_lock, self._mp_n_counter_value)
+        # Make sure data is pickable.
+        self.mp_data = dict(self.mp_data)
+        # print(type(self.mp_data))
         with open(self.persistence_grid_path, 'wb') as f:
             pickle.dump(self, f)
-        self.mp_manager = _store_manager
+        # Store saved values.
+        (self.mp_manager, self.mp_lock, self.mp_data, self._mp_n_counter_value) = (_store_manager, _store_lock, _store_data, _store_counter)
+        # print(self.mp_data, dict(self.mp_data))
+        # print(type(self.mp_data))
 
     def compute_request_hash(self, estimator, grid):
         estimator_hash = self.get_hash(su.get_estimator_name(estimator))
@@ -139,7 +153,7 @@ class BasePersistentGrid(object):
         #   1) file paths
         #   2) small strings
         #   3) python_objects
-        if isinstance(x, dict) or not os.path.isfile(x):  # use function cache.
+        if isinstance(x, (dict, bytes)) or not os.path.isfile(x):  # use function cache.
             return self._get_hash_from_hashable(self._transform_to_hashable(x))
         # For files.
         hash_obj = self.hash_function()
