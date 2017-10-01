@@ -1,9 +1,7 @@
 """Test sklearn_utilities from this module."""
 import os
-import datetime as dt
 import multiprocessing
 import glob
-import unittest
 
 import pandas as pd
 import numpy as np
@@ -19,22 +17,21 @@ from data_utilities.tests.test_support import (
 class TestGridSearchCV(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
     """Test class for persistent_grid_search_cv of sklearn_utilities."""
 
-
     @classmethod
     def setUpClass(cls):
         # Create data.
         cls.data_ml_x, cls.data_ml_y = datasets.make_hastie_10_2(
             n_samples=cls.n_lines, random_state=1)
         cls.small_grid = {'n_estimators': list(range(40, 44)),
-                    'max_depth': [4, 9],
-                    'min_samples_leaf': [.2],
-                    'n_jobs': [1, ],
-                    }
+                          'max_depth': [4, 9],
+                          'min_samples_leaf': [.2],
+                          'n_jobs': [1, ],
+                          }
         # Call parent class super.
         super(TestGridSearchCV, cls).setUpClass()
         # Create support directories.
-        cls.temp_directory_grid_search = os.path.join(cls.temp_directory.name,
-                                                      'test_persistent_grid_search_cv')
+        cls.temp_directory_grid_search = os.path.join(
+            cls.temp_directory.name, 'test_persistent_grid_search_cv')
         os.mkdir(cls.temp_directory_grid_search)
         cls.temp_directory_grid_search_data = os.path.join(
             cls.temp_directory_grid_search, 'data')
@@ -51,7 +48,7 @@ class TestGridSearchCV(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
             glob.glob(os.path.join(self.temp_directory_grid_search,
                                    '**.pickle'))
             + glob.glob(os.path.join(self.temp_directory_grid_search,
-                                   '**' + os.sep + '*.pickle')))
+                                     '**' + os.sep + '*.pickle')))
         for remove_pickle in all_pickle_files:
             os.remove(remove_pickle)
         # os.system('tree ' + self.temp_directory.name)
@@ -82,12 +79,12 @@ class TestGridSearchCV(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
             all_times.append(np.mean(processor_times))
         all_times = np.array(all_times)
         assert all(np.diff(all_times) < 0)
-    def test_grid_search(self):
 
+    def test_grid_search(self):
         # Initiate a persistent grid search.
         bpg1 = su.grid_search.PersistentGrid(
             persistent_grid_path=os.path.join(self.temp_directory_grid_search,
-                                               'bpg.pickle'),
+                                              'bpg.pickle'),
             dataset_path=self.csv_path)
 
         # Do a first run.
@@ -104,7 +101,7 @@ class TestGridSearchCV(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
         # Do a second run.
         bpg2 = su.grid_search.PersistentGrid(
             persistent_grid_path=os.path.join(self.temp_directory_grid_search,
-                                               'bpg.pickle'),
+                                              'bpg.pickle'),
             dataset_path=self.csv_path)
         grid2 = su.persistent_grid_search_cv(
             bpg2,
@@ -114,3 +111,4 @@ class TestGridSearchCV(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
             y=self.data_ml_y,
             cv=10,
             n_jobs=multiprocessing.cpu_count())
+        # TODO: assert that the second run is way faster than the first.

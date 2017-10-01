@@ -12,7 +12,8 @@ from sklearn.model_selection import cross_val_score
 
 from data_utilities import python_utilities as pyu
 
-from data_utilities.sklearn_utilities import grid_search  # noqa
+# Imported at the bottom of the file.
+# from . import grid_search
 
 
 def multiprocessing_grid_search(queue, shared_list, persistent_object):
@@ -174,3 +175,5 @@ def xgboost_get_feature_importances_from_booster(booster):
     df['frequency'] = df['weight'] / df['weight'].sum()
 
     return df
+
+from . import grid_search
