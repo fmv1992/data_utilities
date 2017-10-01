@@ -13,39 +13,32 @@ from sklearn.ensemble import RandomForestClassifier
 
 from data_utilities import sklearn_utilities as su
 from data_utilities.tests.test_support import (
-    TestDataUtilitiesTestCase, TestMetaClass)
-
-
-def time_function_call(func, *func_args, **func_kwargs):
-    """Time a function call."""
-    time_before = dt.datetime.now()
-    func(*func_args, **func_kwargs)
-    return (dt.datetime.now() - time_before).total_seconds()
+    TestDataUtilitiesTestCase, TestMetaClass, time_function_call)
 
 
 class TestGridSearchCV(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
-    """Test class for grid_search_cv of sklearn_utilities."""
+    """Test class for persistent_grid_search_cv of sklearn_utilities."""
 
-    data_ml_x, data_ml_y = datasets.make_hastie_10_2(
-        n_samples=60000, random_state=1)
-    small_grid = {'n_estimators': list(range(1, 3)),
-                  'max_depth': [2, 4],
-                  'min_samples_leaf': [.2],
-                  'n_jobs': [1, ],
-                  }
 
     @classmethod
     def setUpClass(cls):
+        # Create data.
+        cls.data_ml_x, cls.data_ml_y = datasets.make_hastie_10_2(
+            n_samples=cls.n_lines, random_state=1)
+        cls.small_grid = {'n_estimators': list(range(40, 44)),
+                    'max_depth': [4, 9],
+                    'min_samples_leaf': [.2],
+                    'n_jobs': [1, ],
+                    }
         # Call parent class super.
         super(TestGridSearchCV, cls).setUpClass()
         # Create support directories.
         cls.temp_directory_grid_search = os.path.join(cls.temp_directory.name,
-                                                      'test_grid_search_cv')
+                                                      'test_persistent_grid_search_cv')
         os.mkdir(cls.temp_directory_grid_search)
         cls.temp_directory_grid_search_data = os.path.join(
             cls.temp_directory_grid_search, 'data')
         os.mkdir(cls.temp_directory_grid_search_data)
-        os.mknod(cls.temp_directory_grid_search_data + '/ppp.pickle')
         # Create a csv file.
         cls.csv_path = os.path.join(cls.temp_directory_grid_search_data,
                                     'data.csv')
@@ -63,40 +56,41 @@ class TestGridSearchCV(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
             os.remove(remove_pickle)
         # os.system('tree ' + self.temp_directory.name)
 
-    @unittest.skip('Will make timer decorator on next commit')
     def test_multiparallelism_speed(self):
-        """Test that using more processes speed up grid search."""
+        """Test that using more processes speed up the grid search."""
         clf = RandomForestClassifier()
 
         all_times = []
         N_RUNS = 3
-        for processors in (1, multiprocessing.cpu_count()):
+        cpu_count = multiprocessing.cpu_count()
+        for processors in (1, cpu_count):
             processor_times = []
             for _ in range(N_RUNS):
-                processor_times.append(
-                    time_function_call(
-                        su.grid_search_cv,
-                        self.small_grid,
-                        clf,
-                        self.data_ml_x,
-                        n_jobs=processors,
-                        y=self.data_ml_y,
-                        persistence_path=None,
-                        scoring='roc_auc',
-                        cv=5))
+                time_func = time_function_call(su.persistent_grid_search_cv)
+                run_time = time_func(
+                    su.grid_search.PersistentGrid(os.devnull, os.devnull),
+                    self.small_grid,
+                    clf,
+                    self.data_ml_x,
+                    n_jobs=processors,
+                    y=self.data_ml_y,
+                    scoring='roc_auc',
+                    cv=5)
+                processor_times.append(run_time.total_seconds())
             all_times.append(np.mean(processor_times))
         all_times = np.array(all_times)
+        print(all_times)
         assert all(np.diff(all_times) < 0)
     def test_grid_search(self):
 
         # Initiate a persistent grid search.
-        bpg1 = su.grid_search.BasePersistentGrid(
+        bpg1 = su.grid_search.PersistentGrid(
             persistence_grid_path=os.path.join(self.temp_directory_grid_search,
                                                'bpg.pickle'),
             dataset_path=self.csv_path)
 
         # Do a first run.
-        grid = su.grid_search_cv(
+        grid = su.persistent_grid_search_cv(
             bpg1,
             self.small_grid,
             RandomForestClassifier(),
@@ -107,11 +101,11 @@ class TestGridSearchCV(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
         del grid, bpg1
 
         # Do a second run.
-        bpg2 = su.grid_search.BasePersistentGrid(
+        bpg2 = su.grid_search.PersistentGrid(
             persistence_grid_path=os.path.join(self.temp_directory_grid_search,
                                                'bpg.pickle'),
             dataset_path=self.csv_path)
-        grid2 = su.grid_search_cv(
+        grid2 = su.persistent_grid_search_cv(
             bpg2,
             self.small_grid,
             RandomForestClassifier(),
