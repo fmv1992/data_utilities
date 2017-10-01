@@ -34,6 +34,7 @@ import pandas as pd
 import seaborn as sns
 
 # pylama: ignore=W0611,D301
+# pylama: ignore=D406,D407  # TODO: add this too
 
 
 def scale_axes_axis(axes, scale_xy_axis=False, scale_z_axis=False):
@@ -327,7 +328,13 @@ def histogram_of_categorical(a,
     new_labels = tuple(map(
         lambda x: labels[x] if x in labels.keys() else '',
         axes.get_xticks()))
-    axes.set_xticklabels(new_labels)
+    # Set rotation for the ticklabels.
+    # TODO: only set rotation in one place.
+    if any(map(lambda x: x > 4, labels)):
+        rotation = -90
+    else:
+        rotation = 0
+    axes.set_xticklabels(new_labels, rotation=rotation)
     return axes
 
 
@@ -436,6 +443,7 @@ def histogram_of_integers(a,
         pass
 
     # Apply rotation to labels if they are numerous.
+    # TODO: rotate categorical names if they are too many.
     if max(a) >= 100:
         rotation = -45
     else:
@@ -510,13 +518,14 @@ def histogram_of_dataframe(dataframe,
         # Since numpy dtypes seem not to be organized in a hierarchy of data
         # types (eg int8, int32 etc are instances of a int) we resort to a
         # string representation of data types.
-        series_str_dtype = str(series.dtype)
+        series_str_dtype = str(series.dtypes)
 
         # .
         # ├── categorical (x)
         # └── number
         #     ├── bool
         #     ├── float
+        #     ├── datetime
         #     └── int
         if series_str_dtype == 'category':
             axes = histogram_of_categorical(
@@ -527,12 +536,13 @@ def histogram_of_dataframe(dataframe,
         # └── number (x)
         #     ├── bool
         #     ├── float
+        #     ├── datetime
         #     └── int
         #
         # Series with nans cannot be passed to sns.distplot. So this should be
         # sent separetely to add_summary_statistics_textbox
         elif ('bool' in series_str_dtype or 'int' in series_str_dtype or
-              'float' in series_str_dtype):
+              'float' in series_str_dtype or 'datetime' in series_str_dtype):
             # Null values if passed to seaborn.distplot raise ValueError.
             series_not_null = series[~series.isnull()]
             # .
@@ -540,6 +550,7 @@ def histogram_of_dataframe(dataframe,
             # └── number
             #     ├── bool (x)
             #     ├── float
+            #     ├── datetime
             #     └── int
             if 'bool' in series_str_dtype:
                 axes = histogram_of_categorical(
@@ -551,8 +562,25 @@ def histogram_of_dataframe(dataframe,
             # └── number
             #     ├── bool
             #     ├── float (x)
+            #     ├── datetime
             #     └── int
             if 'float' in series_str_dtype:
+                axes = histogram_of_floats(
+                    series_not_null,
+                    **sns_distplot_kwargs)
+
+            # TODO: improve
+            # .
+            # ├── categorical
+            # └── number
+            #     ├── bool
+            #     ├── float
+            #     ├── datetime (x)
+            #     └── int
+            if 'datetime' in series_str_dtype:
+                series_not_null = pd.to_numeric(series_not_null)
+                series = pd.to_numeric(series)  # TODO XXX to fix
+                                                # add_summ_tbox on datetime
                 axes = histogram_of_floats(
                     series_not_null,
                     **sns_distplot_kwargs)
@@ -562,6 +590,7 @@ def histogram_of_dataframe(dataframe,
             # └── number
             #     ├── bool
             #     ├── float
+            #     ├── datetime
             #     └── int (x)
             if 'int' in series_str_dtype:
                 axes = histogram_of_integers(
@@ -570,6 +599,8 @@ def histogram_of_dataframe(dataframe,
 
             # Add summary statistics for all numeric cases.
             text = add_summary_statistics_textbox(series, axes)  # noqa
+            # TODO: having problems displays text boxes for Coursera Capstone
+            # Project.
 
         # If it is neither a number nor a categorical data type raise error.
         else:
@@ -595,6 +626,7 @@ def histogram_of_dataframe(dataframe,
                     output_path,
                     '{0}'.format(column)) + '.png',
                 dpi=300)
+            plt.close(fig)
 
     return tuple(list_of_figures)
 
@@ -678,6 +710,16 @@ def add_summary_statistics_textbox(series,
                 x_placement = ((i - contiguous_patches_to_halt + flipped_on) *
                                stride + x0 + 0.5 * stride)
                 break
+        else:
+            # TODO: not elegant at all.
+            try:
+                x_placement
+            except NameError:
+                x_placement = 0.05
+            try:
+                y_placement
+            except NameError:
+                y_placement = 0.95
         axes_ylim = axes.get_ylim()
         # Correct the placement of the box to absolute units.
         y_placement = axes_ylim[0] + y_placement * (axes_ylim[1] -
@@ -781,6 +823,7 @@ def list_usable_backends():
             usable_backends.append(backend)
 
     return usable_backends
+
 
 color = {
     'standard': (223, 229, 239),
