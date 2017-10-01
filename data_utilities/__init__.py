@@ -41,7 +41,7 @@ import data_utilities.tests.test_sklearn_utilities as tsu
 import data_utilities.tests.test_support as ts
 from data_utilities.tests.test_support import TestDataUtilitiesTestCase
 
-__version__ = '1.2.7'
+__version__ = '1.2.8'
 
 # pylama: ignore=D406,D407
 
