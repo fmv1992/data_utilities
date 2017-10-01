@@ -43,9 +43,7 @@ def multiprocessing_grid_search(queue, shared_list, persistence_object):
         shared_list.append(grid_result)
 
 
-# TODO: adapt to have the same anatomy of cross_val_score (adding just
-# persistence_path).
-def grid_search_cv(persistence_object,
+def persistent_grid_search_cv(persistence_object,
                    grid_space,
                    *cross_val_score_args,
                    **cross_val_score_kwargs):
