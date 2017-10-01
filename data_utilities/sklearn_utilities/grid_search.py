@@ -38,7 +38,7 @@ class BasePersistentGrid(object):
                  persistence_grid_path=None,
                  dataset_path=None,
                  hash_function=hashlib.md5,
-                 save_every_n_interations=1):
+                 save_every_n_interations=10):
 
             # Create creation date if needed.
             self.temporary_results = {}
