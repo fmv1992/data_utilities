@@ -23,6 +23,7 @@ import unittest
 import inspect
 import os
 import tempfile
+import datetime as dt
 
 
 import data_utilities as du
@@ -36,6 +37,15 @@ def setUpModule():
     Useful if there is a unittest being run.
     """
     TestDataUtilitiesTestCase.update_data()
+
+
+def time_function_call(func):
+    def wrapper(*args, **kwargs):
+        before = dt.datetime.now()
+        func(*args, **kwargs)
+        after = dt.datetime.now()
+        return (after - before)
+    return wrapper
 
 
 def is_inside_recursive_test_call():

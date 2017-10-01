@@ -37,6 +37,7 @@ import random
 import data_utilities.tests.test_pandas_utilities as tpu
 import data_utilities.tests.test_matplotlib_utilities as tmu
 import data_utilities.tests.test_python_utilities as tpyu
+import data_utilities.tests.test_sklearn_utilities as tsu
 import data_utilities.tests.test_support as ts
 from data_utilities.tests.test_support import TestDataUtilitiesTestCase
 
@@ -87,12 +88,9 @@ def test(label='fast',
         >>> du.test(verbose=False)
 
     """
-    # TODO: implement the 'fast' label and the default values of variables as
-    # the default argments. So overriding any of them should only change the
-    # changed variable in a simple way.
-
     # Default function parameters.
     default_function_parameters = {
+        'label': 'fast',
         'verbose': False,
         'n_tests': 5,
         'n_lines': 50,
@@ -103,6 +101,7 @@ def test(label='fast',
 
     # Parse function parameters.
     function_parameters = {
+        'label': label,
         'verbose': verbose,
         'n_tests': n_tests,
         'n_lines': n_lines,
@@ -149,12 +148,13 @@ def test(label='fast',
     TestDataUtilitiesTestCase.update_data()
 
     # Initial definitions.
+    # TODO: change verbose to more correct 'verbosity'.
     text_result = unittest.TextTestRunner(verbosity=verbose,
                                           **kwargs_test_runner)
 
     # Filter test cases.
     test_objects = list()
-    for module in (tpu, tmu, tpyu, ts):
+    for module in (tpu, tmu, tpyu, ts, tsu):
         for defined_object in dir(module):
             defined_object = getattr(module, defined_object)  # str -> object
             try:
