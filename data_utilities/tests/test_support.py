@@ -232,7 +232,7 @@ class TestDataUtilitiesTestCase(unittest.TestCase, metaclass=TestMetaClass):
     is_inside_unittest = is_inside_unittest()
     n_tests = 5
     n_graphical_tests = 3
-    n_lines = 50
+    n_lines_test_pandas = 50
     n_columns = 5
     save_figures = False
     maxDiff = None  # TODO: check if it is being utilized
@@ -245,7 +245,7 @@ class TestDataUtilitiesTestCase(unittest.TestCase, metaclass=TestMetaClass):
 
         """
         cls.data = pu.statistical_distributions_dataframe(
-            shape=(cls.n_lines, cls.n_columns))
+            shape=(cls.n_lines_test_pandas, cls.n_columns))
         return None
 
     # Setup temporary folder to be used.

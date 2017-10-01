@@ -21,7 +21,7 @@ class TestGridSearchCV(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
     def setUpClass(cls):
         # Create data.
         cls.data_ml_x, cls.data_ml_y = datasets.make_hastie_10_2(
-            n_samples=cls.n_lines, random_state=1)
+            n_samples=cls.n_lines_test_sklearn, random_state=1)
         cls.small_grid = {'n_estimators': list(range(40, 44)),
                           'max_depth': [4, 9],
                           'min_samples_leaf': [.2],
