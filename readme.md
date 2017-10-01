@@ -16,20 +16,23 @@ It depends on:
 
 # Organization and files
 
-
     .
     ├── data_utilities
     │   ├── __init__.py
     │   ├── matplotlib_utilities.py
     │   ├── pandas_utilities.py
     │   ├── python_utilities.py
+    │   ├── sklearn_utilities
+    │   │   ├── grid_search.py
+    │   │   └── __init__.py
     │   └── tests
     │       ├── __init__.py
     │       ├── test_matplotlib_utilities.py
     │       ├── test_pandas_utilities.py
     │       ├── test_python_utilities.py
+    │       ├── test_sklearn_utilities.py
     │       └── test_support.py
-    ├── license
+    ├── LICENSE
     ├── MANIFEST.in
     ├── readme.md
     └── setup.py
@@ -41,129 +44,17 @@ the utilities module should follow the guidelines and APIs provided by the
 parent module.
 
 Note: This is a primitive project. Expect backwards incompatible changes as I
-figure out the best way to to develop the utilities. Use at your own risk :)
+figure out the best way to to develop the utilities.
 
-# TODO
+# What's new
 
-## Tests
+* **Added `sklearn_utilities`**.
+* Improved tests customization in `du.test`.
+* Greatly improved documentation to `matplotlib_utilities`.
+* Greatly expanded `pandas_utilities` functions.
+* Improved tests as a whole.
 
-* Add test to every line of code.
-    - Current coverage: xxx%
-
-* Output images if `save_figures == True` to a tempfolder
-
-## Other
-
-* Create a data_parser helper for handling unstructured CSV files
-    * Ideas: identify time series
-    * Enable header regex
-    * Enable footer regex
-    * Parse 'body' of numbers as 'body' of the data.
-
-* Move changelog and todo sections to separate files
-  (https://github.com/pypa/sampleproject)
-
-* Create a helper function to allow for easy plotting of 20-30 data points to
-  be easily distinguishable on the map. Cycling thru colors, markers and
-  dash/lines is a good way to start.
-    * http://seaborn.pydata.org/tutorial/color_palettes.html is a good place to
-      start.
-
-* Add a way to create release versions number unequivocally (instead of doing
-  the analysis of backwards compatibility myself)
-
-* Solve all open "XXX"s and "TODO"s
-
-# Changelog
-
-#### Version 1.2.7
-
-* Greatly improved `matplotlib_utilities` module
-
-* Removed dependency with `unidecode` module
-
-* tests: enabled parametrized tests invocations such as:  
-  `python3 -c "import data_utilities as du; du.test(label='fast')"`  
-  `python3 -c "import data_utilities as du; du.test(N=500)"`
-
-* Add a test for the `test_support` file itself
-
-#### Version 1.2.6
-
-* Other
-    * Stable version uploaded to pypi
-
-#### Version 1.2.1 to 1.2.5
-
-* Other
-    * Development versions uploaded to pypi
-
-#### Version 1.2.0
-
-* Other
-    * Stable version uploaded to pypi
-
-#### Version 1.2.1 to 1.2.5
-
-* Other
-    * Development versions uploaded to pypi
-
-#### Version 1.2.0
-
-<!---
-* `matplolib_utilities`
-    * A
-
-* `pandas_utilities`
-    * A
-
-* `python_utilities`
-    * A
--->
-
-* Other
-    * Added package to PyPA as `data_utilities`
-    * Added a test method to the package:
-        python3 -c `import data_utilities as du; du.test()`
-
-#### Version 1.1.0
-
-* Improved `histogram_of_dataframe` function: added a textbox with summary
-  statistics.
-
-* Added a function to scale axes axis (`scale_axes_axis`).
-
-* Added a colorbar argument to `plot_3d`.
-
-* Label containers now return a list of matplotlib Text objects.
-
-* Added a boolean column to `dummy_dataframe`.
-
-* Added a test module for other libraries: `matplotlib_utilities` and
-  `python_utilities`.
-
-* Cleaned up the code.
-
-#### Version 1.0.0
-
-* Incompatible changes: the two utility functions to create dummy dataframes
-  now use a keyword argument 'shape' instead of 'n' or 'rows' and 'columns' to
-  resemble the numpy interface.
-
-#### Version 0.1.1
-
-* Added a convenience function (`statistical_distributions_dataframe`) of
-  variable size initialized with some common statistical distributions.
-
-* Added a test module which allows parametrized tests via the `TestMetaClass`.
-
-* Added a test module for the `find_components_of_array` function.
-
-#### Version 0.0.1
-
-* First commit.
-
-# Development Guidelines
+# Development guidelines
 
 * Support first the test interface of numpy:
 
