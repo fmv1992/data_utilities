@@ -132,7 +132,8 @@ class TestUtilitiesDataFrames(TestDataUtilitiesTestCase,
         # Test shapes with integers.
         # Prepare test shapes with integer values.
         integer_shapes = (
-            random.randint(1, self.n_lines) for x in range(self.n_tests//2))
+            random.randint(1, self.n_lines_test_pandas)
+            for x in range(self.n_tests//2))
         # Prepare test shapes with integer borderline values.
         integer_borderline_shapes = range(0, 1 + 1)
         iterator_of_ints = itertools.chain(
@@ -140,7 +141,7 @@ class TestUtilitiesDataFrames(TestDataUtilitiesTestCase,
         # Test shapes with tuples.
         # Prepare test shapes with tuple values.
         tuple_shapes = (
-            (random.randint(1, self.n_lines),
+            (random.randint(1, self.n_lines_test_pandas),
              random.randint(1, self.n_columns)) for x in
             range(self.n_tests//2))
         # Prepare test shapes with tuple borderline values.
@@ -262,8 +263,9 @@ class TestBalanceNDFrame(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
         """Return series to be tested."""
         categories = random.choice(((0, 1), ('a', 'b')))
         bias = np.random.random() * .95
-        array = np.random.choice(categories, size=self.n_lines, p=(bias,
-                                                                   1-bias))
+        array = np.random.choice(categories,
+                                 size=self.n_lines_test_pandas,
+                                 p=(bias, 1-bias))
         return pd.Series(array)
 
     def _get_dataframe(self):
