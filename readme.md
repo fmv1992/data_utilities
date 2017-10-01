@@ -58,6 +58,15 @@ figure out the best way to to develop the utilities.
 
 * Coding style: [PEP 8](https://www.python.org/dev/peps/pep-0008/) compliant.
 * Docstrings: [google docstrings](http://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html).
+* Before commiting new versions do a test for different versions of python3:
+    * python3.4
+    * python3.5
+    * python3.6
+    * (newer versions)
+    * Rationale: even though stability is expected between python versions some
+      changes occur. See for instance that on commit v1.2.8 (60573d7) there was
+      as unexpected import error on python34 but not on python36.
+
 
 * Support first the test interface of numpy:
 
