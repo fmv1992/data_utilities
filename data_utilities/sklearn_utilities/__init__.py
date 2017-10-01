@@ -12,16 +12,16 @@ from sklearn.model_selection import cross_val_score
 
 from data_utilities import python_utilities as pyu
 
-from data_utilities.sklearn_utilities import grid_search
+from data_utilities.sklearn_utilities import grid_search  # noqa
 
 
-def multiprocessing_grid_search(queue, shared_list, persistence_object):
+def multiprocessing_grid_search(queue, shared_list, persistent_object):
     """Explore cross validation grid using multiprocessing."""
     # scores = cross_val_score(*cross_val_score_args, **cross_val_score_kwargs)
     # queue.put(scores)
     while True:
         # All parameters from cross_val_score, i to compute pickle name and
-        # persistence_path.
+        # persistent_path.
         passed_parameters = queue.get()
         if passed_parameters is None:
             break
@@ -32,10 +32,10 @@ def multiprocessing_grid_search(queue, shared_list, persistence_object):
         del cvs_args
 
         # Check if value was already calculated:
-        stored_value = persistence_object.retrieve(estimator, grid)
+        stored_value = persistent_object.retrieve(estimator, grid)
         if stored_value is None:
             scores = cross_val_score(estimator, x, **cvs_kwargs)
-            persistence_object.update(estimator, grid, scores)
+            persistent_object.update(estimator, grid, scores)
         else:
             scores = stored_value
         grid_result = grid.copy()
@@ -43,17 +43,18 @@ def multiprocessing_grid_search(queue, shared_list, persistence_object):
         shared_list.append(grid_result)
 
 
-def persistent_grid_search_cv(persistence_object,
-                   grid_space,
-                   *cross_val_score_args,
-                   **cross_val_score_kwargs):
+def persistent_grid_search_cv(persistent_object,
+                              grid_space,
+                              *cross_val_score_args,
+                              **cross_val_score_kwargs):
     """Sklearn utilities version of grid search with cross validation."""
     # Dismember arguments and values.
     if 'n_jobs' in cross_val_score_kwargs.keys():
         if cross_val_score_kwargs['n_jobs'] == -1:
             n_workers = multiprocessing.cpu_count()
         elif cross_val_score_kwargs['n_jobs'] < 0:
-            n_workers = multiprocessing.cpu_count() + 1 + cross_val_score_kwargs['n_jobs']
+            n_workers = (multiprocessing.cpu_count()
+                         + 1 + cross_val_score_kwargs['n_jobs'])
         elif cross_val_score_kwargs['n_jobs'] > 0:
             n_workers = cross_val_score_kwargs['n_jobs']
     else:
@@ -62,19 +63,19 @@ def persistent_grid_search_cv(persistence_object,
     all_values = grid_space.values()
 
     # Initialize multiprocessing manager, queue, shared list, and enable
-    # multiprocessing capabilities on persistence_object.
-    mp_manager = persistence_object.get_multiprocessing_manager()
+    # multiprocessing capabilities on persistent_object.
+    mp_manager = persistent_object.get_multiprocessing_manager()
     # Initialize queue.
     mp_queue = mp_manager.Queue(64)
     # Initialize shared list.
     mp_scores_list = mp_manager.list()
-    # Enable multiprocessing capabilities on persistence_object.
+    # Enable multiprocessing capabilities on persistent_object.
     # Start parallel workers.
     jobs = []
     for i in range(n_workers):
         p = multiprocessing.Process(
             target=multiprocessing_grid_search,
-            args=(mp_queue, mp_scores_list, persistence_object),
+            args=(mp_queue, mp_scores_list, persistent_object),
             kwargs={})
         p.start()
         jobs.append(p)

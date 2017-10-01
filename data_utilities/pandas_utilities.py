@@ -532,12 +532,14 @@ def group_sorted_series_into_n_groups(series, n_groups=100):
 def categorize_n_most_frequent(series, n, other_name='other', inplace=False):
     """Categorize the most frequent values in a series.
 
-    Set the n most frequent occurences in a dataframe and set all other values to 'other.'
+    Set the n most frequent occurences in a dataframe and set all other values
+    to 'other.'
 
     Arguments:
         series (pandas.Series): series to be modified.
         n (int): the n most frequent groups to preserve.
-        other_name (str): The name to set to other categories/less frequent categories.
+        other_name (str): The name to set to other categories/less frequent
+        categories.
 
     Examples:
         >>> import data_utilities as du

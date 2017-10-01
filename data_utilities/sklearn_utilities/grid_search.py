@@ -19,23 +19,29 @@ import functools
 from data_utilities import sklearn_utilities as su
 
 class BasePersistentGrid(object):
-    def __new__(cls, *args, **kwargs):
-        """Allow single interface for creating and loading objects:
+    """Base class for persistent grids.
 
-        Example:
-            >>> path = '/path/to/persistent/file'
-            >>> persistent_grid = (
-                grid_search.BasePersistentGrid.load_from_path(path))
+    Its characteristics are:
+    * Simple usage. Instatiate it once per project (same call) feed into
+    the function and let them take care of the work.
+    * Store combinations of dataset + classifier + grid.
+    * Parallelization.
+
+    """
+    def __new__(cls, **kwargs):
+        """Allow single interface for instantiation and creation of objects.
+
+        All objects can be created with `cls.load_from_path()`.
+
         """
-        loaded_object = cls.load_from_path(**kwargs)
-        if loaded_object is None:  # Intialize with __init__ method.
-            # Will call init and set all attributes (including data set's).
-            return super(BasePersistentGrid, cls).__new__(cls)
-        else:
+        if os.path.isfile(kwargs['persistent_grid_path']):
+            loaded_object = cls.load_from_path(**kwargs)
             return loaded_object
+        else:
+            return super(BasePersistentGrid, cls).__new__(cls)
 
     def __init__(self,
-                 persistence_grid_path=None,
+                 persistent_grid_path=None,
                  dataset_path=None,
                  hash_function=hashlib.md5,
                  save_every_n_interations=10):
@@ -45,7 +51,7 @@ class BasePersistentGrid(object):
 
             # These attributes are constant even between runs.
             self.hash_function = hash_function
-            self.persistence_grid_path = persistence_grid_path
+            self.persistent_grid_path = persistent_grid_path
             self.save_every_n_interations = save_every_n_interations
 
             # These two attributes can change between interactions.
@@ -65,23 +71,20 @@ class BasePersistentGrid(object):
             # These attributes change every session.
             # self._n_counter = 0
 
-    @classmethod
-    def load_from_path(cls, *args, **kwargs):
-        if kwargs:
-            path = kwargs['persistence_grid_path']
-        else:
-            return None
-
-        if os.path.isfile(path):
-            with open(path, 'rb') as f:
+    @staticmethod
+    def load_from_path(*args, **kwargs):
+        if os.path.isfile(kwargs['persistent_grid_path']):
+            with open(kwargs['persistent_grid_path'], 'rb') as f:
                 loaded_object = pickle.load(f)
             # Refresh data set hash.
+            print(kwargs['dataset_path'])
             loaded_object._update_dataset_hash(kwargs['dataset_path'])
             # All other attributes are kept.
             loaded_object._instantiate_shared_attributes()
             return loaded_object
         else:
-            return None
+            pg = PersistentGrid(**kwargs)
+            return pg
 
     def get_multiprocessing_manager(self):
         return self.mp_manager
@@ -122,7 +125,7 @@ class BasePersistentGrid(object):
         del (self.mp_manager, self.mp_lock, self._mp_n_counter_value)
         # Make sure data is pickable.
         self.mp_data = dict(self.mp_data)
-        with open(self.persistence_grid_path, 'wb') as f:
+        with open(self.persistent_grid_path, 'wb') as f:
             pickle.dump(self, f)
         # Store saved values.
         (self.mp_manager, self.mp_lock, self.mp_data, self._mp_n_counter_value) = (_store_manager, _store_lock, _store_data, _store_counter)
@@ -184,33 +187,33 @@ class BasePersistentGrid(object):
 
 
 class PersistentGrid(BasePersistentGrid):
-    """Enable easy persistence of calculated values for grid searchs.
+    """Allow easy persistence between interrupted grid searches.
 
-    Not be used directly, just instantiated by the user then fed to other
-    functions.
+    Example:
+        >>> import pandas as pd, numpy as np
+        >>> from sklearn.tree import DecisionTreeClassifier as DTC
+        >>> from sklearn.datasets import load_breast_cancer
+        >>> pg_path = '/tmp/pg.pickle'
+        >>> dset_path = '/tmp/data.csv'
+        >>> dataset = load_breast_cancer()
+        >>> df = pd.DataFrame(np.column_stack((dataset.data, dataset.target)))
+        >>> df.to_csv(dset_path)
+        >>> dt_grid = {'split': ['random', 'best'],
+        ...            'max_depth': [2, 4]}
+        >>> clf = DTC()
+        >>> dset_path = '/tmp/data.csv'
+        >>> persistent_grid = su.grid_search.PersistentGrid().load_from_path( persistent_grid_path='/tmp/pg.pickle', dataset_path='/tmp/data.csv')
+        >>> persistent_grid
 
-    The persistent grid is a (optionally compressed) file that resides in your
-    system. It should be one per project. A project may contain multiple data
-    sets and multiple models. For a given data set and model combination only
-    one calculated grid may exist.
 
-    It must unequivocally store calculated values for a model for a given data
-    set.
 
-    It should also be able to store tens of thousands of calculated grids and
-    retrieve them quickly if already calculated.
-
-    It must allow for multiple processes to access it.
-
-    A PersitentGrid must have:
-        * A unique data set tied to it (checksum).
-            * Changing it should raise a warning.
-        * A unique classifier tied to it.
-            *
     """
     pass
 
 if __name__ == '__main__':
-    bpg = PersistentGrid(
-        '../../__/persistent_grid.pickle',
-        '../../__/iris_dataset.csv')
+    bpg1 = PersistentGrid(
+        persistent_grid_path='../../__/persistent_grid.pickle',
+        dataset_path='../../__/iris_dataset.csv')
+    bpg2 = PersistentGrid.load_from_path(
+        persistent_grid_path='../../__/persistent_grid.pickle',
+        dataset_path='../../__/iris_dataset.csv')
