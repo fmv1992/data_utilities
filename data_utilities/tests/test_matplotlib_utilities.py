@@ -57,15 +57,16 @@ class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
         """
         # Create series. Will be divided by more than //2 when all plots are
         # ready.
-        def dist_function01(): return np.random.normal(size=cls.n_lines)
+        def dist_function01(): return np.random.normal(
+            size=cls.n_lines_test_pandas)
 
         def dist_function02(): return np.random.randint(
             0,
-            99999) * np.arange(cls.n_lines)
+            99999) * np.arange(cls.n_lines_test_pandas)
 
         def dist_function03(): return np.random.randint(
             0,
-            99999) * np.ones(cls.n_lines)
+            99999) * np.ones(cls.n_lines_test_pandas)
         dist_functions = (dist_function01, dist_function02, dist_function03)
         iterable_of_series = (pd.Series(np.random.choice(dist_functions)())
                               for _ in range(cls.n_graphical_tests//2))
@@ -229,12 +230,12 @@ class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
     def test_add_summary_statistics_textbox(self):
         """Add summary statistics textbox test."""
         # Initialize x values.
-        x = np.linspace(-10, 10, self.n_lines)
+        x = np.linspace(-10, 10, self.n_lines_test_pandas)
 
         # Initialize y values.
         # Add some borderline cases to y.
-        y_borderline = (pd.Series(np.ones(self.n_lines)),
-                        pd.Series(np.zeros(self.n_lines)))
+        y_borderline = (pd.Series(np.ones(self.n_lines_test_pandas)),
+                        pd.Series(np.zeros(self.n_lines_test_pandas)))
         # Add other functions to y.
         y = map(lambda x, y: pd.Series(self.compose_functions(x, 3)),
                 itertools.repeat(x),
