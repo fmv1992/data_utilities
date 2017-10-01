@@ -56,6 +56,9 @@ figure out the best way to to develop the utilities.
 
 # Development guidelines
 
+* Coding style: [PEP 8](https://www.python.org/dev/peps/pep-0008/) compliant.
+* Docstrings: [google docstrings](http://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html).
+
 * Support first the test interface of numpy:
 
         `python3 -c "import data_utilities as du; du.test()"`
