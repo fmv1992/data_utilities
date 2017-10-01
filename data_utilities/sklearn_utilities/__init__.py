@@ -60,6 +60,11 @@ def persistent_grid_search_cv(persistent_object,
             n_workers = cross_val_score_kwargs['n_jobs']
     else:
         n_workers = multiprocessing.cpu_count()
+    # This function already creates 4 parallel works. In order to avoid having
+    # n**2 parallel workers then reset n_jobs.
+    cross_val_score_kwargs['n_jobs'] = 1
+
+    # Dismember grid space.
     all_parameters = grid_space.keys()
     all_values = grid_space.values()
 
@@ -176,4 +181,6 @@ def xgboost_get_feature_importances_from_booster(booster):
 
     return df
 
-from . import grid_search
+if __name__ != '__main__':
+    # Running this file will cause import errors.
+    from . import grid_search
