@@ -31,23 +31,38 @@ module should mimick the development guidelines of its parent module.
 
 import unittest
 
+import numpy as np
+import random
+
 import data_utilities.tests.test_pandas_utilities as tpu
 import data_utilities.tests.test_matplotlib_utilities as tmu
 import data_utilities.tests.test_python_utilities as tpyu
+import data_utilities.tests.test_sklearn_utilities as tsu
 import data_utilities.tests.test_support as ts
 from data_utilities.tests.test_support import TestDataUtilitiesTestCase
 
 __version__ = '1.2.7'
 
+# pylama: ignore=D406,D407
 
-def test(label='fast', verbose=1, n_tests=50, n_lines=100, n_columns=10,
-         n_graphical_tests=3, save_figures=False, **kwargs_test_runner):
+
+def test(label='fast',
+         verbose=False,                 # Must match the default values for
+         n_tests=5,                     # fast label.
+         n_lines=50,
+         n_columns=5,
+         n_graphical_tests=3,
+         save_figures=False,
+         **kwargs_test_runner):
     """Module level test function.
 
     Run tests using the unittest module. Both 'numpy style' and unittest
     invocations should work:
+
     `python3 -m unittest discover -vvv data_utilities/tests`
+        (not fully supported as of yet)
     `python3 -c "import data_utilities as du; du.test()"`
+        (fully supported as of yet)
 
     Created based on the same architecture as the scipy test function defined
     on their __init__.py.
@@ -73,45 +88,73 @@ def test(label='fast', verbose=1, n_tests=50, n_lines=100, n_columns=10,
         >>> du.test(verbose=False)
 
     """
-    # TODO: implement the label variable.
-    # TODO: implement the verbose variable.
+    # Default function parameters.
+    default_function_parameters = {
+        'label': 'fast',
+        'verbose': False,
+        'n_tests': 5,
+        'n_lines': 50,
+        'n_columns': 5,
+        'n_graphical_tests': 3,
+        'save_figures': False,
+    }
+
+    # Parse function parameters.
+    function_parameters = {
+        'label': label,
+        'verbose': verbose,
+        'n_tests': n_tests,
+        'n_lines': n_lines,
+        'n_columns': n_columns,
+        'n_graphical_tests': n_graphical_tests,
+        'save_figures': save_figures,
+    }
+    # Update those parameters related to new keyword parameters.
+    function_parameters = {
+        k: v for k, v in function_parameters.items() if
+        v != default_function_parameters[k]}
+
+    # Enforce label variable.
     if label == 'fast':
-        test_size_parameters = {
-            'verbose': False,
-            'n_tests': 5,
-            'n_lines': 50,
-            'n_columns': 5,
-            'n_graphical_tests': 3,
-            'save_figures': True,  # TODO: later needs to be false
-        }
+        updated_function_parameters = default_function_parameters.copy()
+        updated_function_parameters.update(function_parameters)
     elif label == 'full':
-        raise NotImplementedError("label == full is not implemented yet.")
-        test_size_parameters = {
-            'verbose': verbose,
-            'n_tests': n_tests,
-            'n_lines': n_lines,
-            'n_columns': n_columns,
-            'n_graphical_tests': n_graphical_tests,
-            'save_figures': save_figures,
+        updated_function_parameters = {
+            'verbose': False,
+            'n_tests': 100,
+            'n_lines': 500,
+            'n_columns': 50,
+            'n_graphical_tests': 20,
+            'save_figures': True,
         }
+        updated_function_parameters.update(function_parameters)
     else:
-        test_size_parameters = {
-            'verbose': verbose,
-            'n_tests': n_tests,
-            'n_lines': n_lines,
-            'n_columns': n_columns,
-            'n_graphical_tests': n_graphical_tests,
-            'save_figures': save_figures,
-        }
-    for attr in test_size_parameters.keys():
-        setattr(TestDataUtilitiesTestCase, attr, test_size_parameters[attr])
+        raise NotImplementedError(
+            "label == '{}' is not implemented yet.".format(label))
+
+    # Avoid recursion in case this function is called from test. Has to come
+    # after the label testing part.
+    # TODO: maybe modifying normal functions just to add a couple of lines to
+    # test coverage is not a good idea.
+    if ts.is_inside_recursive_test_call():
+        return None
+
+    # Overwrite parsed variables.
+    for attr in updated_function_parameters.keys():
+        setattr(TestDataUtilitiesTestCase,
+                attr,
+                updated_function_parameters[attr])
+    # Update data.
+    TestDataUtilitiesTestCase.update_data()
 
     # Initial definitions.
-    text_result = unittest.TextTestRunner(verbosity=verbose, **kwargs_test_runner)
+    # TODO: change verbose to more correct 'verbosity'.
+    text_result = unittest.TextTestRunner(verbosity=verbose,
+                                          **kwargs_test_runner)
 
     # Filter test cases.
     test_objects = list()
-    for module in (tpu, tmu, tpyu, ts):
+    for module in (tpu, tmu, tpyu, ts, tsu):
         for defined_object in dir(module):
             defined_object = getattr(module, defined_object)  # str -> object
             try:
@@ -127,4 +170,19 @@ def test(label='fast', verbose=1, n_tests=50, n_lines=100, n_columns=10,
         test_objects))
     text_result.run(test_suite)
 
+    return None
+
+
+def set_random_seed(seed):
+    """Set relevant random seed for all applicable modules.
+
+    Arguments:
+        seed (int): seed the random state of the random module and np.random.
+
+    Returns:
+        None
+
+    """
+    np.random.seed(seed)
+    random.seed(seed)
     return None
