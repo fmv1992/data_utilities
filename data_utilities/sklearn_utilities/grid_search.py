@@ -16,7 +16,7 @@ import multiprocessing as mp
 
 import functools
 
-from data_utilities import sklearn_utilities as su
+from data_utilities.sklearn_utilities import get_estimator_name
 
 class BasePersistentGrid(object):
     """Base class for persistent grids.
@@ -131,7 +131,7 @@ class BasePersistentGrid(object):
         (self.mp_manager, self.mp_lock, self.mp_data, self._mp_n_counter_value) = (_store_manager, _store_lock, _store_data, _store_counter)
 
     def compute_request_hash(self, estimator, grid):
-        estimator_hash = self.get_hash(su.get_estimator_name(estimator))
+        estimator_hash = self.get_hash(get_estimator_name(estimator))
         grid_hash = self.get_hash(grid)
         final_hash = self.get_hash(
             self.dataset_hash + estimator_hash + grid_hash)
@@ -202,7 +202,7 @@ class PersistentGrid(BasePersistentGrid):
         ...            'max_depth': [2, 4]}
         >>> clf = DTC()
         >>> dset_path = '/tmp/data.csv'
-        >>> persistent_grid = su.grid_search.PersistentGrid().load_from_path( persistent_grid_path='/tmp/pg.pickle', dataset_path='/tmp/data.csv')
+        >>> persistent_grid = grid_search.PersistentGrid().load_from_path( persistent_grid_path='/tmp/pg.pickle', dataset_path='/tmp/data.csv')
         >>> persistent_grid
 
 
