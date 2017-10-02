@@ -9,12 +9,15 @@ import numpy as np
 from sklearn import datasets
 from sklearn.ensemble import RandomForestClassifier
 
+from deap.algorithms import eaSimple
+from deap.base import Toolbox
+
 from data_utilities import sklearn_utilities as su
 from data_utilities.tests.test_support import (
     TestDataUtilitiesTestCase, TestMetaClass, time_function_call)
 
 
-class TestGridSearchCV(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
+class BaseGridTestCase(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
     """Test class for persistent_grid_search_cv of sklearn_utilities."""
 
     @classmethod
@@ -28,7 +31,7 @@ class TestGridSearchCV(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
                           'n_jobs': [1, ],
                           }
         # Call parent class super.
-        super(TestGridSearchCV, cls).setUpClass()
+        super(BaseGridTestCase, cls).setUpClass()
         # Create support directories.
         cls.temp_directory_grid_search = os.path.join(
             cls.temp_directory.name, 'test_persistent_grid_search_cv')
@@ -53,6 +56,10 @@ class TestGridSearchCV(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
             os.remove(remove_pickle)
         # os.system('tree ' + self.temp_directory.name)
 
+
+class TestGridSearchCV(BaseGridTestCase, metaclass=TestMetaClass):
+    """Test class for persistent_grid_search_cv of sklearn_utilities."""
+
     def test_multiparallelism_speed(self):
         """Test that using more processes speed up the grid search."""
         clf = RandomForestClassifier()
@@ -65,6 +72,8 @@ class TestGridSearchCV(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
             for _ in range(N_RUNS):
                 time_func = time_function_call(su.persistent_grid_search_cv)
                 run_time = time_func(
+                    # TODO: use real values to improve testing scenario
+                    # coverage.
                     su.grid_search.PersistentGrid(
                         persistent_grid_path=os.devnull,
                         dataset_path=os.devnull),
@@ -112,3 +121,22 @@ class TestGridSearchCV(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
             cv=10,
             n_jobs=multiprocessing.cpu_count())
         # TODO: assert that the second run is way faster than the first.
+
+
+class TestEvolutionaryPersistentGrid(BaseGridTestCase,
+                                     metaclass=TestMetaClass):
+    def test_simple(self):
+        population = [list(range(10)) for x in range(10)]
+        toolbox = Toolbox()
+        cxpb = 0.5
+        mutpb = 0.05
+        ngen = 50
+        easimple_args = (population, toolbox, cxpb, mutpb, ngen)
+
+        epg = su.evolutionary_grid_search.EvolutionaryPersistentGrid.load_from_path(
+            eaSimple,
+            easimple_args,
+            persistent_grid_path=os.devnull,
+            dataset_path=os.devnull,
+        )
+

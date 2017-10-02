@@ -14,6 +14,7 @@ from data_utilities import python_utilities as pyu
 
 # Imported at the bottom of the file.
 # from . import grid_search
+# from . import evolutionary_grid_search
 
 
 def multiprocessing_grid_search(queue, shared_list, persistent_object):
@@ -184,3 +185,4 @@ def xgboost_get_feature_importances_from_booster(booster):
 if __name__ != '__main__':
     # Running this file will cause import errors.
     from . import grid_search
+    from . import evolutionary_grid_search
