@@ -515,7 +515,7 @@ def group_sorted_series_into_n_groups(series, n_groups=100):
 
     """
     # Check that the array is sorted.
-    assert series.is_monotonic, "Provided series is not monotonic."
+    # assert series.is_monotonic, "Provided series is not monotonic."
 
     alen = len(series)
     repeat_times = alen // n_groups
