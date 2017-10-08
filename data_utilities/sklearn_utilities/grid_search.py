@@ -72,7 +72,6 @@ class BasePersistentGrid(object):
             created_object = cls(*args, **kwargs)
             return created_object
 
-
     def get_multiprocessing_manager(self):
         return self.mp_manager
 
@@ -166,7 +165,6 @@ class BasePersistentGrid(object):
         hash_obj.update(hashable)
         return hash_obj.digest()
 
-
     def _load_data_from_bytesio(self, zipf):
         """Return a dictionary of hexdigest -> results."""
         keys = map(lambda x: x.strip('.pickle'), zipf.namelist())
@@ -227,6 +225,7 @@ class PersistentGrid(BasePersistentGrid):
         loaded_object = super(cls, PersistentGrid).load_from_path(**kwargs)
         loaded_object._update_base_hash(kwargs['persistent_grid_path'])
         return loaded_object
+
 
 if __name__ == '__main__':
     bpg1 = PersistentGrid(

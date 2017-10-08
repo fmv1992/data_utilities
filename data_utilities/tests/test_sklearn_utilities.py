@@ -122,7 +122,6 @@ class TestGridSearchCV(BaseGridTestCase, metaclass=TestMetaClass):
             n_jobs=multiprocessing.cpu_count())
         # TODO: assert that the second run is way faster than the first.
 
-
 class TestEvolutionaryPersistentGrid(BaseGridTestCase,
                                      metaclass=TestMetaClass):
     def test_simple(self):
