@@ -23,6 +23,7 @@ import unittest
 import inspect
 import os
 import tempfile
+import datetime as dt
 
 
 import data_utilities as du
@@ -36,6 +37,15 @@ def setUpModule():
     Useful if there is a unittest being run.
     """
     TestDataUtilitiesTestCase.update_data()
+
+
+def time_function_call(func):
+    def wrapper(*args, **kwargs):
+        before = dt.datetime.now()
+        func(*args, **kwargs)
+        after = dt.datetime.now()
+        return (after - before)
+    return wrapper
 
 
 def is_inside_recursive_test_call():
@@ -74,7 +84,6 @@ def is_inside_unittest():
     key = 'argv'  # this may be error prone...
     value = 'unittest'
     while frame:
-        # print(frame.f_locals.items())
         frame_argv = frame.f_locals.get(key)
         if frame_argv and value in ''.join(frame_argv):
             return True
@@ -97,7 +106,6 @@ class TestMetaClass(type):
         def assert_X_from_iterables(self, x=lambda: True, *args, **kwargs):
             func = getattr(self, x.__name__, x)
             for i, zipargs in enumerate(zip(*args)):
-                # print('iteration i:', i)
                 with self.subTest(iteration=i, arguments=zipargs):
                     func(*zipargs)
             return None
@@ -178,6 +186,10 @@ class TestDataUtilitiesTestCase(unittest.TestCase, metaclass=TestMetaClass):
             super().__setattr__(name, value)
 
     @classmethod
+    def setUpClass(cls):
+        pass
+
+    @classmethod
     def compose_functions(cls,
                           x,
                           number_of_compositions=1,
@@ -220,7 +232,7 @@ class TestDataUtilitiesTestCase(unittest.TestCase, metaclass=TestMetaClass):
     is_inside_unittest = is_inside_unittest()
     n_tests = 5
     n_graphical_tests = 3
-    n_lines = 50
+    n_lines_test_pandas = 50
     n_columns = 5
     save_figures = False
     maxDiff = None  # TODO: check if it is being utilized
@@ -233,7 +245,7 @@ class TestDataUtilitiesTestCase(unittest.TestCase, metaclass=TestMetaClass):
 
         """
         cls.data = pu.statistical_distributions_dataframe(
-            shape=(cls.n_lines, cls.n_columns))
+            shape=(cls.n_lines_test_pandas, cls.n_columns))
         return None
 
     # Setup temporary folder to be used.
