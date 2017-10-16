@@ -24,7 +24,8 @@ class BasePersistentGrid(object):
     Its characteristics are:
     * Simple usage. Instatiate it once per project (same call) feed into
     the function and let them take care of the work.
-    * Store combinations of dataset + classifier + grid.
+    * Store combinations of dataset (and its processed variants) + classifier +
+    grid.
     * Parallelization.
 
     """
@@ -34,14 +35,10 @@ class BasePersistentGrid(object):
         All objects can be created with `cls.load_from_path()`.
 
         """
-        if os.path.isfile(kwargs['persistent_grid_path']):
-            loaded_object = cls.load_from_path(**kwargs)
-            loaded_object._instantiate_shared_attributes()
-            return loaded_object
-        else:
-            return super(BasePersistentGrid, cls).__new__(cls)
+        return super(BasePersistentGrid, cls).__new__(cls)
 
     def __init__(self,
+                 *args,
                  persistent_grid_path=None,
                  dataset_path=None,
                  hash_function=hashlib.md5,
@@ -63,10 +60,10 @@ class BasePersistentGrid(object):
         """Unpickle file from persistent_grid_path.
 
         In addition to it refresh its base_hash based on base_attribute."""
-
         if os.path.isfile(kwargs['persistent_grid_path']):
             with open(kwargs['persistent_grid_path'], 'rb') as f:
                 loaded_object = pickle.load(f)
+                loaded_object._instantiate_shared_attributes()
             return loaded_object
         else:
             created_object = cls(*args, **kwargs)
@@ -93,11 +90,10 @@ class BasePersistentGrid(object):
 
     def update(self, estimator, grid, results):
         request_hash = self.compute_request_hash(estimator, grid)
-        with self.mp_lock:
-            self.mp_data[request_hash] = results
-            self._mp_n_counter_value.value += 1
-            if self._mp_n_counter_value.value % self.save_every_n_interations == 0:
-                self.save()
+        self.mp_data[request_hash] = results
+        self._mp_n_counter_value.value += 1
+        if self._mp_n_counter_value.value % self.save_every_n_interations == 0:
+            self.save()
 
     def _get_multiprocessing_shared_attributes(self):
         pass
@@ -117,7 +113,8 @@ class BasePersistentGrid(object):
         (self.mp_manager, self.mp_lock, self.mp_data, self._mp_n_counter_value) = (_store_manager, _store_lock, _store_data, _store_counter)
 
     def compute_request_hash(self, estimator, grid):
-        estimator_hash = self.get_hash(get_estimator_name(estimator))
+        estimator_name = get_estimator_name(estimator)
+        estimator_hash = self.get_hash(estimator_name)
         grid_hash = self.get_hash(grid)
         final_hash = self.get_hash(
             self.base_hash + estimator_hash + grid_hash)
@@ -126,7 +123,8 @@ class BasePersistentGrid(object):
     def retrieve(self, estimator, grid):
         # If already stored just return.
         request_hash = self.compute_request_hash(estimator, grid)
-        return self.mp_data.get(request_hash, None)
+        retrieved_hash = self.mp_data.get(request_hash, None)
+        return retrieved_hash
 
     def get_hash(self, x):
         # For dict, bytes and strings.
@@ -200,10 +198,11 @@ class PersistentGrid(BasePersistentGrid):
                  dataset_path=None,
                  hash_function=hashlib.md5,
                  save_every_n_interations=10):
-        super(PersistentGrid, self).__init__(persistent_grid_path,
-                                             dataset_path,
-                                             hash_function,
-                                             save_every_n_interations)
+        super(PersistentGrid, self).__init__(
+            persistent_grid_path=persistent_grid_path,
+            dataset_path=dataset_path,
+            hash_function=hash_function,
+            save_every_n_interations=save_every_n_interations)
         # Base hash:
         # The base hash is the hash that is combined with any new
         # parameters go guarantee that the combination of
@@ -218,12 +217,13 @@ class PersistentGrid(BasePersistentGrid):
     # refresh shared attributes
     # All other attributes are kept.
     @classmethod
-    def load_from_path(cls, **kwargs):
+    def load_from_path(cls, *args, **kwargs):
         """Unpickle file from persistent_grid_path.
 
         In addition to it refresh its base_hash based on base_attribute."""
-        loaded_object = super(cls, PersistentGrid).load_from_path(**kwargs)
-        loaded_object._update_base_hash(kwargs['persistent_grid_path'])
+        loaded_object = super(cls, PersistentGrid).load_from_path(*args,
+                                                                  **kwargs)
+        loaded_object._update_base_hash(kwargs['dataset_path'])
         return loaded_object
 
 

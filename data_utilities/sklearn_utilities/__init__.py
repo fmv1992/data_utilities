@@ -26,6 +26,7 @@ def multiprocessing_grid_search(queue, shared_list, persistent_object):
         # persistent_path.
         passed_parameters = queue.get()
         if passed_parameters is None:
+            persistent_object.save()
             break
         # Dismember arguments and values.
         grid, cvs_args, cvs_kwargs = passed_parameters
