@@ -2,6 +2,7 @@
 import os
 import multiprocessing
 import glob
+import tempfile
 
 import pandas as pd
 import numpy as np
@@ -33,14 +34,14 @@ class BaseGridTestCase(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
         # Call parent class super.
         super(BaseGridTestCase, cls).setUpClass()
         # Create support directories.
-        cls.temp_directory_grid_search = os.path.join(
-            cls.temp_directory.name, 'test_persistent_grid_search_cv')
-        os.mkdir(cls.temp_directory_grid_search)
-        cls.temp_directory_grid_search_data = os.path.join(
-            cls.temp_directory_grid_search, 'data')
-        os.mkdir(cls.temp_directory_grid_search_data)
+        cls.temp_directory_grid_search = tempfile.TemporaryDirectory(
+                dir=cls.temp_directory.name,
+                prefix='test_persistent_grid_search_cv')
+        cls.temp_directory_grid_search_data = tempfile.TemporaryDirectory(
+                dir=cls.temp_directory_grid_search.name,
+                prefix='data')
         # Create a csv file.
-        cls.csv_path = os.path.join(cls.temp_directory_grid_search_data,
+        cls.csv_path = os.path.join(cls.temp_directory_grid_search_data.name,
                                     'data.csv')
         pd.concat(map(pd.DataFrame,
                       (cls.data_ml_x, cls.data_ml_y)),
@@ -48,9 +49,9 @@ class BaseGridTestCase(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
 
     def tearDown(self):
         all_pickle_files = (
-            glob.glob(os.path.join(self.temp_directory_grid_search,
+            glob.glob(os.path.join(self.temp_directory_grid_search.name,
                                    '**.pickle'))
-            + glob.glob(os.path.join(self.temp_directory_grid_search,
+            + glob.glob(os.path.join(self.temp_directory_grid_search.name,
                                      '**' + os.sep + '*.pickle')))
         for remove_pickle in all_pickle_files:
             os.remove(remove_pickle)
@@ -92,8 +93,9 @@ class TestGridSearchCV(BaseGridTestCase, metaclass=TestMetaClass):
     def test_grid_search(self):
         # Initiate a persistent grid search.
         bpg1 = su.grid_search.PersistentGrid(
-            persistent_grid_path=os.path.join(self.temp_directory_grid_search,
-                                              'bpg.pickle'),
+            persistent_grid_path=os.path.join(
+                self.temp_directory_grid_search.name,
+                'bpg.pickle'),
             dataset_path=self.csv_path)
 
         # Do a first run.
@@ -109,8 +111,9 @@ class TestGridSearchCV(BaseGridTestCase, metaclass=TestMetaClass):
 
         # Do a second run.
         bpg2 = su.grid_search.PersistentGrid(
-            persistent_grid_path=os.path.join(self.temp_directory_grid_search,
-                                              'bpg.pickle'),
+            persistent_grid_path=os.path.join(
+                self.temp_directory_grid_search.name,
+                'bpg.pickle'),
             dataset_path=self.csv_path)
         grid2 = su.persistent_grid_search_cv(
             bpg2,
