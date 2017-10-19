@@ -2,6 +2,7 @@
 import os
 import multiprocessing
 import glob
+import unittest
 
 import pandas as pd
 import numpy as np
@@ -53,6 +54,8 @@ class TestGridSearchCV(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
             os.remove(remove_pickle)
         # os.system('tree ' + self.temp_directory.name)
 
+    @unittest.skipIf(os.name == 'nt',
+                     "Multiprocessing should not be tested on Windows.")
     def test_multiparallelism_speed(self):
         """Test that using more processes speed up the grid search."""
         clf = RandomForestClassifier()
