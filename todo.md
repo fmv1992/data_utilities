@@ -2,10 +2,15 @@
 
 ## Tests
 
+* Add travis/ci support for windows (multiprocessing is not playing nice on
+  win).
+
 * Add test to every line of code.
     - Current coverage: 67%
 
 * Output images if `save_figures == True` to a tempfolder (instead of `/tmp`).
+
+* Improve testing on PersitentGrid (a bug was found by a different project).
 
 ## Other
 
