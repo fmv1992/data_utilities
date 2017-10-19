@@ -3,7 +3,7 @@ env:
     - PYTHONPATH=$PYTHONPATH:/home/travis/build/fmv1992/data_utilities/data_utilities/
 branches:
   only:
-    - develop
+    - dev
     - master
 python:
     - "3.4"  # oldest python version supported by numpy
