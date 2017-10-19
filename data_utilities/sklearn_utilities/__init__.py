@@ -3,6 +3,8 @@ import hashlib
 import itertools
 import pickle
 import multiprocessing
+import threading
+import os
 
 import numpy as np
 import pandas as pd
@@ -78,13 +80,21 @@ def persistent_grid_search_cv(persistent_object,
     # Enable multiprocessing capabilities on persistent_object.
     # Start parallel workers.
     jobs = []
-    for i in range(n_workers):
-        p = multiprocessing.Process(
+    if os.name == 'nt':  # if on windows use threading. Jesus, Windows...
+        p = threading.Thread(
             target=multiprocessing_grid_search,
             args=(mp_queue, mp_scores_list, persistent_object),
             kwargs={})
         p.start()
         jobs.append(p)
+    else:
+        for i in range(n_workers):
+            p = multiprocessing.Process(
+                target=multiprocessing_grid_search,
+                args=(mp_queue, mp_scores_list, persistent_object),
+                kwargs={})
+            p.start()
+            jobs.append(p)
     # Explore grid.
     grid_results = list()
     # Iterate over grid values.
@@ -181,6 +191,7 @@ def xgboost_get_feature_importances_from_booster(booster):
 
     return df
 
+
 if __name__ != '__main__':
     # Running this file will cause import errors.
-    from . import grid_search
+    from . import grid_search  # noqa
