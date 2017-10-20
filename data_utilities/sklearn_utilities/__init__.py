@@ -95,8 +95,6 @@ def persistent_grid_search_cv(persistent_object,
                 kwargs={})
             p.start()
             jobs.append(p)
-    # Explore grid.
-    grid_results = list()
     # Iterate over grid values.
     for i, one_grid_values in enumerate(itertools.product(*all_values)):
         # Create a dict from values.
@@ -110,8 +108,10 @@ def persistent_grid_search_cv(persistent_object,
         mp_queue.put(None)
     for p in jobs:
         p.join()
+    # Save persistent grid object.
+    persistent_object.save()
     # Order results.
-    return sorted(grid_results, key=lambda x: np.mean(x['scores']))
+    return sorted(list(mp_scores_list), key=lambda x: np.mean(x['scores']))
 
 
 def _get_hash_from_dict(dictionary):
