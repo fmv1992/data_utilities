@@ -1,12 +1,12 @@
 """Test sklearn_utilities from this module."""
-import os
-import multiprocessing
 import glob
-import unittest
+import multiprocessing
+import os
 import warnings
+import datetime as dt
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 from sklearn import datasets
 from sklearn.ensemble import RandomForestClassifier
@@ -74,6 +74,7 @@ class TestGridSearchCV(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
         for processors in (1, cpu_count):
             processor_times = []
             for _ in range(N_RUNS):
+                # Decorate persistent_grid_search_cv.
                 time_func = time_function_call(su.persistent_grid_search_cv)
                 run_time = time_func(
                     su.grid_search.PersistentGrid(
@@ -94,11 +95,12 @@ class TestGridSearchCV(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
             all_times_norm = all_times / all_times.max()
             # Assert that all times are very similar.
             print(all_times_norm)
-            assert(all(all_times_norm > 0.95))
+            assert(all(all_times_norm > 0.9))
         else:
             assert all(np.diff(all_times) < 0)
 
     def test_grid_search(self):
+        """Simplest test to persistent_grid_search_cv function."""
         # Initiate a persistent grid search.
         bpg1 = su.grid_search.PersistentGrid(
             persistent_grid_path=os.path.join(self.temp_directory_grid_search,
@@ -130,3 +132,102 @@ class TestGridSearchCV(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
             cv=10,
             n_jobs=multiprocessing.cpu_count())
         # TODO: assert that the second run is way faster than the first.
+
+    def test_grid_search_times(self):
+        """Test that the persistent grid is in fact saving time."""
+        # Decorate persistent_grid_search_cv.
+        time_func = time_function_call(su.persistent_grid_search_cv)
+
+        # Initialize needed objects.
+        clf = RandomForestClassifier()
+        bpg1 = su.grid_search.PersistentGrid(
+            persistent_grid_path=os.path.join(self.temp_directory_grid_search,
+                                              'bpg.pickle'),
+            dataset_path=self.csv_path)
+
+        # Compute run times.
+        first_run_time = time_func(
+            bpg1,
+            self.small_grid,
+            clf,
+            self.data_ml_x,
+            n_jobs=-1,
+            y=self.data_ml_y,
+            scoring='roc_auc',
+            cv=5)
+        second_run_time = time_func(
+            bpg1,
+            self.small_grid,
+            clf,
+            self.data_ml_x,
+            n_jobs=-1,
+            y=self.data_ml_y,
+            scoring='roc_auc',
+            cv=5)
+        MIN_SLOW_TO_FAST_RATIO = 10
+        assert first_run_time/second_run_time > MIN_SLOW_TO_FAST_RATIO
+
+    def test_grid_search_times_are_similar(self):
+        """Test that the persistent grid called twice has similar times."""
+        # Define grids with virtually the same running time.
+        grid1 = self.small_grid.copy()
+        grid1['random_state'] = [1, ]
+        grid2 = self.small_grid.copy()
+        grid2['random_state'] = [0, ]
+
+        # Decorate persistent_grid_search_cv.
+        time_func = time_function_call(su.persistent_grid_search_cv)
+
+        # Initialize needed objects.
+        clf = RandomForestClassifier()
+        bpg1 = su.grid_search.PersistentGrid(
+            persistent_grid_path=os.path.join(self.temp_directory_grid_search,
+                                              'bpg.pickle'),
+            dataset_path=self.csv_path)
+
+        # Compute first run time.
+        first_run_time = time_func(
+            bpg1,
+            grid1,
+            clf,
+            self.data_ml_x,
+            n_jobs=-1,
+            y=self.data_ml_y,
+            scoring='roc_auc',
+            cv=5)
+        second_run_time = time_func(
+            bpg1,
+            grid2,
+            clf,
+            self.data_ml_x,
+            n_jobs=-1,
+            y=self.data_ml_y,
+            scoring='roc_auc',
+            cv=5)
+        third_run_time = time_func(
+            bpg1,
+            grid2,
+            clf,
+            self.data_ml_x,
+            n_jobs=-1,
+            y=self.data_ml_y,
+            scoring='roc_auc',
+            cv=5)
+        fourth_run_time = time_func(
+            bpg1,
+            grid2,
+            clf,
+            self.data_ml_x,
+            n_jobs=-1,
+            y=self.data_ml_y,
+            scoring='roc_auc',
+            cv=5)
+        # First compare that running with different seeds has almost equal
+        # times.
+        max_runtime = max((first_run_time, second_run_time))
+        min_runtime = min((first_run_time, second_run_time))
+        assert min_runtime/max_runtime > 0.9
+        # Then compare that those values were in fact stored.
+        eq1_runtime = max((third_run_time, fourth_run_time))
+        eq2_runtime = min((third_run_time, fourth_run_time))
+        assert eq1_runtime - eq2_runtime < dt.timedelta(seconds=0.5)
