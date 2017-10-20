@@ -3,6 +3,7 @@ import os
 import multiprocessing
 import glob
 import unittest
+import warnings
 
 import pandas as pd
 import numpy as np
@@ -29,7 +30,7 @@ class TestGridSearchCV(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
                           'n_jobs': [1, ],
                           }
         # Call parent class super.
-        super(TestGridSearchCV, cls).setUpClass()
+        super().setUpClass()
         # Create support directories.
         cls.temp_directory_grid_search = os.path.join(
             cls.temp_directory.name, 'test_persistent_grid_search_cv')
@@ -44,6 +45,12 @@ class TestGridSearchCV(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
                       (cls.data_ml_x, cls.data_ml_y)),
                   axis=1).to_csv(cls.csv_path)
 
+    def setUp(self):
+        super().setUp()
+        # Ignore joblib/parallel.py if using threads.
+        if os.name == 'nt':
+            warnings.filterwarnings('ignore', category=UserWarning)
+
     def tearDown(self):
         all_pickle_files = (
             glob.glob(os.path.join(self.temp_directory_grid_search,
@@ -53,9 +60,10 @@ class TestGridSearchCV(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
         for remove_pickle in all_pickle_files:
             os.remove(remove_pickle)
         # os.system('tree ' + self.temp_directory.name)
+        # Restore warnings.
+        if os.name == 'nt':
+            warnings.filterwarnings('default', category=UserWarning)
 
-    @unittest.skipIf(os.name == 'nt',
-                     "Multiprocessing should not be tested on Windows.")
     def test_multiparallelism_speed(self):
         """Test that using more processes speed up the grid search."""
         clf = RandomForestClassifier()
@@ -81,7 +89,14 @@ class TestGridSearchCV(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
                 processor_times.append(run_time.total_seconds())
             all_times.append(np.mean(processor_times))
         all_times = np.array(all_times)
-        assert all(np.diff(all_times) < 0)
+        # Windows...
+        if os.name == 'nt':
+            all_times_norm = all_times / all_times.max()
+            # Assert that all times are very similar.
+            print(all_times_norm)
+            assert(all(all_times_norm > 0.95))
+        else:
+            assert all(np.diff(all_times) < 0)
 
     def test_grid_search(self):
         # Initiate a persistent grid search.

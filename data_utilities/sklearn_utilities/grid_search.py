@@ -38,7 +38,7 @@ class BasePersistentGrid(object):
             loaded_object = cls.load_from_path(**kwargs)
             return loaded_object
         else:
-            return super(BasePersistentGrid, cls).__new__(cls)
+            return super().__new__(cls)
 
     def __init__(self,
                  persistent_grid_path=None,
