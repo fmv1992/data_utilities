@@ -35,12 +35,13 @@ import random
 
 import numpy as np
 
-import data_utilities.tests.test_pandas_utilities as tpu
-import data_utilities.tests.test_matplotlib_utilities as tmu
-import data_utilities.tests.test_python_utilities as tpyu
-import data_utilities.tests.test_sklearn_utilities as tsu
-import data_utilities.tests.test_support as ts
-from data_utilities.tests.test_support import TestDataUtilitiesTestCase
+# Imported inside test function to avoid creation of temporary file (tempfile).
+# import data_utilities.tests.test_pandas_utilities as tpu
+# import data_utilities.tests.test_matplotlib_utilities as tmu
+# import data_utilities.tests.test_python_utilities as tpyu
+# import data_utilities.tests.test_sklearn_utilities as tsu
+# import data_utilities.tests.test_support as ts
+# from data_utilities.tests.test_support import TestDataUtilitiesTestCase
 
 __version__ = '1.2.8'
 
@@ -92,6 +93,13 @@ def test(label='fast',
         >>> du.test(verbose=False)
 
     """
+    import data_utilities.tests.test_matplotlib_utilities as tmu
+    import data_utilities.tests.test_pandas_utilities as tpu
+    import data_utilities.tests.test_python_utilities as tpyu
+    import data_utilities.tests.test_sklearn_utilities as tsu
+    import data_utilities.tests.test_support as ts
+    from data_utilities.tests.test_support import TestDataUtilitiesTestCase
+
     # Default function parameters.
     default_function_parameters = {
         'label': 'fast',
