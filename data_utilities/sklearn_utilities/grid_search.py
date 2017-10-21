@@ -21,11 +21,11 @@ class BasePersistentGrid(object):
     """Base class for persistent grids.
 
     Its characteristics are:
-    * Simple usage. Instatiate it once per project (same call) feed into
-    the function and let them take care of the work.
-    * Store combinations of dataset (and its processed variants) + classifier +
-    grid.
-    * Parallelization.
+    * Simple usage. Instatiation and loading from persistence with the same
+    interface (load_from_path).
+    * Store combinations of dataset + classifier + grid.
+        * TODO: need to figure out a good way to handle processed data sets.
+    * Parallel (in UNIX using multirprocessing).
 
     """
 
@@ -69,10 +69,6 @@ class BasePersistentGrid(object):
             created_object = cls(*args, **kwargs)
             return created_object
 
-    def get_multiprocessing_manager(self):
-        """Return the multiprocessing manager object."""
-        return self.mp_manager
-
     def _instantiate_shared_attributes(self):
         # Common manager (for other common attributes).
         try:
@@ -90,9 +86,6 @@ class BasePersistentGrid(object):
         # Common attributes update counter (_n_counter).
         self._mp_n_counter_value = self.mp_manager.Value(int, 0)
 
-    def _update_base_hash(self, x):
-        self.base_hash = self.get_hash(x)
-
     def update(self, estimator, grid, results):
         """Update storage of hash -> cv scores."""
         request_hash = self.compute_request_hash(estimator, grid)
@@ -100,9 +93,6 @@ class BasePersistentGrid(object):
         self._mp_n_counter_value.value += 1
         if self._mp_n_counter_value.value % self.save_every_n_interations == 0:
             self.save()
-
-    def _get_multiprocessing_shared_attributes(self):
-        pass
 
     def save(self):
         """Save persistent object."""
@@ -191,16 +181,16 @@ class BasePersistentGrid(object):
         hash_obj.update(hashable)
         return hash_obj.digest()
 
-    def _load_data_from_bytesio(self, zipf):
-        """Return a dictionary of hexdigest -> results."""
-        keys = map(lambda x: x.strip('.pickle'), zipf.namelist())
-        values = map(zipf.read, zipf.namelist())
-        # TODO: use a shared dictionary
-        return dict(zip(keys, values))
+    def get_multiprocessing_manager(self):
+        """Return the multiprocessing manager object."""
+        return self.mp_manager
+
+    def _update_base_hash(self, x):
+        self.base_hash = self.get_hash(x)
 
 
 class PersistentGrid(BasePersistentGrid):
-    """Allow easy persistence between interrupted grid searches.
+    """Allow easy persistence between (possibly interrupted) grid searches.
 
     Example:
         >>> import pandas as pd, numpy as np
@@ -247,10 +237,6 @@ class PersistentGrid(BasePersistentGrid):
         # hash(parameter)
         self.base_hash = self.get_hash(dataset_path)
 
-    # load from path.
-    # refresh base_hash
-    # refresh shared attributes
-    # All other attributes are kept.
     @classmethod
     def load_from_path(cls, *args, **kwargs):
         """Unpickle file from persistent_grid_path.
@@ -260,5 +246,6 @@ class PersistentGrid(BasePersistentGrid):
         """
         loaded_object = super(cls, PersistentGrid).load_from_path(*args,
                                                                   **kwargs)
+        # For PersistentGrid the base hash is the dataset path.
         loaded_object._update_base_hash(kwargs['dataset_path'])
         return loaded_object

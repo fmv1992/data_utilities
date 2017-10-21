@@ -823,4 +823,3 @@ def list_usable_backends():
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
-    # doctest.run_docstring_examples(func, globals())
