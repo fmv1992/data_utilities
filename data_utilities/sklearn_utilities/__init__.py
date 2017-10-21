@@ -74,7 +74,7 @@ def persistent_grid_search_cv(persistent_object,
     # multiprocessing capabilities on persistent_object.
     mp_manager = persistent_object.get_multiprocessing_manager()
     # Initialize queue.
-    mp_queue = mp_manager.Queue(64)
+    mp_queue = mp_manager.Queue(2 * n_workers)
     # Initialize shared list.
     mp_scores_list = mp_manager.list()
     # Enable multiprocessing capabilities on persistent_object.
@@ -156,12 +156,8 @@ def get_sorted_feature_importances(classifier, attributes):
 
 
 def get_estimator_name(estimator):
-    """Get a good representation of estimator name."""
-    # Create a nice representation of estimator name.
-    estimator_name = pyu.process_string(str(estimator)).strip('_')
-    index_last_underscore = (len(estimator_name)
-                             - estimator_name[::-1].index('_'))
-    estimator_name = estimator_name[index_last_underscore:]
+    """Get a simple representation of an estimator's name."""
+    estimator_name = pyu.process_string(estimator.__class__.__name__)
     return estimator_name
 
 
