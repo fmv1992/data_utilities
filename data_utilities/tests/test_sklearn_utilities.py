@@ -21,6 +21,13 @@ class TestGridSearchCV(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
 
     @classmethod
     def setUpClass(cls):
+        """Set up class method from unittest.
+
+        Initialize:
+            * Data to be used on tests.
+            * Support directories.
+
+        """
         # Create data.
         cls.data_ml_x, cls.data_ml_y = datasets.make_hastie_10_2(
             n_samples=cls.n_lines_test_sklearn, random_state=1)
@@ -32,34 +39,41 @@ class TestGridSearchCV(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
         # Call parent class super.
         super().setUpClass()
         # Create support directories.
-        cls.temp_directory_grid_search = os.path.join(
-            cls.temp_directory.name, 'test_persistent_grid_search_cv')
-        os.mkdir(cls.temp_directory_grid_search)
-        cls.temp_directory_grid_search_data = os.path.join(
-            cls.temp_directory_grid_search, 'data')
-        os.mkdir(cls.temp_directory_grid_search_data)
+        cls.test_directory_grid_search_data = os.path.join(
+            cls.test_directory.name, 'data')
+        os.mkdir(cls.test_directory_grid_search_data)
         # Create a csv file.
-        cls.csv_path = os.path.join(cls.temp_directory_grid_search_data,
+        cls.csv_path = os.path.join(cls.test_directory_grid_search_data,
                                     'data.csv')
         pd.concat(map(pd.DataFrame,
                       (cls.data_ml_x, cls.data_ml_y)),
                   axis=1).to_csv(cls.csv_path)
 
     def setUp(self):
+        """Set up method from unittest.
+
+        Filter warnings of the type:
+
+        """
         super().setUp()
         # Ignore joblib/parallel.py if using threads.
-        if os.name == 'nt':
-            warnings.filterwarnings('ignore', category=UserWarning)
+        # if os.name == 'nt':
+        #     warnings.filterwarnings('ignore', category=UserWarning)
 
     def tearDown(self):
+        """Tear down method from unittest.
+
+        Compute and display running time for test method.
+
+        """
         all_pickle_files = (
-            glob.glob(os.path.join(self.temp_directory_grid_search,
+            glob.glob(os.path.join(self.test_directory.name,
                                    '**.pickle'))
-            + glob.glob(os.path.join(self.temp_directory_grid_search,
+            + glob.glob(os.path.join(self.test_directory.name,
                                      '**' + os.sep + '*.pickle')))
         for remove_pickle in all_pickle_files:
             os.remove(remove_pickle)
-        # os.system('tree ' + self.temp_directory.name)
+        # os.system('tree ' + self.test_directory.name)
         # Restore warnings.
         if os.name == 'nt':
             warnings.filterwarnings('default', category=UserWarning)
@@ -94,7 +108,6 @@ class TestGridSearchCV(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
         if os.name == 'nt':
             all_times_norm = all_times / all_times.max()
             # Assert that all times are very similar.
-            print(all_times_norm)
             assert(all(all_times_norm > 0.9))
         else:
             assert all(np.diff(all_times) < 0)
@@ -103,7 +116,7 @@ class TestGridSearchCV(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
         """Simplest test to persistent_grid_search_cv function."""
         # Initiate a persistent grid search.
         bpg1 = su.grid_search.PersistentGrid(
-            persistent_grid_path=os.path.join(self.temp_directory_grid_search,
+            persistent_grid_path=os.path.join(self.test_directory.name,
                                               'bpg.pickle'),
             dataset_path=self.csv_path)
 
@@ -120,10 +133,10 @@ class TestGridSearchCV(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
 
         # Do a second run.
         bpg2 = su.grid_search.PersistentGrid(
-            persistent_grid_path=os.path.join(self.temp_directory_grid_search,
+            persistent_grid_path=os.path.join(self.test_directory.name,
                                               'bpg.pickle'),
             dataset_path=self.csv_path)
-        grid2 = su.persistent_grid_search_cv(
+        grid2 = su.persistent_grid_search_cv(  # noqa
             bpg2,
             self.small_grid,
             RandomForestClassifier(),
@@ -141,7 +154,7 @@ class TestGridSearchCV(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
         # Initialize needed objects.
         clf = RandomForestClassifier()
         bpg1 = su.grid_search.PersistentGrid(
-            persistent_grid_path=os.path.join(self.temp_directory_grid_search,
+            persistent_grid_path=os.path.join(self.test_directory.name,
                                               'bpg.pickle'),
             dataset_path=self.csv_path)
 
@@ -181,7 +194,7 @@ class TestGridSearchCV(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
         # Initialize needed objects.
         clf = RandomForestClassifier()
         bpg1 = su.grid_search.PersistentGrid(
-            persistent_grid_path=os.path.join(self.temp_directory_grid_search,
+            persistent_grid_path=os.path.join(self.test_directory.name,
                                               'bpg.pickle'),
             dataset_path=self.csv_path)
 

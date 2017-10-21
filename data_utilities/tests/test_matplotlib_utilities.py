@@ -44,13 +44,8 @@ class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
         Save figures in a temporary folder.
 
         """
-        # TODO: save figures in temporary folder.
-        if cls.save_figures:
-            for i, f in enumerate(itertools.chain(cls.figures_2d_histogram,
-                                                  cls.figures_3d)):
-                f.savefig(os.path.join(
-                    cls.test_directory.name, 'teardown_{0}.png'.format(i)),
-                          dpi=300)
+        # It is more memory efficient if every method saves its own figures.
+        pass
 
     @classmethod
     def generate_test_figures_2d_histogram(cls):
@@ -156,6 +151,7 @@ class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
         if self.verbose:
             print('\t{0:.3f} seconds elapsed\t'.format(elapsed_time), end='',
                   flush=True)
+        plt.close('all')
 
     def test_plot_3d(self):
         """Plot 3d test."""
