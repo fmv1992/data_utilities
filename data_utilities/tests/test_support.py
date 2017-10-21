@@ -24,8 +24,6 @@ import inspect
 import os
 import tempfile
 import datetime as dt
-import shutil
-
 
 import data_utilities as du
 from data_utilities import pandas_utilities as pu
@@ -41,6 +39,7 @@ def setUpModule():
 
 
 def time_function_call(func):
+    """Decorate to compute the time it takes a function to execute."""
     def wrapper(*args, **kwargs):
         before = dt.datetime.now()
         func(*args, **kwargs)
@@ -188,6 +187,11 @@ class TestDataUtilitiesTestCase(unittest.TestCase, metaclass=TestMetaClass):
 
     @classmethod
     def setUpClass(cls):
+        """Set up class method from unittest.
+
+        Initialize a test directory for each test object.
+
+        """
         cls.test_directory = tempfile.TemporaryDirectory(
             prefix=cls.__name__ + '_',
             dir=cls.temp_directory.name)

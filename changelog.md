@@ -1,5 +1,11 @@
 # Changelog
 
+#### Version 1.2.9
+
+* Fixed: Output images if `save_figures == True` to a tempfolder (instead of
+  `/tmp`).
+* Improved testing on PersitentGrid (a bug was found by a different project).
+
 #### Version 1.2.8
 
 * **Added `sklearn_utilities`**.
