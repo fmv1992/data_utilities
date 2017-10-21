@@ -8,6 +8,10 @@
     - Current coverage: 67%
 * Output images if `save_figures == True` to a tempfolder (instead of `/tmp`).
     * Including doctests.
+* Support first the test interface of numpy:
+        `python3 -c "import data_utilities as du; du.test()"`
+  and then the unittest interface:
+        `python3 -m unittest discover -vvv data_utilities/tests`
 
 ## Other
 
