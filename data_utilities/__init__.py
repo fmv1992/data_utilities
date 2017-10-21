@@ -30,9 +30,10 @@ module should mimick the development guidelines of its parent module.
 # http://stackoverflow.com/questions/42259098/python-version-numbering-scheme/42259144
 
 import unittest
+import shutil
+import random
 
 import numpy as np
-import random
 
 import data_utilities.tests.test_pandas_utilities as tpu
 import data_utilities.tests.test_matplotlib_utilities as tmu
@@ -54,6 +55,7 @@ def test(label='fast',
          n_columns=5,
          n_graphical_tests=3,
          save_figures=False,
+         save_tests=True,
          **kwargs_test_runner):
     """Module level test function.
 
@@ -71,15 +73,16 @@ def test(label='fast',
     Test are modularized and their repetition is customizable.
 
     Arguments:
-        label (str): test suite to be implemented. Either 'full' or 'fast'. Not
-        implemented.
-        verbose (int): verbosity of the test suite. Not implemented.
+        label (str): test suite to be implemented. Either 'full' or 'fast'.
+        verbose (int): verbosity of the test suite.
         N (int): number of random tests to be performed. It impacts the running
         time directly.
         lines (int): number of lines of the dataframes of the test data.
         columns (int): number of columns of the dataframes of the test data.
         n_graphical_tests (int): Number of graphical tests to be performed.
         save_figures (bool): True to save images in test folder.
+        save_tests (bool): True to create a copy of the tests results in the
+        temp folder.
 
     Returns:
         None: no exceptions should be raised if tests are correctly performed.
@@ -173,6 +176,9 @@ def test(label='fast',
         unittest.defaultTestLoader.loadTestsFromTestCase,
         test_objects))
     text_result.run(test_suite)
+
+    shutil.copytree(TestDataUtilitiesTestCase.temp_directory.name,
+                    TestDataUtilitiesTestCase.temp_directory.name + '_')
 
     return None
 
