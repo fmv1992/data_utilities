@@ -62,8 +62,8 @@ def scale_axes_axis(axes, scale_xy_axis=False, scale_z_axis=False):
         True
         >>> mu.scale_axes_axis(ax, scale_xy_axis=True, scale_z_axis=False)
         >>> fig.tight_layout()
-        >>> fig.savefig('/tmp/doctest_{0}.png'.format('scale_axes_axis'),     \
-            dpi=500)
+        >>> fig.savefig('/tmp/doctest_{0}.png'.format('scale_axes_axis'),
+        ...             dpi=500)
 
     """
     if hasattr(axes, 'get_zlim'):
@@ -118,9 +118,9 @@ def plot_3d(series,
         >>> import itertools
         >>> import pandas as pd
         >>> fig = plt.figure()
-        >>> s_index = pd.MultiIndex.from_tuples(                              \
-            tuple(itertools.product(range(6), list('abc'))),                  \
-        names=('x1', 'x2'))
+        >>> s_index = pd.MultiIndex.from_tuples(
+        ...     tuple(itertools.product(range(6), list('abc'))),
+        ...     names=('x1', 'x2'))
         >>> s = pd.Series(data=np.arange(18), index=s_index)
         >>> ax = plot_3d(s, include_colorbar=True)
         >>> fig.tight_layout()
@@ -316,8 +316,8 @@ def histogram_of_categorical(a,
         >>> axes = histogram_of_categorical(cat_serie, kde=False)
         >>> isinstance(axes, matplotlib.axes.Axes)
         True
-        >>> fig.savefig('/tmp/doctest_{0}.png'.format(                        \
-        'histogram_of_categorical'), dpi=500)
+        >>> fig.savefig('/tmp/doctest_{0}.png'.format(
+        ...     'histogram_of_categorical'), dpi=500)
 
     """
     # Create a dictionary of labels from categories.
@@ -356,8 +356,8 @@ def histogram_of_floats(a,
         >>> axes = histogram_of_floats(float_serie, kde=False)
         >>> isinstance(axes, matplotlib.axes.Axes)
         True
-        >>> fig.savefig('/tmp/doctest_{0}.png'.format(                        \
-        'histogram_of_floats'), dpi=500)
+        >>> fig.savefig('/tmp/doctest_{0}.png'.format(
+        ...     'histogram_of_floats'), dpi=500)
 
     """
     axes = sns.distplot(
@@ -385,8 +385,8 @@ def histogram_of_integers(a,
         >>> axes = histogram_of_integers(int_serie, kde=False)
         >>> isinstance(axes, matplotlib.axes.Axes)
         True
-        >>> fig.savefig('/tmp/doctest_{0}.png'.format(                        \
-        'histogram_of_ints'), dpi=500)
+        >>> fig.savefig('/tmp/doctest_{0}.png'.format(
+        ...     'histogram_of_ints'), dpi=500)
 
     """
     # Data transformation:
@@ -490,8 +490,8 @@ def histogram_of_dataframe(dataframe,
         >>> from data_utilities import pandas_utilities as pu
         >>> from data_utilities import matplotlib_utilities as mu
         >>> dummy_df = pu.dummy_dataframe(shape=200)
-        >>> df_columns = tuple(x for x in dummy_df.columns if 'object_'       \
-        not in x)
+        >>> df_columns = tuple(x for x in dummy_df.columns if 'object_'
+        ...                    not in x)
         >>> dummy_df = dummy_df.loc[:, df_columns]
         >>> isinstance(mu.histogram_of_dataframe(dummy_df, '/tmp/'), tuple)
         True
@@ -657,8 +657,8 @@ def add_summary_statistics_textbox(series,
         >>> fig = plt.figure()
         >>> axes = histogram_of_integers(serie, kde=False)
         >>> text = add_summary_statistics_textbox(serie, axes)
-        >>> fig.savefig('/tmp/doctest_{0}.png'.format(                        \
-        'add_summary_statistics_textbox'), dpi=500)
+        >>> fig.savefig('/tmp/doctest_{0}.png'.format(
+        ...             'add_summary_statistics_textbox'), dpi=500)
 
     """
     def find_best_placement_for_summary_in_histogram(axes):
@@ -772,8 +772,8 @@ def add_summary_statistics_textbox(series,
     text = (text_mean, text_max, text_min, text_n, text_nans, text_stddevp)
 
     if axes.patches:
-        x_placement, y_placement =                                            \
-            find_best_placement_for_summary_in_histogram(axes)
+        x_placement, y_placement = (
+            find_best_placement_for_summary_in_histogram(axes))
     else:
         offset = .1
         x_placement, y_placement = offset, 1 - offset
