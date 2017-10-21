@@ -44,6 +44,7 @@ def multiprocessing_grid_search(queue, shared_list, persistent_object):
         grid_result = grid.copy()
         grid_result['scores'] = scores
         shared_list.append(grid_result)
+        # del x, estimator, cvs_args, cvs_kwargs
 
 
 def persistent_grid_search_cv(persistent_object,
@@ -74,7 +75,7 @@ def persistent_grid_search_cv(persistent_object,
     # multiprocessing capabilities on persistent_object.
     mp_manager = persistent_object.get_multiprocessing_manager()
     # Initialize queue.
-    mp_queue = mp_manager.Queue(64)
+    mp_queue = mp_manager.Queue(2 * n_workers)
     # Initialize shared list.
     mp_scores_list = mp_manager.list()
     # Enable multiprocessing capabilities on persistent_object.
@@ -108,10 +109,12 @@ def persistent_grid_search_cv(persistent_object,
         mp_queue.put(None)
     for p in jobs:
         p.join()
-    # Save persistent grid object.
+    # Save persistent grid object and terminate process.
     persistent_object.save()
+    result_list = list(mp_scores_list)
+    mp_manager.shutdown()
     # Order results.
-    return sorted(list(mp_scores_list), key=lambda x: np.mean(x['scores']))
+    return sorted(result_list, key=lambda x: np.mean(x['scores']))
 
 
 def _get_hash_from_dict(dictionary):
