@@ -187,7 +187,7 @@ def xgboost_get_feature_importances_from_booster(booster):
         index=indexes,
         columns=score_types)
     df.columns = score_improved_labels
-    df['frequency'] = df['weight'] / df['weight'].sum()
+    df['frequency'] = df['nr_occurences'] / df['nr_occurences'].sum()
 
     return df
 
