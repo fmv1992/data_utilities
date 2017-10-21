@@ -193,7 +193,9 @@ class PersistentGrid(BasePersistentGrid):
         ...            'max_depth': [2, 4]}
         >>> clf = DTC()
         >>> dset_path = '/tmp/data.csv'
-        >>> persistent_grid = grid_search.PersistentGrid().load_from_path( persistent_grid_path='/tmp/pg.pickle', dataset_path='/tmp/data.csv')
+        >>> persistent_grid = grid_search.PersistentGrid().load_from_path(
+        ...     persistent_grid_path='/tmp/pg.pickle',
+        ...     dataset_path='/tmp/data.csv')
         >>> persistent_grid
 
 
