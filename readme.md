@@ -66,11 +66,3 @@ figure out the best way to to develop the utilities.
     * Rationale: even though stability is expected between python versions some
       changes occur. See for instance that on commit v1.2.8 (60573d7) there was
       as unexpected import error on python34 but not on python36.
-
-
-* Support first the test interface of numpy:
-
-        `python3 -c "import data_utilities as du; du.test()"`
-  and then the unittest interface:
-
-        `python3 -m unittest discover -vvv data_utilities/tests`
