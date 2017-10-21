@@ -24,6 +24,7 @@ import inspect
 import os
 import tempfile
 import datetime as dt
+import shutil
 
 
 import data_utilities as du
@@ -187,7 +188,9 @@ class TestDataUtilitiesTestCase(unittest.TestCase, metaclass=TestMetaClass):
 
     @classmethod
     def setUpClass(cls):
-        pass
+        cls.test_directory = tempfile.TemporaryDirectory(
+            prefix=cls.__name__ + '_',
+            dir=cls.temp_directory.name)
 
     @classmethod
     def compose_functions(cls,
@@ -228,15 +231,6 @@ class TestDataUtilitiesTestCase(unittest.TestCase, metaclass=TestMetaClass):
             i += 1
         return y
 
-    # Goes with 'fast' parameters by default.
-    is_inside_unittest = is_inside_unittest()
-    n_tests = 5
-    n_graphical_tests = 3
-    n_lines_test_pandas = 50
-    n_columns = 5
-    save_figures = False
-    maxDiff = None  # TODO: check if it is being utilized
-
     @classmethod
     def update_data(cls):
         """Update the 'data' attribute.
@@ -248,6 +242,14 @@ class TestDataUtilitiesTestCase(unittest.TestCase, metaclass=TestMetaClass):
             shape=(cls.n_lines_test_pandas, cls.n_columns))
         return None
 
+    # Goes with 'fast' parameters by default.
+    is_inside_unittest = is_inside_unittest()  # TODO: use this attribute.
+    n_tests = 5
+    n_graphical_tests = 3
+    n_lines_test_pandas = 50
+    n_columns = 5
+    save_figures = False
+    maxDiff = None  # TODO: check if it is being utilized
     # Setup temporary folder to be used.
     temp_directory = tempfile.TemporaryDirectory(prefix='test_data_utilities_')
 

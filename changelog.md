@@ -11,13 +11,10 @@
 #### Version 1.2.7
 
 * Greatly improved `matplotlib_utilities` module.
-
 * Removed dependency with `unidecode` module.
-
 * tests: enabled parametrized tests invocations such as:  
   `python3 -c "import data_utilities as du; du.test(label='fast')"`  
   `python3 -c "import data_utilities as du; du.test(N=500)"`
-
 * Add a test for the `test_support` file itself.
 
 #### Version 1.2.6
@@ -62,18 +59,12 @@
 
 * Improved `histogram_of_dataframe` function: added a textbox with summary
   statistics.
-
 * Added a function to scale axes axis (`scale_axes_axis`).
-
 * Added a colorbar argument to `plot_3d`.
-
 * Label containers now return a list of matplotlib Text objects.
-
 * Added a boolean column to `dummy_dataframe`.
-
 * Added a test module for other libraries: `matplotlib_utilities` and
   `python_utilities`.
-
 * Cleaned up the code.
 
 #### Version 1.0.0
@@ -88,7 +79,6 @@
   variable size initialized with some common statistical distributions.
 
 * Added a test module which allows parametrized tests via the `TestMetaClass`.
-
 * Added a test module for the `find_components_of_array` function.
 
 #### Version 0.0.1
