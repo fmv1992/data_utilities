@@ -50,7 +50,20 @@ def persistent_grid_search_cv(persistent_object,
                               grid_space,
                               *cross_val_score_args,
                               **cross_val_score_kwargs):
-    """Sklearn utilities version of grid search with cross validation."""
+    """Sklearn utilities version of grid search with cross validation.
+
+    Sklearns' cross_val_score args and kwargs:
+        * estimator
+        * X
+        * y=None
+        * scoring=None
+        * cv=None
+        * n_jobs=1
+        * verbose=0
+        * fit_params=None
+        * pre_dispatch='2*n_jobs'
+
+    """
     # Dismember arguments and values.
     if 'n_jobs' in cross_val_score_kwargs.keys():
         if cross_val_score_kwargs['n_jobs'] == -1:
