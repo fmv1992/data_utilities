@@ -25,9 +25,11 @@ import os
 import tempfile
 import datetime as dt
 
-import sklearn.datasets
 import numpy as np
 import pandas as pd
+
+import sklearn.datasets
+from sklearn.model_selection import train_test_split
 
 import data_utilities as du
 from data_utilities import pandas_utilities as pu
@@ -284,6 +286,11 @@ class TestSKLearnTestCase(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
                             + ['y', ])
         cls.x = cls.data.filter(regex='^x')
         cls.y = cls.data.filter(regex='^y')
+        cls.x_train, cls.x_test, cls.y_train, cls.y_test = train_test_split(
+            cls.x,
+            cls.y,
+            train_size=0.7,
+            random_state=0)
         return None
 
 
