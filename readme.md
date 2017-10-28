@@ -7,12 +7,16 @@ data analysis in python.
 
 It depends on:
 
-* Numpy
-* Scipy
-* Pandas
-* Matplotlib
-* Seaborn
-* Scikit-learn
+* numpy
+* scipy
+* pandas
+* matplotlib
+* seaborn
+* scikit-learn
+
+Optional dependencies are:
+
+* xgboost
 
 # Organization and files
 

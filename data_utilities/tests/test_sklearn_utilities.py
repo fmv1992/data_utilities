@@ -4,16 +4,27 @@ import multiprocessing
 import os
 import warnings
 import datetime as dt
+import unittest
 
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
 from sklearn import datasets
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+try:
+    from xgboost import XGBClassifier
+    HAS_XGBOOST = True
+except ImportError:
+    HAS_XGBOOST = False
 
 from data_utilities import sklearn_utilities as su
 from data_utilities.tests.test_support import (
-    TestDataUtilitiesTestCase, TestMetaClass, time_function_call)
+    TestDataUtilitiesTestCase,
+    TestMetaClass,
+    TestSKLearnTestCase,
+    time_function_call)
 
 
 class TestGridSearchCV(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
@@ -244,3 +255,41 @@ class TestGridSearchCV(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
         eq1_runtime = max((third_run_time, fourth_run_time))
         eq2_runtime = min((third_run_time, fourth_run_time))
         assert eq1_runtime - eq2_runtime < dt.timedelta(seconds=0.5)
+
+
+class TestXGBoostFunctions(TestSKLearnTestCase, metaclass=TestMetaClass):
+    """Test class to test all XGBoost related functions."""
+
+    @unittest.skipIf(not HAS_XGBOOST, 'xgboost not present.')
+    def test_xgboost_get_learning_curve(self):
+        """Test xgboost_get_learning_curve function syntax."""
+        x_train, x_test, y_train, y_test = train_test_split(
+            self.x,
+            self.y,
+            train_size=0.7,
+            random_state=0)
+        estimator = XGBClassifier(
+            n_estimators=20,
+            nthread=4)
+        estimator.fit(x_train, y_train)
+        lcurve = su.xgboost_get_learning_curve(
+            estimator,
+            x_train,
+            x_test,
+            y_train,
+            y_test)
+        # Plot results.
+        if self.save_figures:
+            fig, ax = plt.subplots()
+            y2 = lcurve['train_scores']
+            y1 = lcurve['test_scores']
+            x = np.arange(len(y1))
+            ax.plot(x, y1, label='test')
+            ax.plot(x, y2, label='train')
+            ax.set_ylim(0, 1)
+            ax.legend()
+            fig.tight_layout()
+            fig.savefig(os.path.join(
+                self.test_directory.name,
+                'test_xgboost_get_learning_curve.png'),
+                        dpi=300)
