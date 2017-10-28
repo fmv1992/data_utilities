@@ -12,7 +12,6 @@ import matplotlib.pyplot as plt
 
 from sklearn import datasets
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
 try:
     from xgboost import XGBClassifier
     HAS_XGBOOST = True
@@ -262,22 +261,17 @@ class TestXGBoostFunctions(TestSKLearnTestCase, metaclass=TestMetaClass):
 
     @unittest.skipIf(not HAS_XGBOOST, 'xgboost not present.')
     def test_xgboost_get_learning_curve(self):
-        """Test xgboost_get_learning_curve function syntax."""
-        x_train, x_test, y_train, y_test = train_test_split(
-            self.x,
-            self.y,
-            train_size=0.7,
-            random_state=0)
+        """Test xgboost_get_learning_curve syntax."""
         estimator = XGBClassifier(
             n_estimators=20,
             nthread=4)
-        estimator.fit(x_train, y_train)
+        estimator.fit(self.x_train, self.y_train.values.ravel())
         lcurve = su.xgboost_get_learning_curve(
             estimator,
-            x_train,
-            x_test,
-            y_train,
-            y_test)
+            self.x_train,
+            self.x_test,
+            self.y_train,
+            self.y_test)
         # Plot results.
         if self.save_figures:
             fig, ax = plt.subplots()
@@ -293,3 +287,12 @@ class TestXGBoostFunctions(TestSKLearnTestCase, metaclass=TestMetaClass):
                 self.test_directory.name,
                 'test_xgboost_get_learning_curve.png'),
                         dpi=300)
+
+    @unittest.skipIf(not HAS_XGBOOST, 'xgboost not present.')
+    def test_xgboost_get_feature_importances_from_booster(self):
+        """Test xgboost_get_feature_importances_from_booster syntax."""
+        estimator = XGBClassifier(n_estimators=10, nthread=4)
+        estimator.fit(self.x_train, self.y_train.values.ravel())
+        fi = su.xgboost_get_feature_importances_from_booster(
+            estimator.get_booster())
+        assert isinstance(fi, pd.DataFrame)
