@@ -98,7 +98,9 @@ def test(label='fast',
     import data_utilities.tests.test_python_utilities as tpyu
     import data_utilities.tests.test_sklearn_utilities as tsu
     import data_utilities.tests.test_support as ts
-    from data_utilities.tests.test_support import TestDataUtilitiesTestCase
+    from data_utilities.tests.test_support import (
+        TestDataUtilitiesTestCase,
+        TestSKLearnTestCase,)
 
     # Default function parameters.
     default_function_parameters = {
@@ -159,8 +161,10 @@ def test(label='fast',
         setattr(TestDataUtilitiesTestCase,
                 attr,
                 updated_function_parameters[attr])
+
     # Update data.
     TestDataUtilitiesTestCase.update_data()
+    TestSKLearnTestCase.update_data()
 
     # Initial definitions.
     # TODO: change verbose to more correct 'verbosity'.
@@ -171,6 +175,10 @@ def test(label='fast',
     test_objects = list()
     for module in (tpu, tmu, tpyu, ts, tsu):
         for defined_object in dir(module):
+            # Uncomment this to make develop-test cycle faster.
+            # if 'boost' not in defined_object.lower():
+            #     print(defined_object)
+            #     continue
             defined_object = getattr(module, defined_object)  # str -> object
             try:
                 if issubclass(defined_object, unittest.TestCase):

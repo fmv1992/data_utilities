@@ -2,6 +2,7 @@
 
 ## Tests
 
+* Put all XGBoost related tests under `TestXGBoostFunctions`.
 * Add travis/ci support for Windows (multiprocessing is not playing nice on
   Win).
 * Add test to every line of code.
