@@ -29,6 +29,7 @@ from data_utilities.tests.test_support import (
     time_function_call)
 
 
+# TODO: Inherit from TestSKLearnTestCase.
 class BaseGridTestCase(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
     """Test class for persistent_grid_search_cv of sklearn_utilities."""
 
@@ -307,14 +308,39 @@ class TestXGBoostFunctions(TestSKLearnTestCase, metaclass=TestMetaClass):
         assert isinstance(fi, pd.DataFrame)
 
 
-class TestEvolutionaryPersistentGridSearchCV(BaseGridTestCase,
+class BaseEvolutionaryGridTestCase(BaseGridTestCase,
+                                   metaclass=TestMetaClass):
+    @classmethod
+    def setUpClass(cls):
+        """Set up class method from unittest.
+
+        Initialize:
+            * Data to be used on tests.
+            * Support directories.
+
+        """
+        # Call parent class super.
+        super().setUpClass()
+        cls.small_grid = {'n_estimators': frozenset(range(1, 5)),
+                          'max_depth': frozenset([4, 9]),
+                          'min_samples_leaf': (0.0, .2),
+                          }
+
+class TestEvolutionaryPersistentGridSearchCV(BaseEvolutionaryGridTestCase,
                                              metaclass=TestMetaClass):
     """Test class to test evolutionary grid search strategies."""
 
     def test_simple_instantiation(self):
         """Test simple instantiation of objects."""
+        # EvolutionaryPersistentGrid.
+        # TODO: correct them.
+        easimple_args = ('pop', 'toolbox', 'cxpb', 'mutpb', 'ngen')
+
         epgo = su.evolutionary_grid_search.EvolutionaryPersistentGrid(
-        su.evolutionary_grid_search.ea_simple_with_persistence,
+        eaSimple,
+        ef_args=easimple_args,
         dataset_path=self.csv_path,
         persistent_grid_path=os.path.join(self.test_directory.name,
                                           'epgo.pickle'))
+        # IndividualFromGrid
+        ifg = su.evolutionary_grid_search.IndividualFromGrid(self.small_grid)
