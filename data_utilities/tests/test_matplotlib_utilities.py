@@ -1,6 +1,7 @@
 """Test matplolib_utilities from this module."""
 
 import itertools
+import os
 import random
 import time
 
@@ -28,8 +29,9 @@ class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
         Initialize figure as attributes.
 
         """
-        # TODO: fix the 2 * N//2 != N issue that may happen.
+        super().setUpClass()
 
+        # TODO: fix the 2 * N//2 != N issue that may happen.
         # Single axes 2d figures (no colorbar or other features).
         cls.figures_2d_histogram = cls.generate_test_figures_2d_histogram()
         # Single axes 3d figures (no colorbar or other features).
@@ -42,11 +44,8 @@ class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
         Save figures in a temporary folder.
 
         """
-        # TODO: save figures in temporary folder.
-        if cls.save_figures:
-            for i, f in enumerate(itertools.chain(cls.figures_2d_histogram,
-                                                  cls.figures_3d)):
-                f.savefig('/tmp/teardown_{0}.png'.format(i), dpi=300)
+        # It is more memory efficient if every method saves its own figures.
+        pass
 
     @classmethod
     def generate_test_figures_2d_histogram(cls):
@@ -152,6 +151,7 @@ class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
         if self.verbose:
             print('\t{0:.3f} seconds elapsed\t'.format(elapsed_time), end='',
                   flush=True)
+        plt.close('all')
 
     def test_plot_3d(self):
         """Plot 3d test."""
@@ -224,7 +224,9 @@ class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
 
         if self.save_figures:
             for i, f in enumerate(figures_histogram):
-                f.savefig('/tmp/test_histogram_of_integers_{0}.png'.format(i),
+                f.savefig(os.path.join(
+                    self.test_directory.name,
+                    'test_histogram_of_integers_{0}'.format(i)),
                           dpi=300)
 
     def test_add_summary_statistics_textbox(self):
@@ -265,10 +267,9 @@ class TestMatplotlibUtilities(TestDataUtilitiesTestCase,
             texts,
             itertools.repeat(matplotlib.text.Text))
 
-        # TODO: remove this short circ.
-        if self.save_figures or True:
+        if self.save_figures:
             for i, f in enumerate(figures):
-                f.savefig(
-                    '/tmp/test_add_summary_statistics_textbox_{0}.png'.format(
-                        i),
-                    dpi=300)
+                f.savefig(os.path.join(
+                    self.test_directory.name,
+                    'test_add_summary_statistics_textbox_{0}.png'.format(i)),
+                          dpi=300)
