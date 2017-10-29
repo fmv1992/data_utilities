@@ -62,13 +62,13 @@ class TestGridSearchCV(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
     def setUp(self):
         """Set up method from unittest.
 
-        Filter warnings of the type:
+        Filter warnings of the type: UserWarning.
 
         """
         super().setUp()
         # Ignore joblib/parallel.py if using threads.
-        # if os.name == 'nt':
-        #     warnings.filterwarnings('ignore', category=UserWarning)
+        if os.name == 'nt':
+            warnings.filterwarnings('ignore', category=UserWarning)
 
     def tearDown(self):
         """Tear down method from unittest.
