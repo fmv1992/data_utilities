@@ -25,10 +25,14 @@ import os
 import tempfile
 import datetime as dt
 
+import numpy as np
+import pandas as pd
+
+import sklearn.datasets
+from sklearn.model_selection import train_test_split
 
 import data_utilities as du
 from data_utilities import pandas_utilities as pu
-import numpy as np
 
 
 def setUpModule():
@@ -40,6 +44,7 @@ def setUpModule():
 
 
 def time_function_call(func):
+    """Decorate to compute the time it takes a function to execute."""
     def wrapper(*args, **kwargs):
         before = dt.datetime.now()
         func(*args, **kwargs)
@@ -153,18 +158,6 @@ class TestDataUtilitiesTestCase(unittest.TestCase, metaclass=TestMetaClass):
 
     """
 
-    def __new__(cls, *args, **kwargs):
-        """__new__ method."""
-        return super().__new__(cls)
-
-    def __init__(self, *args, **kwargs):
-        """Instatiate the test case.
-
-        Instatiate the test case to allow customization of run parameters.
-
-        """
-        super().__init__(*args, **kwargs)  # call init from unittest.TestCase
-
     def __setattr__(self, name, value):
         """Prevent instances from changing 'non private' attributes.
 
@@ -187,7 +180,15 @@ class TestDataUtilitiesTestCase(unittest.TestCase, metaclass=TestMetaClass):
 
     @classmethod
     def setUpClass(cls):
-        pass
+        """Set up class method from unittest.
+
+        Initialize a test directory for each test object.
+
+        """
+        super().setUpClass()
+        cls.test_directory = tempfile.TemporaryDirectory(
+            prefix=cls.__name__ + '_',
+            dir=cls.temp_directory.name)
 
     @classmethod
     def compose_functions(cls,
@@ -228,15 +229,6 @@ class TestDataUtilitiesTestCase(unittest.TestCase, metaclass=TestMetaClass):
             i += 1
         return y
 
-    # Goes with 'fast' parameters by default.
-    is_inside_unittest = is_inside_unittest()
-    n_tests = 5
-    n_graphical_tests = 3
-    n_lines_test_pandas = 50
-    n_columns = 5
-    save_figures = False
-    maxDiff = None  # TODO: check if it is being utilized
-
     @classmethod
     def update_data(cls):
         """Update the 'data' attribute.
@@ -248,8 +240,58 @@ class TestDataUtilitiesTestCase(unittest.TestCase, metaclass=TestMetaClass):
             shape=(cls.n_lines_test_pandas, cls.n_columns))
         return None
 
+    # Goes with 'fast' parameters by default.
+    is_inside_unittest = is_inside_unittest()  # TODO: use this attribute.
+    n_tests = 5
+    n_graphical_tests = 3
+    n_lines_test_pandas = 50
+    n_columns = 5
+    save_figures = False
+    maxDiff = None  # TODO: check if it is being utilized
     # Setup temporary folder to be used.
     temp_directory = tempfile.TemporaryDirectory(prefix='test_data_utilities_')
+
+
+class TestSKLearnTestCase(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
+    """Test class that provides a single framework for machine learning tests.
+
+    It replaces the 'data' attribute to a binary classification data set.
+
+    """
+
+    @classmethod
+    def update_data(cls):
+        """Update the 'data' attribute.
+
+        Most likely this is set during the execution of data_utilities.test().
+
+        """
+        # Generate a data set with:
+        #   * 20% of informative features.
+        #   * 20% of redundant features.
+        x, y = sklearn.datasets.make_classification(
+            n_samples=cls.n_lines_test_sklearn,
+            n_features=cls.n_columns,
+            n_informative=max((1, cls.n_columns//5)),
+            n_redundant=max((1, cls.n_columns//5)),
+            n_classes=2,
+            n_clusters_per_class=5,
+            weights=[0.8, 0.2],  # imbalanced classes.
+            flip_y=0.10,  # noise in classes.
+            random_state=0)
+        cls.data = pd.concat(
+            map(pd.DataFrame, (x, y.ravel())),
+            axis=1)
+        cls.data.columns = (['x_' + x for x in map(str, range(cls.n_columns))]
+                            + ['y', ])
+        cls.x = cls.data.filter(regex='^x')
+        cls.y = cls.data.filter(regex='^y')
+        cls.x_train, cls.x_test, cls.y_train, cls.y_test = train_test_split(
+            cls.x,
+            cls.y,
+            train_size=0.7,
+            random_state=0)
+        return None
 
 
 class TestSupport(TestDataUtilitiesTestCase,

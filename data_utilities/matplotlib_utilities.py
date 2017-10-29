@@ -19,22 +19,17 @@ All the functions should follow matplotlib, pandas and numpy's guidelines:
 
 import itertools
 import os
-import random
 import warnings
-
-from data_utilities.pandas_utilities import object_columns_to_category
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-from mpl_toolkits.mplot3d import Axes3D
-import sklearn.preprocessing
 
 import matplotlib
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D  # enable scale_axes_axis  # noqa
+
 import numpy as np
 import pandas as pd
 import seaborn as sns
 
-# pylama: ignore=W0611,D301
-# pylama: ignore=D406,D407  # TODO: add this too
+import sklearn.preprocessing
 
 
 def scale_axes_axis(axes, scale_xy_axis=False, scale_z_axis=False):
@@ -52,24 +47,24 @@ def scale_axes_axis(axes, scale_xy_axis=False, scale_z_axis=False):
         >>> import matplotlib_utilities as mu
         >>> from mpl_toolkits.mplot3d import Axes3D
         >>> from mpl_toolkits.mplot3d.art3d import Path3DCollection
-        >>> x = np.arange(0, 5)
+        >>> x = np.arange(0, 10)
         >>> y = x.copy()
         >>> xx, yy = np.meshgrid(x, y)
-        >>> z = xx * yy
+        >>> z = np.log2(xx * yy)
         >>> fig = plt.figure()
         >>> ax = fig.gca(projection='3d')
         >>> isinstance(ax.scatter3D(xx, yy, z), Path3DCollection)
         True
-        >>> mu.scale_axes_axis(ax, scale_xy_axis=True, scale_z_axis=False)
+        >>> mu.scale_axes_axis(ax, scale_xy_axis=True, scale_z_axis=True)
         >>> fig.tight_layout()
-        >>> fig.savefig('/tmp/doctest_{0}.png'.format('scale_axes_axis'),     \
-            dpi=500)
+        >>> fig.savefig('/tmp/doctest_{0}.png'.format('scale_axes_axis'),
+        ...             dpi=500)
 
     """
     if hasattr(axes, 'get_zlim'):
-        dimenesions = 3
+        n_dimensions = 3
     else:
-        dimenesions = 2
+        n_dimensions = 2
 
     xlim = tuple(axes.get_xlim3d())
     ylim = tuple(axes.get_ylim3d())
@@ -91,7 +86,7 @@ def scale_axes_axis(axes, scale_xy_axis=False, scale_z_axis=False):
     if scale_xy_axis:
         axes.set_xlim3d([xmean - plot_radius, xmean + plot_radius])
         axes.set_ylim3d([ymean - plot_radius, ymean + plot_radius])
-    if dimenesions == 3 and scale_z_axis:
+    if n_dimensions == 3 and scale_z_axis:
         axes.set_zlim3d([zmean - plot_radius, zmean + plot_radius])
 
     return None
@@ -118,9 +113,9 @@ def plot_3d(series,
         >>> import itertools
         >>> import pandas as pd
         >>> fig = plt.figure()
-        >>> s_index = pd.MultiIndex.from_tuples(                              \
-            tuple(itertools.product(range(6), list('abc'))),                  \
-        names=('x1', 'x2'))
+        >>> s_index = pd.MultiIndex.from_tuples(
+        ...     tuple(itertools.product(range(6), list('abc'))),
+        ...     names=('x1', 'x2'))
         >>> s = pd.Series(data=np.arange(18), index=s_index)
         >>> ax = plot_3d(s, include_colorbar=True)
         >>> fig.tight_layout()
@@ -310,14 +305,14 @@ def histogram_of_categorical(a,
         matplotlib.axes.Axes: the plotted axes.
 
     Examples:
-        >>> import pandas_utilities as pu
+        >>> from data_utilities import pandas_utilities as pu
         >>> cat_serie = pu.dummy_dataframe().categorical_0
         >>> fig = plt.figure()
         >>> axes = histogram_of_categorical(cat_serie, kde=False)
         >>> isinstance(axes, matplotlib.axes.Axes)
         True
-        >>> fig.savefig('/tmp/doctest_{0}.png'.format(                        \
-        'histogram_of_categorical'), dpi=500)
+        >>> fig.savefig('/tmp/doctest_{0}.png'.format(
+        ...     'histogram_of_categorical'), dpi=500)
 
     """
     # Create a dictionary of labels from categories.
@@ -350,14 +345,14 @@ def histogram_of_floats(a,
         matplotlib.axes.Axes: the plotted axes.
 
     Examples:
-        >>> import pandas_utilities as pu
+        >>> from data_utilities import pandas_utilities as pu
         >>> float_serie = pu.dummy_dataframe().float_0
         >>> fig = plt.figure()
         >>> axes = histogram_of_floats(float_serie, kde=False)
         >>> isinstance(axes, matplotlib.axes.Axes)
         True
-        >>> fig.savefig('/tmp/doctest_{0}.png'.format(                        \
-        'histogram_of_floats'), dpi=500)
+        >>> fig.savefig('/tmp/doctest_{0}.png'.format(
+        ...     'histogram_of_floats'), dpi=500)
 
     """
     axes = sns.distplot(
@@ -379,14 +374,14 @@ def histogram_of_integers(a,
         matplotlib.axes.Axes: the plotted axes.
 
     Examples:
-        >>> import pandas_utilities as pu
+        >>> from data_utilities import pandas_utilities as pu
         >>> int_serie = pu.dummy_dataframe().int_0
         >>> fig = plt.figure()
         >>> axes = histogram_of_integers(int_serie, kde=False)
         >>> isinstance(axes, matplotlib.axes.Axes)
         True
-        >>> fig.savefig('/tmp/doctest_{0}.png'.format(                        \
-        'histogram_of_ints'), dpi=500)
+        >>> fig.savefig('/tmp/doctest_{0}.png'.format(
+        ...     'histogram_of_ints'), dpi=500)
 
     """
     # Data transformation:
@@ -490,8 +485,8 @@ def histogram_of_dataframe(dataframe,
         >>> from data_utilities import pandas_utilities as pu
         >>> from data_utilities import matplotlib_utilities as mu
         >>> dummy_df = pu.dummy_dataframe(shape=200)
-        >>> df_columns = tuple(x for x in dummy_df.columns if 'object_'       \
-        not in x)
+        >>> df_columns = tuple(x for x in dummy_df.columns if 'object_'
+        ...                    not in x)
         >>> dummy_df = dummy_df.loc[:, df_columns]
         >>> isinstance(mu.histogram_of_dataframe(dummy_df, '/tmp/'), tuple)
         True
@@ -652,13 +647,13 @@ def add_summary_statistics_textbox(series,
         matplotlib.text.Text: The drawed text object.
 
     Examples:
-        >>> import pandas_utilities as pu
+        >>> from data_utilities import pandas_utilities as pu
         >>> serie = pu.dummy_dataframe().int_0
         >>> fig = plt.figure()
         >>> axes = histogram_of_integers(serie, kde=False)
         >>> text = add_summary_statistics_textbox(serie, axes)
-        >>> fig.savefig('/tmp/doctest_{0}.png'.format(                        \
-        'add_summary_statistics_textbox'), dpi=500)
+        >>> fig.savefig('/tmp/doctest_{0}.png'.format(
+        ...             'add_summary_statistics_textbox'), dpi=500)
 
     """
     def find_best_placement_for_summary_in_histogram(axes):
@@ -772,8 +767,8 @@ def add_summary_statistics_textbox(series,
     text = (text_mean, text_max, text_min, text_n, text_nans, text_stddevp)
 
     if axes.patches:
-        x_placement, y_placement =                                            \
-            find_best_placement_for_summary_in_histogram(axes)
+        x_placement, y_placement = (
+            find_best_placement_for_summary_in_histogram(axes))
     else:
         offset = .1
         x_placement, y_placement = offset, 1 - offset
@@ -825,18 +820,6 @@ def list_usable_backends():
     return usable_backends
 
 
-color = {
-    'standard': (223, 229, 239),
-    'gold': (255, 200, 31),
-    'platinum': (192, 192, 192),
-    'black': (0, 0, 0),
-    'pseudo_black': (90, 90, 90),
-    'business': (119, 202, 141),
-}
-color = {k: (v[0]/255, v[1]/255, v[2]/255) for k, v in color.items()}
-
-
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
-    # doctest.run_docstring_examples(func, globals())
