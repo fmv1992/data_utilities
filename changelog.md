@@ -83,7 +83,6 @@
 
 * Added a convenience function (`statistical_distributions_dataframe`) of
   variable size initialized with some common statistical distributions.
- 2
 * Added a test module which allows parametrized tests via the `TestMetaClass`.
 * Added a test module for the `find_components_of_array` function.
 
