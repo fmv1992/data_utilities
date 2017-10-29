@@ -305,3 +305,16 @@ class TestXGBoostFunctions(TestSKLearnTestCase, metaclass=TestMetaClass):
         fi = su.xgboost_get_feature_importances_from_booster(
             estimator.get_booster())
         assert isinstance(fi, pd.DataFrame)
+
+
+class TestEvolutionaryPersistentGridSearchCV(BaseGridTestCase,
+                                             metaclass=TestMetaClass):
+    """Test class to test evolutionary grid search strategies."""
+
+    def test_simple_instantiation(self):
+        """Test simple instantiation of objects."""
+        epgo = su.evolutionary_grid_search.EvolutionaryPersistentGrid(
+        su.evolutionary_grid_search.ea_simple_with_persistence,
+        dataset_path=self.csv_path,
+        persistent_grid_path=os.path.join(self.test_directory.name,
+                                          'epgo.pickle'))

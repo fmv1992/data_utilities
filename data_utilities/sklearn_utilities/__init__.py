@@ -234,3 +234,4 @@ def xgboost_get_learning_curve(estimator,
 if __name__ != '__main__':
     # Running this file will cause import errors.
     from . import grid_search  # noqa
+    from . import evolutionary_grid_search  # noqa
