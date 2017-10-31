@@ -514,6 +514,7 @@ def group_sorted_series_into_n_groups(series, n_groups=100):
         True
 
     """
+    # TODO: check the necessity of this.
     # Check that the array is sorted.
     # assert series.is_monotonic, "Provided series is not monotonic."
 

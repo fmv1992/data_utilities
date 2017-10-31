@@ -11,6 +11,7 @@ import pandas as pd
 import scipy.stats
 
 from sklearn.model_selection import cross_val_score
+from sklearn.metrics import roc_auc_score
 
 from data_utilities import python_utilities as pyu
 
@@ -51,7 +52,20 @@ def persistent_grid_search_cv(persistent_object,
                               grid_space,
                               *cross_val_score_args,
                               **cross_val_score_kwargs):
-    """Sklearn utilities version of grid search with cross validation."""
+    """Sklearn utilities version of grid search with cross validation.
+
+    Sklearns' cross_val_score args and kwargs:
+        * estimator
+        * X
+        * y=None
+        * scoring=None
+        * cv=None
+        * n_jobs=1
+        * verbose=0
+        * fit_params=None
+        * pre_dispatch='2*n_jobs'
+
+    """
     # Dismember arguments and values.
     if 'n_jobs' in cross_val_score_kwargs.keys():
         if cross_val_score_kwargs['n_jobs'] == -1:
@@ -109,12 +123,10 @@ def persistent_grid_search_cv(persistent_object,
         mp_queue.put(None)
     for p in jobs:
         p.join()
-    # Save persistent grid object and terminate process.
+    # Save persistent grid object.
     persistent_object.save()
-    result_list = list(mp_scores_list)
-    mp_manager.shutdown()
     # Order results.
-    return sorted(result_list, key=lambda x: np.mean(x['scores']))
+    return sorted(list(mp_scores_list), key=lambda x: np.mean(x['scores']))
 
 
 def _get_hash_from_dict(dictionary):
@@ -159,12 +171,8 @@ def get_sorted_feature_importances(classifier, attributes):
 
 
 def get_estimator_name(estimator):
-    """Get a good representation of estimator name."""
-    # Create a nice representation of estimator name.
-    estimator_name = pyu.process_string(str(estimator)).strip('_')
-    index_last_underscore = (len(estimator_name)
-                             - estimator_name[::-1].index('_'))
-    estimator_name = estimator_name[index_last_underscore:]
+    """Get a simple representation of an estimator's name."""
+    estimator_name = pyu.process_string(estimator.__class__.__name__)
     return estimator_name
 
 
@@ -193,6 +201,33 @@ def xgboost_get_feature_importances_from_booster(booster):
     df['frequency'] = df['nr_occurences'] / df['nr_occurences'].sum()
 
     return df
+
+
+def xgboost_get_learning_curve(estimator,
+                               x_train,
+                               x_test,
+                               y_train,
+                               y_test,
+                               scoring_func=roc_auc_score):
+    """Return scores for test and training as as function of trees in XGBoost.
+
+    Returns:
+        dict: keys: 'train_scores' and 'test_scores'. Values are the results of
+        the scoring function.
+
+    """
+    ntrees = getattr(estimator, 'best_ntree_limit', estimator.n_estimators)
+    test_list = list()
+    train_list = list()
+    for i in range(1, ntrees + 1):
+        pred_train = estimator.predict_proba(x_train, ntree_limit=i)[:, 1]
+        pred_test = estimator.predict_proba(x_test, ntree_limit=i)[:, 1]
+        score_train = scoring_func(y_train, pred_train)
+        score_test = scoring_func(y_test, pred_test)
+        train_list.append(score_train)
+        test_list.append(score_test)
+    return dict(train_scores=np.array(train_list),
+                test_scores=np.array(test_list))
 
 
 if __name__ != '__main__':
