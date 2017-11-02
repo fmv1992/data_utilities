@@ -143,23 +143,25 @@ class EvolutionaryPersistentGrid(BasePersistentGrid):
             map(self.get_hash, map(self._transform_to_hashable,
                                    self.hash_sequence))))
 
-    # def _remove_pickling_error(self, func):
-    #     def wrapper(*args, **kwargs):
-
-
-    def _transform_to_hashable(self, x):
-        # TODO: mutator and its methods are producing pickling errors.
-        if isinstance(x, EvolutionaryToolbox):
-            _mutator = x.mutator
-            _mutate = x.mutate
-            del x.mutator
-            del x.mutate
-            ret = super()._transform_to_hashable(x)
-            x.mutator = _mutator
-            x.mutate = _mutate
+    def _remove_pickling_error(func):
+        def wrapper(self, *args, **kwargs):
+            _mutator = self.toolbox.mutator
+            _mutate = self.toolbox.mutate
+            del self.toolbox.mutator
+            del self.toolbox.mutate
+            ret = func(self, *args, **kwargs)
+            self.toolbox.mutator = _mutator
+            self.toolbox.mutate = _mutate
             return ret
-        else:
-            return super()._transform_to_hashable(x)
+        return wrapper
+
+    @_remove_pickling_error
+    def save(self):
+        return super().save()
+
+    @_remove_pickling_error
+    def _transform_to_hashable(self, x):
+        return super()._transform_to_hashable(x)
 
     def _paraellize_toolbox(self):
         if os.name != 'nt':  # Use multiprocessing if not on Windows.
@@ -209,6 +211,14 @@ class EvolutionaryPersistentGridSearchCV(BaseEstimator, ClassifierMixin):
         # Iterate over populations.
         self._fit()
 
+        # Save best parameters.
+        _best_individual = deap.tools.selBest(self.epgo.pop, 1)[0]
+        self.best_params_ = _best_individual.data
+        self.epgo.toolbox.estimator.set_params(**self.best_params_)
+        self.epgo.toolbox.estimator.fit(self.x_, self.y_,)
+        self.best_estimator_ = self.epgo.toolbox.estimator
+        self.best_score_ = _best_individual.fitness.values[0]
+
         # Return the classifier
         return self
 
@@ -226,14 +236,22 @@ class EvolutionaryPersistentGridSearchCV(BaseEstimator, ClassifierMixin):
         remaining_cycles = (
             self.epgo.ngen % self.epgo.save_every_n_interations)
         for _ in range(evolution_full_cycles):
-            self.epgo.pop = eaSimple(
+            self.epgo.pop, logbook = eaSimple(
                 self.epgo.pop,
                 self.epgo.toolbox,
                 self.epgo.cxpb,
                 self.epgo.mutpb,
-                self.epgo.ngen)
-            # TODO: remove references of x and y from individuals.
+                self.epgo.save_every_n_interations)
             self.epgo.save()
+        if remaining_cycles != 0:
+            self.epgo.pop, logbook = eaSimple(
+                self.epgo.pop,
+                self.epgo.toolbox,
+                self.epgo.cxpb,
+                self.epgo.mutpb,
+                remaining_cycles)
+            self.epgo.save()
+        return None
 
     def predict(self, X):
 
