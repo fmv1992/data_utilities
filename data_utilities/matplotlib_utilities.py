@@ -617,6 +617,8 @@ def histogram_of_dataframe(dataframe,
             FIGSIZE[1]
         )
 
+        # TODO: add a low_memory argument to prevent figures using too much
+        # memory.
         list_of_figures.append(fig)
 
         # Save the plotting.
