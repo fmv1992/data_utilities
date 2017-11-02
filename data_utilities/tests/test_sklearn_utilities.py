@@ -334,25 +334,8 @@ class TestEvolutionaryPersistentGridSearchCV(BaseEvolutionaryGridTestCase,
                                              metaclass=TestMetaClass):
     """Test class to test evolutionary grid search strategies."""
 
-    #def test_simple_instantiation(self):
-    #    """Test simple instantiation of objects."""
-    #    # EvolutionaryPersistentGrid.
-    #    # TODO: correct them.
-    #    easimple_args = ('pop', 'toolbox', 'cxpb', 'mutpb', 'ngen')
-
-    #    epgo = su.evolutionary_grid_search.EvolutionaryPersistentGrid(
-    #    eaSimple,
-    #    ef_args=easimple_args,
-    #    dataset_path=self.csv_path,
-    #    persistent_grid_path=os.path.join(self.test_directory.name,
-    #                                      'epgo.pickle'))
-    #    # IndividualFromGrid
-    #    ifg = su.evolutionary_grid_search.IndividualFromGrid(self.small_grid)
-    #    # Mutator.
-    #    evm = su.evolutionary_grid_search.EvolutionaryMutator(self.small_grid)
-    #    evm.mutate(ifg)
-
     def test_simple(self):
+        """Simplest test to EvolutionaryPersistentGridSearchCV."""
 
         grid = self.small_grid.copy()
         bound_grid = self.small_grid_bounds.copy()
@@ -373,7 +356,7 @@ class TestEvolutionaryPersistentGridSearchCV(BaseEvolutionaryGridTestCase,
         # EvolutionaryPersistentGrid.
         # Create arguments.
         # TODO: correct them.
-        easimple_args = ('pop', et, .6, .1, 5)
+        easimple_args = ('pop', et, .6, .1, 11)
         # easimple_kwargs = {'verbose': True}
         # Instantiate.
         epgo = su.evolutionary_grid_search.EvolutionaryPersistentGrid(
