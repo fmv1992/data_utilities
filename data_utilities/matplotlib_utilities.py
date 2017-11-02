@@ -540,6 +540,12 @@ def histogram_of_dataframe(dataframe,
               'float' in series_str_dtype or 'datetime' in series_str_dtype):
             # Null values if passed to seaborn.distplot raise ValueError.
             series_not_null = series[~series.isnull()]
+            if series_not_null.empty:
+                warnings.warn(
+                    'Series with column {0} is empty. Skipping.'.format(
+                        column),
+                    UserWarning)
+                continue
             # .
             # ├── categorical
             # └── number
