@@ -325,6 +325,10 @@ class BaseEvolutionaryGridTestCase(BaseGridTestCase,
                           'max_depth': frozenset([4, 9]),
                           'min_samples_leaf': (0.0, .2),
                           }
+        cls.small_grid_bounds = {'n_estimators': (1, 10),
+                                 'max_depth': (1, 10),
+                                 'min_samples_leaf': (0.0001, 0.49999)}
+
 
 class TestEvolutionaryPersistentGridSearchCV(BaseEvolutionaryGridTestCase,
                                              metaclass=TestMetaClass):
@@ -351,9 +355,13 @@ class TestEvolutionaryPersistentGridSearchCV(BaseEvolutionaryGridTestCase,
     def test_simple(self):
 
         grid = self.small_grid.copy()
+        bound_grid = self.small_grid_bounds.copy()
         grid.pop('min_samples_leaf')
+        bound_grid.pop('min_samples_leaf')
 
-        em = su.evolutionary_grid_search.EvolutionaryMutator(grid)
+        em = su.evolutionary_grid_search.EvolutionaryMutator(
+            grid,
+            grid_bounds=bound_grid)
         ec = su.evolutionary_grid_search.EvolutionaryCombiner(grid)
         et = su.evolutionary_grid_search.EvolutionaryToolbox(
             grid,
@@ -365,8 +373,7 @@ class TestEvolutionaryPersistentGridSearchCV(BaseEvolutionaryGridTestCase,
         # EvolutionaryPersistentGrid.
         # Create arguments.
         # TODO: correct them.
-        easimple_args = ('pop', et, 'cxpb', 'mutpb', 'ngen')
-        easimple_args = ('pop', et, .6, .1, 50)
+        easimple_args = ('pop', et, .6, .1, 5)
         # easimple_kwargs = {'verbose': True}
         # Instantiate.
         epgo = su.evolutionary_grid_search.EvolutionaryPersistentGrid(
@@ -383,4 +390,3 @@ class TestEvolutionaryPersistentGridSearchCV(BaseEvolutionaryGridTestCase,
             classifier,
             grid)
         epgcv.fit(self.data_ml_x, self.data_ml_y)
-        import ipdb; ipdb.set_trace()  # XXX BREAKPOINT

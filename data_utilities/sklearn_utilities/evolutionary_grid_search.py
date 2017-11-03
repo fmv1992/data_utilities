@@ -49,6 +49,9 @@ import os
 import multiprocessing as mp
 import hashlib
 import itertools
+import functools
+import copy
+
 
 import numpy as np
 
@@ -133,12 +136,30 @@ class EvolutionaryPersistentGrid(BasePersistentGrid):
         # hash(hash(dataset) + hash(arg1) + hash(arg2) + ...
         # + hash(function name).
         self.hash_sequence = (dataset_path,
-                              ef_args,
+                              *ef_args,
                               ef_kwargs,
                               ev_func.__name__,)
         self.base_hash = self.get_hash(b''.join(
             map(self.get_hash, map(self._transform_to_hashable,
                                    self.hash_sequence))))
+
+    # def _remove_pickling_error(self, func):
+    #     def wrapper(*args, **kwargs):
+
+
+    def _transform_to_hashable(self, x):
+        # TODO: mutator and its methods are producing pickling errors.
+        if isinstance(x, EvolutionaryToolbox):
+            _mutator = x.mutator
+            _mutate = x.mutate
+            del x.mutator
+            del x.mutate
+            ret = super()._transform_to_hashable(x)
+            x.mutator = _mutator
+            x.mutate = _mutate
+            return ret
+        else:
+            return super()._transform_to_hashable(x)
 
     def _paraellize_toolbox(self):
         if os.name != 'nt':  # Use multiprocessing if not on Windows.
@@ -239,6 +260,8 @@ class EvolutionaryToolbox(deap.base.Toolbox):
 
         super().__init__()
 
+        self.mutator = mutator
+        self.combiner = combiner
         self.estimator = estimator
 
         self.register('mutate', mutator.mutate)
@@ -314,7 +337,70 @@ class IndividualFromGrid(object):
         return random.sample(arg_set, 1)[0]
 
 
-class EvolutionaryMutator(object):
+class BasePersistentEvolutionaryOperator(object):
+    """Base class for combinator, mutator, etc operators.
+
+    Arguments:
+        grid (dict): dictionary mapping hyperparameters to either a two
+        element tuple (min, max) for continuous variables or a set of
+        values.
+        grid_bounds (dict): TODO.
+        kwargs (dict): dictionary mapping data types to functions that mutate
+        individuals.
+    """
+
+    def __init__(self,
+                 grid,
+                 grid_bounds,
+                 params_to_funcs):
+        self.grid = grid
+        self.grid_bounds = grid_bounds
+        self._key_to_dtypes = self._get_dtypes(grid)
+
+        for key in grid.keys():
+            specific_func = params_to_funcs.get(key, None)
+            if specific_func is None:
+                specific_func = self._dtypes_to_func[self._key_to_dtypes[key]]
+            # TODO: if I do this then I cannot pickle this object.
+            # Workaround: delete the mutator and combiner objects.
+            bounds = self.grid_bounds.get(key, None)
+            if bounds is not None:
+                decorated_func = self.bound_function(specific_func, *bounds)
+                to_set_func = decorated_func    # Convolution needed in order
+            else:                               # to be able to pickle
+                to_set_func = specific_func     # function.
+            setattr(self,
+                    self._get_func_name_from_param(key),
+                    to_set_func)
+
+    def _get_func_name_from_param(self, param):
+        return self._dynamic_function_prefix + '_' + param
+
+    def _get_dtypes(self, grid):
+        dtypes_dict = dict()
+        for key, value in grid.items():
+            for dtype in (int, float, str, tuple, list, set, frozenset):
+                if isinstance(random.sample(value, 1)[0], dtype):
+                    dtypes_dict[key] = dtype
+                    break
+            else:  # exhausted loop and found no dtype.
+                raise NotImplementedError(
+                    'No dtype for {0} was found.'.format(value))
+        return dtypes_dict
+
+    def bound_function(self, func, lower, upper):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            result = func(*args, **kwargs)
+            if result < lower:
+                return lower
+            if result > upper:
+                return upper
+            return result
+        return wrapper
+
+
+class EvolutionaryMutator(BasePersistentEvolutionaryOperator):
     """Mutator object that mutates individuals from grid.
 
     Arguments:
@@ -327,9 +413,9 @@ class EvolutionaryMutator(object):
 
     def __init__(self,
                  grid,
-                 kwargs=dict()):
-        self.grid = grid
-        self._key_to_dtypes = self._get_dtypes(grid)
+                 grid_bounds=dict(),
+                 params_to_funcs=dict()):
+        self._dynamic_function_prefix = '_mutate'
         self._dtypes_to_func = {
             int: self._mutate_int,
             float: self._mutate_float,
@@ -337,15 +423,13 @@ class EvolutionaryMutator(object):
             tuple: self._mutate_tuple,
             list: self._mutate_list,
             set: self._mutate_set, }
-        self._dtypes_to_func.update(kwargs)
+        super().__init__(grid, grid_bounds, params_to_funcs)
 
     def mutate(self, individual):
-        # TODO: Maybe do some performance increase here... However mutation is
-        # not so frequent.
         for key in individual.data.keys():
-            mutation_func = self._dtypes_to_func[self._key_to_dtypes[key]]
-            # If is modifiable.
-            mutated_value = mutation_func(individual.data[key])
+            mutated_value = getattr(
+                self,
+                self._get_func_name_from_param(key))(individual.data[key])
             if mutated_value is not None:  # That means object is not mutable.
                 individual.data[key] = mutated_value
         return (individual, )
@@ -378,20 +462,8 @@ class EvolutionaryMutator(object):
         raise NotImplementedError
         return None
 
-    def _get_dtypes(self, grid):
-        dtypes_dict = dict()
-        for key, value in grid.items():
-            for dtype in (int, float, str, tuple, list, set, frozenset):
-                if isinstance(random.sample(value, 1)[0], dtype):
-                    dtypes_dict[key] = dtype
-                    break
-            else:  # exhausted loop and found no dtype.
-                raise NotImplementedError(
-                    'No dtype for {0} was found.'.format(value))
-        return dtypes_dict
 
-
-class EvolutionaryCombiner(object):
+class EvolutionaryCombiner(BasePersistentEvolutionaryOperator):
     """Combiner object that produces crossover between two individuals.
 
     Arguments:
@@ -404,9 +476,9 @@ class EvolutionaryCombiner(object):
 
     def __init__(self,
                  grid,
-                 kwargs=dict()):
-        self.grid = grid
-        self._key_to_dtypes = self._get_dtypes(grid)
+                 grid_bounds=dict(),
+                 params_to_funcs=dict()):
+        self._dynamic_function_prefix = '_combine'
         self._dtypes_to_func = {
             int: self._combine_int,
             float: self._combine_float,
@@ -414,13 +486,13 @@ class EvolutionaryCombiner(object):
             tuple: self._combine_tuple,
             list: self._combine_list,
             set: self._combine_set}
-        self._dtypes_to_func.update(kwargs)
+        super().__init__(grid, grid_bounds, params_to_funcs)
 
     def combine(self, ind1, ind2):
         for key in ind1.data.keys():
-            combination_func = self._dtypes_to_func[self._key_to_dtypes[key]]
-            # If is modifiable.
-            combination_func(key, ind1, ind2)
+            combined_value = getattr(
+                self,
+                self._get_func_name_from_param(key))(key, ind1, ind2)
         return ind1, ind2
 
     def _combine_int(self, key, ind1, ind2):
@@ -446,17 +518,6 @@ class EvolutionaryCombiner(object):
         raise NotImplementedError
         return None
 
-    def _get_dtypes(self, grid):
-        dtypes_dict = dict()
-        for key, value in grid.items():
-            for dtype in (int, float, str, tuple, list, set, frozenset):
-                if isinstance(random.sample(value, 1)[0], dtype):
-                    dtypes_dict[key] = dtype
-                    break
-            else:  # exhausted loop and found no dtype.
-                raise NotImplementedError(
-                    'No dtype for {0} was found.'.format(value))
-        return dtypes_dict
 
 ###############################################################################
 # class EvolutionaryEvaluator(object):
