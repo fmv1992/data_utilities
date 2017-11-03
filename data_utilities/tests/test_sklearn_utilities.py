@@ -321,7 +321,7 @@ class BaseEvolutionaryGridTestCase(BaseGridTestCase,
         """
         # Call parent class super.
         super().setUpClass()
-        cls.small_grid = {'n_estimators': frozenset(range(1, 5)),
+        cls.small_grid = {'n_estimators': frozenset(range(5, 7)),
                           'max_depth': frozenset([4, 9]),
                           'min_samples_leaf': (0.0, .2),
                           }
@@ -330,17 +330,57 @@ class TestEvolutionaryPersistentGridSearchCV(BaseEvolutionaryGridTestCase,
                                              metaclass=TestMetaClass):
     """Test class to test evolutionary grid search strategies."""
 
-    def test_simple_instantiation(self):
-        """Test simple instantiation of objects."""
-        # EvolutionaryPersistentGrid.
-        # TODO: correct them.
-        easimple_args = ('pop', 'toolbox', 'cxpb', 'mutpb', 'ngen')
+    #def test_simple_instantiation(self):
+    #    """Test simple instantiation of objects."""
+    #    # EvolutionaryPersistentGrid.
+    #    # TODO: correct them.
+    #    easimple_args = ('pop', 'toolbox', 'cxpb', 'mutpb', 'ngen')
 
+    #    epgo = su.evolutionary_grid_search.EvolutionaryPersistentGrid(
+    #    eaSimple,
+    #    ef_args=easimple_args,
+    #    dataset_path=self.csv_path,
+    #    persistent_grid_path=os.path.join(self.test_directory.name,
+    #                                      'epgo.pickle'))
+    #    # IndividualFromGrid
+    #    ifg = su.evolutionary_grid_search.IndividualFromGrid(self.small_grid)
+    #    # Mutator.
+    #    evm = su.evolutionary_grid_search.EvolutionaryMutator(self.small_grid)
+    #    evm.mutate(ifg)
+
+    def test_simple(self):
+
+        grid = self.small_grid.copy()
+        grid.pop('min_samples_leaf')
+
+        em = su.evolutionary_grid_search.EvolutionaryMutator(grid)
+        ec = su.evolutionary_grid_search.EvolutionaryCombiner(grid)
+        et = su.evolutionary_grid_search.EvolutionaryToolbox(
+            grid,
+            combiner=ec,
+            mutator=em,
+            population=50)
+
+
+        # EvolutionaryPersistentGrid.
+        # Create arguments.
+        # TODO: correct them.
+        easimple_args = ('pop', et, 'cxpb', 'mutpb', 'ngen')
+        easimple_args = ('pop', et, .6, .1, 50)
+        # easimple_kwargs = {'verbose': True}
+        # Instantiate.
         epgo = su.evolutionary_grid_search.EvolutionaryPersistentGrid(
         eaSimple,
         ef_args=easimple_args,
+        # ef_kwargs=easimple_kwargs,
         dataset_path=self.csv_path,
         persistent_grid_path=os.path.join(self.test_directory.name,
                                           'epgo.pickle'))
-        # IndividualFromGrid
-        ifg = su.evolutionary_grid_search.IndividualFromGrid(self.small_grid)
+
+        classifier = RandomForestClassifier()
+        epgcv = su.evolutionary_grid_search.EvolutionaryPersistentGridSearchCV(
+            epgo,
+            classifier,
+            grid)
+        epgcv.fit(self.data_ml_x, self.data_ml_y)
+        import ipdb; ipdb.set_trace()  # XXX BREAKPOINT
