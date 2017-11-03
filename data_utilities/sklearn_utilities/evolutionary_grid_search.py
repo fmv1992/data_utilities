@@ -143,40 +143,6 @@ class EvolutionaryPersistentGrid(BasePersistentGrid):
             map(self.get_hash, map(self._transform_to_hashable,
                                    self.hash_sequence))))
 
-    def _remove_pickling_error(func):
-        def wrapper(self, *args, **kwargs):
-            _mutator = self.toolbox.mutator
-            _mutate = self.toolbox.mutate
-            del self.toolbox.mutator
-            del self.toolbox.mutate
-            ret = func(self, *args, **kwargs)
-            self.toolbox.mutator = _mutator
-            self.toolbox.mutate = _mutate
-            return ret
-        return wrapper
-
-    @_remove_pickling_error
-    def save(self):
-        return super().save()
-
-    @_remove_pickling_error
-    def _transform_to_hashable(self, x):
-        return super()._transform_to_hashable(x)
-
-    def _paraellize_toolbox(self):
-        if os.name != 'nt':  # Use multiprocessing if not on Windows.
-            self.toolbox.unregister('map')
-            self.pool = mp.Pool()
-            # TODO: allow customization of pool
-            self.toolbox.register('map', self.pool.map)
-        else:
-            self.pool = None
-
-    def _update_base_hash(self, x):
-        self.base_hash = self.get_hash(b''.join(
-            map(self.get_hash, map(self._transform_to_hashable,
-                                   self.hash_sequence))))
-
 
 class EvolutionaryPersistentGridSearchCV(BaseEstimator, ClassifierMixin):
     """Perform an evolutionary grid search.
@@ -291,6 +257,9 @@ class EvolutionaryToolbox(deap.base.Toolbox):
         else:
             self.pop = population
         # TODO: cover both cases of None and not None.
+        if os.name != 'nt':  # Activate multiprocessing if not on windows.
+            self.pool = mp.Pool()
+            self.register('map', self.pool.map)
 
     def _create_population(self, grid, n_individuals):
         deap.creator.create("FitnessMin", deap.base.Fitness, weights=(-1.0,))
@@ -310,6 +279,17 @@ class EvolutionaryToolbox(deap.base.Toolbox):
             cross_val_score(self.estimator, individual.x, individual.y,
                             *cross_val_score_args, **cross_val_score_kwargs)),
                 )
+
+    def __getstate__(self):
+        """Remove multiprocessing objects and faulty use of decorators."""
+        self_dict = self.__dict__.copy()
+        del self_dict['pool']
+        del self_dict['map']
+        # TODO: removed due to ignorance on using decorators.
+        del self_dict['mutate']
+        # TODO: removed due to ignorance on using decorators.
+        del self_dict['mutator']
+        return self_dict
 
 
 class IndividualFromGrid(object):
@@ -456,7 +436,7 @@ class EvolutionaryMutator(BasePersistentEvolutionaryOperator):
         increment = int(np.random.normal(loc=0, scale=2))
         while increment == 0:
             increment = int(np.random.normal(loc=0, scale=2))
-        return  value + increment
+        return value + increment
 
     def _mutate_float(self, value):
         increment = np.random.normal(loc=0, scale=2)
@@ -508,14 +488,13 @@ class EvolutionaryCombiner(BasePersistentEvolutionaryOperator):
 
     def combine(self, ind1, ind2):
         for key in ind1.data.keys():
-            combined_value = getattr(
-                self,
-                self._get_func_name_from_param(key))(key, ind1, ind2)
+            getattr(self,
+                    self._get_func_name_from_param(key))(key, ind1, ind2)
         return ind1, ind2
 
     def _combine_int(self, key, ind1, ind2):
         ind1.data[key], ind2.data[key] = ind2.data[key], ind1.data[key]
-        return  None
+        return None
 
     def _combine_float(self, key, ind1, ind2):
         return self._combine_int(key, ind1, ind2)
@@ -535,14 +514,3 @@ class EvolutionaryCombiner(BasePersistentEvolutionaryOperator):
     def _combine_set(self, key, ind1, ind2):
         raise NotImplementedError
         return None
-
-
-###############################################################################
-# class EvolutionaryEvaluator(object):
-#     """Evolutionary evaluator with sklearn_utilities defaults."""
-#
-#     def __init__(self, evaluator):
-#         if combiner is None:
-#             self.combiner = self._get_population(self)
-#         if mutator is None:
-#             self.population = self._get_population(self)

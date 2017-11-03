@@ -19,7 +19,6 @@ except ImportError:
     HAS_XGBOOST = False
 
 from deap.algorithms import eaSimple
-from deap.base import Toolbox
 
 from data_utilities import sklearn_utilities as su
 from data_utilities.tests.test_support import (
@@ -310,6 +309,8 @@ class TestXGBoostFunctions(TestSKLearnTestCase, metaclass=TestMetaClass):
 
 class BaseEvolutionaryGridTestCase(BaseGridTestCase,
                                    metaclass=TestMetaClass):
+    """Base test class for EvolutionaryPersistent objects/functions."""
+
     @classmethod
     def setUpClass(cls):
         """Set up class method from unittest.
@@ -336,7 +337,6 @@ class TestEvolutionaryPersistentGridSearchCV(BaseEvolutionaryGridTestCase,
 
     def test_simple(self):
         """Simplest test to EvolutionaryPersistentGridSearchCV."""
-
         grid = self.small_grid.copy()
         bound_grid = self.small_grid_bounds.copy()
         grid.pop('min_samples_leaf')
@@ -352,7 +352,6 @@ class TestEvolutionaryPersistentGridSearchCV(BaseEvolutionaryGridTestCase,
             mutator=em,
             population=50)
 
-
         # EvolutionaryPersistentGrid.
         # Create arguments.
         # TODO: correct them.
@@ -360,12 +359,12 @@ class TestEvolutionaryPersistentGridSearchCV(BaseEvolutionaryGridTestCase,
         # easimple_kwargs = {'verbose': True}
         # Instantiate.
         epgo = su.evolutionary_grid_search.EvolutionaryPersistentGrid(
-        eaSimple,
-        ef_args=easimple_args,
-        # ef_kwargs=easimple_kwargs,
-        dataset_path=self.csv_path,
-        persistent_grid_path=os.path.join(self.test_directory.name,
-                                          'epgo.pickle'))
+            eaSimple,
+            ef_args=easimple_args,
+            # ef_kwargs=easimple_kwargs,
+            dataset_path=self.csv_path,
+            persistent_grid_path=os.path.join(self.test_directory.name,
+                                              'epgo.pickle'))
 
         classifier = RandomForestClassifier()
         epgcv = su.evolutionary_grid_search.EvolutionaryPersistentGridSearchCV(
