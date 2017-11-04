@@ -5,13 +5,14 @@ import pickle
 import multiprocessing
 import threading
 import os
+import functools
 
 import numpy as np
 import pandas as pd
 import scipy.stats
 
 from sklearn.model_selection import cross_val_score
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import get_scorer
 
 from data_utilities import python_utilities as pyu
 
@@ -208,22 +209,27 @@ def xgboost_get_learning_curve(estimator,
                                x_test,
                                y_train,
                                y_test,
-                               scoring_func=roc_auc_score):
+                               scoring='roc_auc'):
     """Return scores for test and training as as function of trees in XGBoost.
+
+    Arguments:
+        scoring_func (function or str): Same format as scikit-learn scorers.
 
     Returns:
         dict: keys: 'train_scores' and 'test_scores'. Values are the results of
         the scoring function.
 
     """
+    predict_original = estimator.predict_proba
+    scorer = get_scorer(scoring)
     ntrees = getattr(estimator, 'best_ntree_limit', estimator.n_estimators)
     test_list = list()
     train_list = list()
     for i in range(1, ntrees + 1):
-        pred_train = estimator.predict_proba(x_train, ntree_limit=i)[:, 1]
-        pred_test = estimator.predict_proba(x_test, ntree_limit=i)[:, 1]
-        score_train = scoring_func(y_train, pred_train)
-        score_test = scoring_func(y_test, pred_test)
+        estimator.predict_proba = functools.partial(
+            predict_original, ntree_limit=i)
+        score_train = scorer(estimator, x_train, y_train)
+        score_test = scorer(estimator, x_test, y_test)
         train_list.append(score_train)
         test_list.append(score_test)
     return dict(train_scores=np.array(train_list),

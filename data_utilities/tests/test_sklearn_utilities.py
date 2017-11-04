@@ -266,33 +266,40 @@ class TestXGBoostFunctions(TestSKLearnTestCase, metaclass=TestMetaClass):
             n_estimators=20,
             nthread=4)
         estimator.fit(self.x_train, self.y_train.values.ravel())
-        lcurve = su.xgboost_get_learning_curve(
-            estimator,
-            self.x_train,
-            self.x_test,
-            self.y_train,
-            self.y_test)
-        # Plot results.
-        if self.save_figures:
-            fig, ax = plt.subplots()
-            y2 = lcurve['train_scores']
-            y1 = lcurve['test_scores']
-            x = np.arange(len(y1))
-            ax.plot(x, y1, label='test')
-            ax.plot(x, y2, label='train')
-            ax.set_ylim(0, 1)
-            ax.legend()
-            fig.tight_layout()
-            fig.savefig(os.path.join(
-                self.test_directory.name,
-                'test_xgboost_get_learning_curve.png'),
-                        dpi=300)
+        for score_str in ('roc_auc', 'accuracy', 'recall'):
+            lcurve = su.xgboost_get_learning_curve(
+                estimator,
+                self.x_train,
+                self.x_test,
+                self.y_train,
+                self.y_test,
+                scoring=score_str)
+            # Plot results.
+            if self.save_figures:
+                fig, ax = plt.subplots()
+                y2 = lcurve['train_scores']
+                y1 = lcurve['test_scores']
+                x = np.arange(len(y1))
+                ax.scatter(x, y1, label='test')
+                ax.scatter(x, y2, label='train')
+                ax.set_ylim(0, 1)
+                ax.legend()
+                ax.set_title('Scoring function: {0}'.format(score_str))
+                fig.tight_layout()
+                fig.savefig(os.path.join(
+                    self.test_directory.name,
+                    'test_xgboost_get_learning_curve_' + score_str + '.png'),
+                            dpi=300)
+                plt.close(fig)
 
     @unittest.skipIf(not HAS_XGBOOST, 'xgboost not present.')
     def test_xgboost_get_feature_importances_from_booster(self):
         """Test xgboost_get_feature_importances_from_booster syntax."""
         estimator = XGBClassifier(n_estimators=10, nthread=4)
         estimator.fit(self.x_train, self.y_train.values.ravel())
-        fi = su.xgboost_get_feature_importances_from_booster(
-            estimator.get_booster())
+        if hasattr(estimator, 'booster'):
+            booster = estimator.booster()
+        else:
+            booster = estimator.get_booster()
+        fi = su.xgboost_get_feature_importances_from_booster( booster)
         assert isinstance(fi, pd.DataFrame)
