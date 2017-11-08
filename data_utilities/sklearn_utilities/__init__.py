@@ -214,6 +214,10 @@ def xgboost_get_learning_curve(estimator,
 
     Arguments:
         scoring_func (function or str): Same format as scikit-learn scorers.
+        The signature of the function is ``(estimator, X, y)`` where
+        ``estimator`` is the model to be evaluated, ``X`` is the test data and
+        ``y`` is the ground truth labeling (or ``None`` in the case of
+        unsupervised models).
 
     Returns:
         dict: keys: 'train_scores' and 'test_scores'. Values are the results of
