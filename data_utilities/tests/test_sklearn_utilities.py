@@ -134,7 +134,7 @@ class TestGridSearchCV(BaseGridTestCase, metaclass=TestMetaClass):
     def test_grid_search(self):
         """Simplest test to persistent_grid_search_cv function."""
         # Initiate a persistent grid search.
-        bpg1 = su.grid_search.PersistentGrid(
+        bpg1 = su.grid_search.PersistentGrid.load_from_path(
             persistent_grid_path=os.path.join(self.test_directory.name,
                                               'bpg.pickle'),
             dataset_path=self.csv_path)
@@ -151,7 +151,7 @@ class TestGridSearchCV(BaseGridTestCase, metaclass=TestMetaClass):
         del grid, bpg1
 
         # Do a second run.
-        bpg2 = su.grid_search.PersistentGrid(
+        bpg2 = su.grid_search.PersistentGrid.load_from_path(
             persistent_grid_path=os.path.join(self.test_directory.name,
                                               'bpg.pickle'),
             dataset_path=self.csv_path)
@@ -328,7 +328,7 @@ class BaseEvolutionaryGridTestCase(BaseGridTestCase,
                           }
         cls.small_grid_bounds = {'n_estimators': (1, 10),
                                  'max_depth': (1, 10),
-                                 'min_samples_leaf': (0.0001, 0.49999)}
+                                 'min_samples_leaf': (1e-10, 0.49999)}
 
 
 class TestEvolutionaryPersistentGridSearchCV(BaseEvolutionaryGridTestCase,
@@ -337,43 +337,51 @@ class TestEvolutionaryPersistentGridSearchCV(BaseEvolutionaryGridTestCase,
 
     def test_simple(self):
         """Simplest test to EvolutionaryPersistentGridSearchCV."""
-        grid = self.small_grid.copy()
-        bound_grid = self.small_grid_bounds.copy()
-        grid.pop('min_samples_leaf')
-        bound_grid.pop('min_samples_leaf')
-
         em = su.evolutionary_grid_search.EvolutionaryMutator(
-            grid,
-            grid_bounds=bound_grid)
+            self.small_grid,
+            grid_bounds=self.small_grid_bounds)
         ec = su.evolutionary_grid_search.EvolutionaryCombiner(
-            grid,
-            grid_bounds=bound_grid)
+            self.small_grid,
+            grid_bounds=self.small_grid_bounds)
         et = su.evolutionary_grid_search.EvolutionaryToolbox(
-            grid,
+            self.small_grid,
             combiner=ec,
             mutator=em,
-            population=50)
+            population=5)
 
         # EvolutionaryPersistentGrid.
         # Create arguments.
-        # TODO: correct them.
-        easimple_args = ('pop', et, .6, .1, 11)
-        # easimple_kwargs = {'verbose': True}
+        easimple_args = (et.pop, et, .6, .1, 11)
+        easimple_kwargs = {'verbose': True}
         # Instantiate.
-        epgo = su.evolutionary_grid_search.EvolutionaryPersistentGrid(
+        epgo1 = su.evolutionary_grid_search.EvolutionaryPersistentGrid.load_from_path(
             eaSimple,
             ef_args=easimple_args,
-            # ef_kwargs=easimple_kwargs,
+            ef_kwargs=easimple_kwargs,
             dataset_path=self.csv_path,
             persistent_grid_path=os.path.join(self.test_directory.name,
                                               'epgo.pickle'))
 
         classifier = RandomForestClassifier()
-        epgcv = su.evolutionary_grid_search.EvolutionaryPersistentGridSearchCV(
-            epgo,
+        epgcv1 = su.evolutionary_grid_search.EvolutionaryPersistentGridSearchCV(
+            epgo1,
             classifier,
-            grid)
-        epgcv.fit(self.data_ml_x, self.data_ml_y)
+            self.small_grid)
+        epgcv1.fit(self.data_ml_x, self.data_ml_y)
+        del epgo1, epgcv1
+
+        epgo2 = su.evolutionary_grid_search.EvolutionaryPersistentGrid.load_from_path(
+            eaSimple,
+            ef_args=easimple_args,
+            ef_kwargs=easimple_kwargs,
+            dataset_path=self.csv_path,
+            persistent_grid_path=os.path.join(self.test_directory.name,
+                                              'epgo.pickle'))
+        epgcv2 = su.evolutionary_grid_search.EvolutionaryPersistentGridSearchCV(
+            epgo2,
+            classifier,
+            self.small_grid)
+        epgcv2.fit(self.data_ml_x, self.data_ml_y)
 
     def test_serialization(self):
         pass

@@ -193,30 +193,32 @@ class EvolutionaryPersistentGridSearchCV(BaseEstimator, ClassifierMixin):
 
     def _evolve(self):
         # Make individuals point to x and y.
-        for ind in self.epgo.pop:
-            ind.x = self.x_
-            ind.y = self.y_
-        # Execute evolution cycles.
-        evolution_full_cycles = (
-            self.epgo.ngen // self.epgo.save_every_n_interations)
-        remaining_cycles = (
-            self.epgo.ngen % self.epgo.save_every_n_interations)
-        for _ in range(evolution_full_cycles):
-            self.epgo.pop, logbook = eaSimple(
-                self.epgo.pop,
-                self.epgo.toolbox,
-                self.epgo.cxpb,
-                self.epgo.mutpb,
-                self.epgo.save_every_n_interations)
-            self.epgo.save()
-        if remaining_cycles != 0:
-            self.epgo.pop, logbook = eaSimple(
-                self.epgo.pop,
-                self.epgo.toolbox,
-                self.epgo.cxpb,
-                self.epgo.mutpb,
-                remaining_cycles)
-            self.epgo.save()
+        with mp.Pool() as mp_pool:
+            self.epgo.toolbox.register('map', mp_pool.map)
+            for ind in self.epgo.pop:
+                ind.x = self.x_
+                ind.y = self.y_
+            # Execute evolution cycles.
+            evolution_full_cycles = (
+                self.epgo.ngen // self.epgo.save_every_n_interations)
+            remaining_cycles = (
+                self.epgo.ngen % self.epgo.save_every_n_interations)
+            for _ in range(evolution_full_cycles):
+                self.epgo.pop, logbook = eaSimple(
+                    self.epgo.pop,
+                    self.epgo.toolbox,
+                    self.epgo.cxpb,
+                    self.epgo.mutpb,
+                    self.epgo.save_every_n_interations)
+                self.epgo.save()
+            if remaining_cycles != 0:
+                self.epgo.pop, logbook = eaSimple(
+                    self.epgo.pop,
+                    self.epgo.toolbox,
+                    self.epgo.cxpb,
+                    self.epgo.mutpb,
+                    remaining_cycles)
+                self.epgo.save()
         return None
 
     def predict(self, X):
@@ -269,10 +271,6 @@ class EvolutionaryToolbox(deap.base.Toolbox):
         else:
             self.pop = population
 
-        if os.name != 'nt':  # Activate multiprocessing if not on windows.
-            self.pool = mp.Pool()
-            self.register('map', self.pool.map)
-
     def _create_population(self, grid, n_individuals):
         deap.creator.create("FitnessMin", deap.base.Fitness, weights=(-1.0,))
         return list(map(IndividualFromGrid, itertools.repeat(grid,
@@ -293,17 +291,12 @@ class EvolutionaryToolbox(deap.base.Toolbox):
         """Remove multiprocessing objects and faulty use of decorators."""
         self_dict = self.__dict__.copy()
         # Delete unpickable multiparallel related objects.
-        if 'pool' in self_dict.keys():
-            del self_dict['pool']
-            del self_dict['map']
-        # TODO: removed due to ignorance on using decorators.
-        del self_dict['combine']
-        del self_dict['combiner']
-        del self_dict['mate']
-        del self_dict['mutate']
-        del self_dict['mutator']
-        del self_dict['select']
+        del self_dict['map']
         return self_dict
+
+    def __setstate__(self, state):
+        """Restore multiprocessing attributes."""
+        self.__dict__.update(state)
 
 
 class IndividualFromGrid(object):

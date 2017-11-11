@@ -51,7 +51,10 @@ class BasePersistentGrid(object):
 
         # Initilize multiprocessing attributes: manager, lock, data and
         # _n_counter.
-        self._instantiate_shared_attributes()
+        self.mp_manager = mp.Manager()
+        self.mp_lock = self.mp_manager.Lock()
+        self.mp_data = self.mp_manager.dict()
+        self._mp_n_counter_value = self.mp_manager.Value(int, 0)
 
     @classmethod
     def load_from_path(cls, *args, **kwargs):
@@ -63,28 +66,10 @@ class BasePersistentGrid(object):
         if os.path.isfile(kwargs['persistent_grid_path']):
             with open(kwargs['persistent_grid_path'], 'rb') as f:
                 loaded_object = pickle.load(f)
-                loaded_object._instantiate_shared_attributes()
             return loaded_object
         else:
             created_object = cls(*args, **kwargs)
             return created_object
-
-    def _instantiate_shared_attributes(self):
-        # Common manager (for other common attributes).
-        try:
-            self.mp_manager
-        except AttributeError:
-            self.mp_manager = mp.Manager()
-        # Common lock.
-        self.mp_lock = self.mp_manager.Lock()
-        # Shared computed values (data).
-        try:
-            self.mp_data
-            self.mp_data = self.mp_manager.dict(self.mp_data)
-        except AttributeError:
-            self.mp_data = self.mp_manager.dict()
-        # Common attributes update counter (_n_counter).
-        self._mp_n_counter_value = self.mp_manager.Value(int, 0)
 
     def update(self, estimator, grid, results):
         """Update storage of hash -> cv scores."""
@@ -94,26 +79,27 @@ class BasePersistentGrid(object):
         if self._mp_n_counter_value.value % self.save_every_n_interations == 0:
             self.save()
 
+    def __setstate__(self, state):
+        """Restore multiprocessing attributes."""
+        self.__dict__.update(state)
+        self.mp_manager = mp.Manager()
+        self.mp_lock = self.mp_manager.Lock()
+        self.mp_data = self.mp_manager.dict(self.mp_data)
+        self._mp_n_counter_value = self.mp_manager.Value(int, 0)
+
+    def __getstate__(self):
+        """Delete multiprocessing attributes."""
+        mp_attrs = ('mp_manager', 'mp_lock', '_mp_n_counter_value')
+        self_dict = self.__dict__.copy()
+        for unwanted_attrs in mp_attrs:
+            self_dict.pop(unwanted_attrs)
+        return self_dict
+
     def save(self):
         """Save persistent object."""
-        # Store values.
-        (_store_manager, _store_lock, _store_data, _store_counter) = (
-            self.mp_manager, self.mp_lock, self.mp_data,
-            self._mp_n_counter_value)
-        # Delete values.
-        del (self.mp_manager, self.mp_lock, self._mp_n_counter_value)
-        # Make sure data is pickable.
         self.mp_data = dict(self.mp_data)
         with open(self.persistent_grid_path, 'wb') as f:
             pickle.dump(self, f)
-        # Store saved values.
-        (self.mp_manager,
-         self.mp_lock,
-         self.mp_data,
-         self._mp_n_counter_value) = (_store_manager,
-                                      _store_lock,
-                                      _store_data,
-                                      _store_counter)
 
     def compute_request_hash(self, estimator, grid):
         """Compute requested hash.
