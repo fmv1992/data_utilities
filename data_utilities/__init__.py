@@ -177,9 +177,9 @@ def test(label='fast',
         for defined_object in dir(module):
 
             # # Uncomment this to make develop-test cycle faster.
-            # if 'evolutionary' not in defined_object.lower():
-            #     print(defined_object)
-            #     continue
+            if 'evolutionary' not in defined_object.lower():
+                print(defined_object)
+                continue
 
             defined_object = getattr(module, defined_object)  # str -> object
             try:

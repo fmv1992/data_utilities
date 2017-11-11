@@ -345,7 +345,9 @@ class TestEvolutionaryPersistentGridSearchCV(BaseEvolutionaryGridTestCase,
         em = su.evolutionary_grid_search.EvolutionaryMutator(
             grid,
             grid_bounds=bound_grid)
-        ec = su.evolutionary_grid_search.EvolutionaryCombiner(grid)
+        ec = su.evolutionary_grid_search.EvolutionaryCombiner(
+            grid,
+            grid_bounds=bound_grid)
         et = su.evolutionary_grid_search.EvolutionaryToolbox(
             grid,
             combiner=ec,
@@ -372,3 +374,6 @@ class TestEvolutionaryPersistentGridSearchCV(BaseEvolutionaryGridTestCase,
             classifier,
             grid)
         epgcv.fit(self.data_ml_x, self.data_ml_y)
+
+    def test_serialization(self):
+        pass

@@ -236,27 +236,39 @@ class EvolutionaryToolbox(deap.base.Toolbox):
 
     def __init__(self,
                  grid,
+                 grid_bounds=dict(),
                  combiner=None,
+                 estimator=None,
                  mutator=None,
                  population=None,
-                 estimator=None,
                  ):
+
+        self.grid = grid
+        self.grid_bounds = grid_bounds
 
         super().__init__()
 
-        self.mutator = mutator
-        self.combiner = combiner
+        if mutator is None:
+            self.mutator = EvolutionaryMutator(grid, grid_bounds=grid_bounds)
+        else:
+            self.mutator = mutator
+        if combiner is None:
+            self.combiner = EvolutionaryCombiner(grid, grid_bounds=grid_bounds)
+        else:
+            self.combiner = combiner
         self.estimator = estimator
 
         self.register('mutate', mutator.mutate)
         self.register('combine', combiner.combine)
         self.mate = self.combine
         self.register('select', deap.tools.selTournament, tournsize=3)
+
+        # TODO: cover both cases of None and not None.
         if isinstance(population, int):
             self.pop = self._create_population(grid, population)
         else:
             self.pop = population
-        # TODO: cover both cases of None and not None.
+
         if os.name != 'nt':  # Activate multiprocessing if not on windows.
             self.pool = mp.Pool()
             self.register('map', self.pool.map)
@@ -265,9 +277,6 @@ class EvolutionaryToolbox(deap.base.Toolbox):
         deap.creator.create("FitnessMin", deap.base.Fitness, weights=(-1.0,))
         return list(map(IndividualFromGrid, itertools.repeat(grid,
                                                              n_individuals)))
-
-    def reset_grid_values(self, individual):
-        individual.estimator.set_params(**individual.data)
 
     def evaluate(self,
                  individual,
@@ -283,12 +292,17 @@ class EvolutionaryToolbox(deap.base.Toolbox):
     def __getstate__(self):
         """Remove multiprocessing objects and faulty use of decorators."""
         self_dict = self.__dict__.copy()
-        del self_dict['pool']
-        del self_dict['map']
+        # Delete unpickable multiparallel related objects.
+        if 'pool' in self_dict.keys():
+            del self_dict['pool']
+            del self_dict['map']
         # TODO: removed due to ignorance on using decorators.
+        del self_dict['combine']
+        del self_dict['combiner']
+        del self_dict['mate']
         del self_dict['mutate']
-        # TODO: removed due to ignorance on using decorators.
         del self_dict['mutator']
+        del self_dict['select']
         return self_dict
 
 
@@ -334,6 +348,11 @@ class IndividualFromGrid(object):
     def _init_from_set(cls, arg_set):
         return random.sample(arg_set, 1)[0]
 
+    def __getstate__(self):
+        """Remove multiprocessing objects and faulty use of decorators."""
+        self_dict = self.__dict__.copy()
+        return self_dict
+
 
 class BasePersistentEvolutionaryOperator(object):
     """Base class for combinator, mutator, etc operators.
@@ -359,17 +378,9 @@ class BasePersistentEvolutionaryOperator(object):
             specific_func = params_to_funcs.get(key, None)
             if specific_func is None:
                 specific_func = self._dtypes_to_func[self._key_to_dtypes[key]]
-            # TODO: if I do this then I cannot pickle this object.
-            # Workaround: delete the mutator and combiner objects.
-            bounds = self.grid_bounds.get(key, None)
-            if bounds is not None:
-                decorated_func = self.bound_function(specific_func, *bounds)
-                to_set_func = decorated_func    # Convolution needed in order
-            else:                               # to be able to pickle
-                to_set_func = specific_func     # function.
             setattr(self,
                     self._get_func_name_from_param(key),
-                    to_set_func)
+                    specific_func)
 
     def _get_func_name_from_param(self, param):
         return self._dynamic_function_prefix + '_' + param
@@ -386,16 +397,12 @@ class BasePersistentEvolutionaryOperator(object):
                     'No dtype for {0} was found.'.format(value))
         return dtypes_dict
 
-    def bound_function(self, func, lower, upper):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            result = func(*args, **kwargs)
-            if result < lower:
-                return lower
-            if result > upper:
-                return upper
-            return result
-        return wrapper
+    def _bound_function(self, result, lower, upper):
+        if result < lower:
+            return lower
+        elif result > upper:
+            return upper
+        return result
 
 
 class EvolutionaryMutator(BasePersistentEvolutionaryOperator):
@@ -428,6 +435,8 @@ class EvolutionaryMutator(BasePersistentEvolutionaryOperator):
             mutated_value = getattr(
                 self,
                 self._get_func_name_from_param(key))(individual.data[key])
+            mutated_value = self._bound_function(mutated_value,
+                                                 *self.grid_bounds[key])
             if mutated_value is not None:  # That means object is not mutable.
                 individual.data[key] = mutated_value
         return (individual, )
@@ -488,13 +497,19 @@ class EvolutionaryCombiner(BasePersistentEvolutionaryOperator):
 
     def combine(self, ind1, ind2):
         for key in ind1.data.keys():
-            getattr(self,
-                    self._get_func_name_from_param(key))(key, ind1, ind2)
-        return ind1, ind2
+            new1, new2 = getattr(
+                self,
+                self._get_func_name_from_param(key))(key, ind1, ind2)
+            new1 = self._bound_function(new1,
+                                        *self.grid_bounds[key])
+            new2 = self._bound_function(new2,
+                                        *self.grid_bounds[key])
+            ind1.data[key], ind2.data[key] = new1, new2
+        return (ind1, ind2)
 
     def _combine_int(self, key, ind1, ind2):
-        ind1.data[key], ind2.data[key] = ind2.data[key], ind1.data[key]
-        return None
+        new1, new2 = ind2.data[key], ind1.data[key]
+        return (new1, new2)
 
     def _combine_float(self, key, ind1, ind2):
         return self._combine_int(key, ind1, ind2)
