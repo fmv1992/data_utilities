@@ -74,8 +74,9 @@ from data_utilities.sklearn_utilities.grid_search import BasePersistentGrid
 
 # pylama: ignore=D103,D102,W0611
 
-X_MATRIX = None
-Y_ARRAY = None
+# Global objects to be assigned to as the data.
+_X_MATRIX = None
+_Y_ARRAY = None
 
 
 class EvolutionaryPersistentGrid(BasePersistentGrid):
@@ -171,10 +172,10 @@ class EvolutionaryPersistentGridSearchCV(BaseEstimator, ClassifierMixin):
         self.x_ = x
         self.y_ = y
 
-        global X_MATRIX
-        global Y_ARRAY
-        X_MATRIX = self.x_
-        Y_ARRAY = self.y_
+        global _X_MATRIX
+        global _Y_ARRAY
+        _X_MATRIX = self.x_
+        _Y_ARRAY = self.y_
 
         # Iterate over populations.
         self._evolve()
@@ -293,12 +294,12 @@ class EvolutionaryToolbox(deap.base.Toolbox):
 
     # TODO: add flexibility in evaluation function.
     def evaluate(self, individual):
-        global X_MATRIX
-        global Y_ARRAY
+        global _X_MATRIX
+        global _Y_ARRAY
         self.estimator.set_params(**individual.data)
-        self.estimator.fit(X_MATRIX, Y_ARRAY)
+        self.estimator.fit(_X_MATRIX, _Y_ARRAY)
         return (np.mean(
-            cross_val_score(self.estimator, X_MATRIX, Y_ARRAY,
+            cross_val_score(self.estimator, _X_MATRIX, _Y_ARRAY,
                             **self.cross_val_score_kwargs)),
                 )
 

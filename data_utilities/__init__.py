@@ -1,10 +1,28 @@
-"""Data analysis helper module written in python.
+"""Data utilities library focused on machine learning and data analysis.
 
-The module relies upon python's scientific/numeric stack to make some
-procedures easier.
+The library relies upon python's scientific/numeric stack to expand their
+capabilities. The dependecies are:
+    * numpy
+    * scipy
+    * pandas
+    * matplotlib
+    * seaborn
+    * scikit-learn
+Optional depencies are:
+    * XGBoost
+    * deap
 
-It offers one module per project (pandas, matplotlib, python itself). Each
-module should mimick the development guidelines of its parent module.
+Highlights are:
+    * matplotlib_utilities: out-of-the-shelf data description with
+      `histogram_of_dataframe`.
+    * pandas_utilities: easier dataframe preparation with
+      `rename_columns_to_lower`, `categorical_serie_to_binary_dataframe`,
+      `balance_ndframe` and `get_numeric_columns`.
+    * sklearn_utilities: multiprocessing and persistance support for hyper
+      parameter grid search, both exhaustive and using a genetic algorithmic
+      approach; convenience functions to the XGBoost module.
+
+and much more.
 
 """
 # According to this, a version number is defined by
@@ -177,9 +195,9 @@ def test(label='fast',
         for defined_object in dir(module):
 
             # # Uncomment this to make develop-test cycle faster.
-            ### if 'evolutionary' not in defined_object.lower():
-            ###     print(defined_object)
-            ###     continue
+            # if 'evolutionary' not in defined_object.lower():
+            #     print(defined_object)
+            #     continue
 
             defined_object = getattr(module, defined_object)  # str -> object
             try:
