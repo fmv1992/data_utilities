@@ -13,7 +13,6 @@ import io
 import multiprocessing as mp
 import os
 import pickle
-import warnings
 
 from data_utilities.sklearn_utilities import get_estimator_name
 

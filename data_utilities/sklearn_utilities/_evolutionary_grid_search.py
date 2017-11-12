@@ -1,6 +1,48 @@
 """Offer an evolutionary grid search object estimator.
 
-Optional file for deap functionality.
+Classes:
+    EvolutionaryPersistentGrid: pickled object that stores evolution states.
+    EvolutionaryPersistentGridSearchCV: scikit-learn-like object.
+    EvolutionaryToolbox: analogue of deap's toolboxes.
+    IndividualFromGrid: analogue of deap's individual.
+    BasePersistentEvolutionaryOperator: input to EToolbox.
+    EvolutionaryMutator: input to EToolbox.
+    EvolutionaryCombiner: input to EToolbox.
+
+EvolutionaryPersistentGrid:
+* Directly saves the necessary data to resume an evolution. The important data
+is the population and the best hyperparameters.
+* All saved data is *solely* stored here.
+
+EvolutionaryPersistentGridSearchCV
+* Scikit-learn-like object with a fit and predict methods. Attributes:
+best_params, best_estimator_ and best_score_.
+
+EvolutionaryToolbox
+* Correspondent to deap's toolbox. Thus it stores the mate, mutate, select,
+population and evaluate methods.
+* TODO: Comment on API requirements? Evaluate and so on.
+
+IndividualFromGrid
+* Holds the hyper parameters values in their data attributes and are
+combined/mutated/selected during evolution.
+
+BasePersistentEvolutionaryOperator
+* Base class for EvolutionaryMutator and EvolutionaryCombiner.
+
+EvolutionaryMutator
+* Object that stores different mutation function for each parameter.
+* Has a set defaults out of the box in case functions are not specified for
+each parameter.
+* TODO: Comment on API requirements? Evaluate and so on.
+
+EvolutionaryCombiner
+* Object that stores different combination functions for each parameter.
+* Has a set defaults out of the box in case functions are not specified for
+each parameter.
+* TODO: Comment on API requirements? Combine and so on.
+
+This module depends on deap.
 
 This script follows the guidelines of the sklearn project:
 http://scikit-learn.org/stable/developers/contributing.html#apis-of-scikit-learn-objects
@@ -11,38 +53,9 @@ attribute that is the persistent evolutionary object.
 Its fit method would call an evolutionary function that would store
 intermediate results in the persistent evolutionary object.
 
->>> import numpy as np
->>> from sklearn.base import BaseEstimator, ClassifierMixin
->>> from sklearn.utils.validation import check_X_y, check_array, check_is_fitted  # noqa
->>> from sklearn.utils.multiclass import unique_labels
->>> from sklearn.metrics import euclidean_distances
->>> class TemplateClassifier(BaseEstimator, ClassifierMixin):
-...
-...     def __init__(self, demo_param='demo'):
-...         self.demo_param = demo_param
-...
-...     def fit(self, X, y):
-...
-...         # Check that X and y have correct shape
-...         X, y = check_X_y(X, y)
-...         # Store the classes seen during fit
-...         self.classes_ = unique_labels(y)
-...
-...         self.X_ = X
-...         self.y_ = y
-...         # Return the classifier
-...         return self
-...
-...     def predict(self, X):
-...
-...         # Check is fit had been called
-...         check_is_fitted(self, ['X_', 'y_'])
-...
-...         # Input validation
-...         X = check_array(X)
-...
-...         closest = np.argmin(euclidean_distances(X, self.X_), axis=1)
-...         return self.y_[closest]
+TODO:
+    * Clone the estimators instead of refit them every time (error prone). This
+    is what scikit-learn do.
 
 """
 
@@ -153,6 +166,10 @@ class EvolutionaryPersistentGrid(BasePersistentGrid):
         self.base_hash = self.get_hash(b''.join(
             map(self.get_hash, map(self._transform_to_hashable,
                                    self.hash_sequence))))
+
+        # TODO: unambiguously determine that population should be refreshed and
+        # stored here upon pickling and that it shall be transfered back to
+        # toolbox upon unpickling.
 
 
 # TODO: clarify who sets what (toolbox, epgscv, etc).
