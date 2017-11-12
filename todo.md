@@ -1,5 +1,12 @@
 # TODO
 
+## Evolutionary Grid Search
+
+* Do not save x and y for every individual of the population.
+* Make it parallel.
+* Handle the minimize/maximize switching on optimization.
+* Improve resemblance to GridSearchCV attributes.
+
 ## Tests
 
 * Put all XGBoost related tests under `TestXGBoostFunctions`.

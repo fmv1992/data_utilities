@@ -18,6 +18,8 @@ try:
 except ImportError:
     HAS_XGBOOST = False
 
+from deap.algorithms import eaSimple
+
 from data_utilities import sklearn_utilities as su
 from data_utilities.tests.test_support import (
     TestDataUtilitiesTestCase,
@@ -26,7 +28,8 @@ from data_utilities.tests.test_support import (
     time_function_call)
 
 
-class TestGridSearchCV(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
+# TODO: Inherit from TestSKLearnTestCase.
+class BaseGridTestCase(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
     """Test class for persistent_grid_search_cv of sklearn_utilities."""
 
     @classmethod
@@ -88,6 +91,10 @@ class TestGridSearchCV(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
         if os.name == 'nt':
             warnings.filterwarnings('default', category=UserWarning)
 
+
+class TestGridSearchCV(BaseGridTestCase, metaclass=TestMetaClass):
+    """Test class for persistent_grid_search_cv of sklearn_utilities."""
+
     def test_multiparallelism_speed(self):
         """Test that using more processes speed up the grid search."""
         clf = RandomForestClassifier()
@@ -101,6 +108,8 @@ class TestGridSearchCV(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
                 # Decorate persistent_grid_search_cv.
                 time_func = time_function_call(su.persistent_grid_search_cv)
                 run_time = time_func(
+                    # TODO: use real values to improve testing scenario
+                    # coverage.
                     su.grid_search.PersistentGrid(
                         persistent_grid_path=os.devnull,
                         dataset_path=os.devnull),
@@ -125,7 +134,7 @@ class TestGridSearchCV(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
     def test_grid_search(self):
         """Simplest test to persistent_grid_search_cv function."""
         # Initiate a persistent grid search.
-        bpg1 = su.grid_search.PersistentGrid(
+        bpg1 = su.grid_search.PersistentGrid.load_from_path(
             persistent_grid_path=os.path.join(self.test_directory.name,
                                               'bpg.pickle'),
             dataset_path=self.csv_path)
@@ -142,7 +151,7 @@ class TestGridSearchCV(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
         del grid, bpg1
 
         # Do a second run.
-        bpg2 = su.grid_search.PersistentGrid(
+        bpg2 = su.grid_search.PersistentGrid.load_from_path(
             persistent_grid_path=os.path.join(self.test_directory.name,
                                               'bpg.pickle'),
             dataset_path=self.csv_path)
@@ -298,8 +307,96 @@ class TestXGBoostFunctions(TestSKLearnTestCase, metaclass=TestMetaClass):
         estimator = XGBClassifier(n_estimators=10, nthread=4)
         estimator.fit(self.x_train, self.y_train.values.ravel())
         if hasattr(estimator, 'booster'):
-            booster = estimator.booster()
+            if callable(estimator.booster):
+                booster = estimator.booster()
+            else:
+                booster = estimator.get_booster()
         else:
             booster = estimator.get_booster()
         fi = su.xgboost_get_feature_importances_from_booster( booster)
         assert isinstance(fi, pd.DataFrame)
+
+
+class BaseEvolutionaryGridTestCase(BaseGridTestCase,
+                                   metaclass=TestMetaClass):
+    """Base test class for EvolutionaryPersistent objects/functions."""
+
+    @classmethod
+    def setUpClass(cls):
+        """Set up class method from unittest.
+
+        Initialize:
+            * Data to be used on tests.
+            * Support directories.
+
+        """
+        # Call parent class super.
+        super().setUpClass()
+        cls.small_grid = {'n_estimators': frozenset(range(3, 7)),
+                          'max_depth': frozenset(range(3, 9)),
+                          'min_samples_leaf': (0.0, .2),
+                          }
+        cls.small_grid_bounds = {'n_estimators': (1, 10),
+                                 'max_depth': (1, 10),
+                                 'min_samples_leaf': (1e-10, 0.49999)}
+
+
+class TestEvolutionaryPersistentGridSearchCV(BaseEvolutionaryGridTestCase,
+                                             metaclass=TestMetaClass):
+    """Test class to test evolutionary grid search strategies."""
+
+    # TODO: test for different algorithms and metrics.
+    def test_simple(self):
+        """Test serialization and syntax for EPersistentGridSearchCV."""
+        classifier = RandomForestClassifier()
+
+        em = su.evolutionary_grid_search.EvolutionaryMutator(
+            self.small_grid,
+            grid_bounds=self.small_grid_bounds)
+        ec = su.evolutionary_grid_search.EvolutionaryCombiner(
+            self.small_grid,
+            grid_bounds=self.small_grid_bounds)
+        et = su.evolutionary_grid_search.EvolutionaryToolbox(
+            self.small_grid,
+            combiner=ec,
+            mutator=em,
+            cross_val_score_kwargs={'scoring': 'neg_log_loss'}, # Smaller is better.  # noqa
+            population=5)
+
+        # Create arguments.
+        easimple_args = [et.pop, et, .6, .1, 11]
+        easimple_kwargs = {'verbose': True}
+
+        # Instantiate first round.
+        epgo1 = su.evolutionary_grid_search.EvolutionaryPersistentGrid.load_from_path(  # noqa
+            eaSimple,
+            ef_args=easimple_args,
+            ef_kwargs=easimple_kwargs,
+            dataset_path=self.csv_path,
+            persistent_grid_path=os.path.join(self.test_directory.name,
+                                              'epgo.pickle'))
+        epgcv1 = su.evolutionary_grid_search.EvolutionaryPersistentGridSearchCV(  # noqa
+            epgo1,
+            classifier,
+            self.small_grid)
+        epgcv1.fit(self.data_ml_x, self.data_ml_y)
+        best_score1 = epgcv1.best_score_
+        del epgo1, epgcv1  # Clean first round.
+
+        # Instantiate second round.
+        epgo2 = su.evolutionary_grid_search.EvolutionaryPersistentGrid.load_from_path(  # noqa
+            eaSimple,
+            ef_args=easimple_args,
+            ef_kwargs=easimple_kwargs,
+            dataset_path=self.csv_path,
+            persistent_grid_path=os.path.join(self.test_directory.name,
+                                              'epgo.pickle'))
+        epgo2.ngen += 5  # Do 5 more evaluations.
+        epgcv2 = su.evolutionary_grid_search.EvolutionaryPersistentGridSearchCV(  # noqa
+            epgo2,
+            classifier,
+            self.small_grid)
+        epgcv2.fit(self.data_ml_x, self.data_ml_y)
+        best_score2 = epgcv2.best_score_
+
+        assert best_score1 <= best_score2

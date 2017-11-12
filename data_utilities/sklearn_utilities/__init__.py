@@ -13,11 +13,13 @@ import scipy.stats
 
 from sklearn.model_selection import cross_val_score
 from sklearn.metrics import get_scorer
+from sklearn.metrics import roc_auc_score
 
 from data_utilities import python_utilities as pyu
 
 # Imported at the bottom of the file.
 # from . import grid_search
+# from . import evolutionary_grid_search
 
 
 def multiprocessing_grid_search(queue, shared_list, persistent_object):
@@ -29,6 +31,7 @@ def multiprocessing_grid_search(queue, shared_list, persistent_object):
         # persistent_path.
         passed_parameters = queue.get()
         if passed_parameters is None:
+            persistent_object.save()
             break
         # Dismember arguments and values.
         grid, cvs_args, cvs_kwargs = passed_parameters
@@ -46,7 +49,6 @@ def multiprocessing_grid_search(queue, shared_list, persistent_object):
         grid_result = grid.copy()
         grid_result['scores'] = scores
         shared_list.append(grid_result)
-        # del x, estimator, cvs_args, cvs_kwargs
 
 
 def persistent_grid_search_cv(persistent_object,
@@ -243,3 +245,4 @@ def xgboost_get_learning_curve(estimator,
 if __name__ != '__main__':
     # Running this file will cause import errors.
     from . import grid_search  # noqa
+    from . import evolutionary_grid_search  # noqa
