@@ -13,6 +13,7 @@ import io
 import multiprocessing as mp
 import os
 import pickle
+import warnings
 
 from data_utilities.sklearn_utilities import get_estimator_name
 
@@ -20,12 +21,16 @@ from data_utilities.sklearn_utilities import get_estimator_name
 class BasePersistentGrid(object):
     """Base class for persistent grids.
 
+    It should **always** be initialized using the `load_from_path` constructor.
+
     Its characteristics are:
     * Simple usage. Instatiation and loading from persistence with the same
     interface (load_from_path).
     * Store combinations of dataset + classifier + grid.
         * TODO: need to figure out a good way to handle processed data sets.
-    * Parallel (in UNIX using multirprocessing).
+        * TODO: considering the evolutionary approach which data should be
+        hashed?
+    * Gives support to parallelism (through proper pickling).
 
     """
 
@@ -34,13 +39,19 @@ class BasePersistentGrid(object):
                  persistent_grid_path=None,
                  dataset_path=None,
                  hash_function=hashlib.md5,
-                 save_every_n_interations=10):
+                 save_every_n_interations=10,
+                 _loaded_through_load_from_path=False):
         """Instantiate a BasePersistentGrid object.
 
         **It is not meant to be used directly. Use the method load_from_path
         instead.**
 
         """
+        if not self._loaded_thru_load_from_path:
+            warnings.warn(
+                'Instance creation should use `load_from_path` method.\nIt '
+                'ensures proper persistence handling.',
+                UserWarning)
         # These attributes are constant even between runs.
         self.hash_function = hash_function
         self.persistent_grid_path = persistent_grid_path

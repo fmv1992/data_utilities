@@ -91,6 +91,11 @@ class EvolutionaryPersistentGrid(BasePersistentGrid):
     (optional)
         * best individual
 
+    Arguments: TODO.
+
+    Example:
+        >>> TODO
+
     """
 
     # TODO: allow for statistics object (deap).
@@ -129,10 +134,11 @@ class EvolutionaryPersistentGrid(BasePersistentGrid):
         # For the case of the EvolutionaryPersistentGrid the base hash is the
         # hash(hash(dataset) + hash(arg1) + hash(arg2) + ...
         # + hash(function name).
-        self.hash_sequence = (dataset_path,
-                              *ef_args,
-                              ef_kwargs,
-                              ev_func.__name__,)
+
+        # Python3.4 does not allow for unpacking ef_args inside a tuple in
+        # multiline.
+        self.hash_sequence = ((dataset_path,) + ef_args +
+                              (ef_kwargs, ev_func.__name__,))
         self.base_hash = self.get_hash(b''.join(
             map(self.get_hash, map(self._transform_to_hashable,
                                    self.hash_sequence))))
@@ -142,7 +148,12 @@ class EvolutionaryPersistentGrid(BasePersistentGrid):
 class EvolutionaryPersistentGridSearchCV(BaseEstimator, ClassifierMixin):
     """Perform an evolutionary grid search.
 
-    Also perform with cross validation and persistence.
+    Perform an evolutionary grid search with cross validation and persistence.
+
+    Arguments: TODO.
+
+    Example:
+        >>> TODO
 
     """
 
@@ -168,7 +179,6 @@ class EvolutionaryPersistentGridSearchCV(BaseEstimator, ClassifierMixin):
             self.best_estimator_ = self.epgo.toolbox.estimator
         else:
             self.best_estimator_ = None
-
 
     def fit(self, x, y):
         """Fit evolutionary object.
@@ -245,7 +255,14 @@ class EvolutionaryPersistentGridSearchCV(BaseEstimator, ClassifierMixin):
 
 
 class EvolutionaryToolbox(deap.base.Toolbox):
-    """Evolutionary toolbox with sklearn_utilities defaults."""
+    """Evolutionary toolbox with sklearn_utilities defaults.
+
+    Arguments: TODO.
+
+    Example:
+        >>> TODO
+
+    """
 
     def __init__(self,
                  grid,
@@ -254,6 +271,7 @@ class EvolutionaryToolbox(deap.base.Toolbox):
                  mutator=None,
                  population=None,
                  cross_val_score_kwargs=dict(),  # maybe required.
+                 cross_val_score_aggr_function=np.mean,
                  ):
         """Initialize EvolutionaryToolbox object.
 
@@ -265,6 +283,7 @@ class EvolutionaryToolbox(deap.base.Toolbox):
         """
         self.grid = grid
         self.grid_bounds = grid_bounds
+        self.cross_val_score_aggr_function = cross_val_score_aggr_function
 
         super().__init__()
 
@@ -301,16 +320,16 @@ class EvolutionaryToolbox(deap.base.Toolbox):
                                                              n_individuals)))
 
     # TODO: add flexibility in evaluation function.
+    # TODO: add support for a different aggregator than cross_val_score.
     def evaluate(self, individual):
         """Evaluate the individual fitness."""
         global _X_MATRIX
         global _Y_ARRAY
         self.estimator.set_params(**individual.data)
         self.estimator.fit(_X_MATRIX, _Y_ARRAY)
-        return (np.mean(
+        return self.cross_val_score_aggr_function(
             cross_val_score(self.estimator, _X_MATRIX, _Y_ARRAY,
-                            **self.cross_val_score_kwargs)),
-                )
+                            **self.cross_val_score_kwargs))
 
     def __getstate__(self):
         """Remove multiprocessing objects and faulty use of decorators."""
@@ -386,6 +405,12 @@ class BasePersistentEvolutionaryOperator(object):
         grid_bounds (dict): TODO.
         kwargs (dict): dictionary mapping data types to functions that mutate
         individuals.
+
+    Arguments: TODO.
+
+    Example:
+        >>> TODO
+
     """
 
     def __init__(self,
@@ -431,12 +456,18 @@ class BasePersistentEvolutionaryOperator(object):
 class EvolutionaryMutator(BasePersistentEvolutionaryOperator):
     """Mutator object that mutates individuals from grid.
 
+    TODO: add explanation.
+
     Arguments:
         grid (dict): dictionary mapping hyperparameters to either a two
         element tuple (min, max) for continuous variables or a set of
         values.
         kwargs (dict): dictionary mapping data types to functions that mutate
         individuals.
+
+    Example:
+        >>> TODO
+
     """
 
     def __init__(self,
@@ -471,12 +502,14 @@ class EvolutionaryMutator(BasePersistentEvolutionaryOperator):
         return (individual, )
 
     def _mutate_int(self, value):
+        """Mutate integers mostly between +2 and -2."""
         increment = int(np.random.normal(loc=0, scale=2))
         while increment == 0:
             increment = int(np.random.normal(loc=0, scale=2))
         return value + increment
 
     def _mutate_float(self, value):
+        """Mutate integers mostly between +2.5 and -2.5."""
         increment = np.random.normal(loc=0, scale=2)
         while increment == 0:
             increment = np.random.normal(loc=0, scale=2)
@@ -508,6 +541,12 @@ class EvolutionaryCombiner(BasePersistentEvolutionaryOperator):
         values.
         kwargs (dict): dictionary mapping data types to functions that combine
         individuals.
+
+    Arguments: TODO.
+
+    Example:
+        >>> TODO
+
     """
 
     def __init__(self,

@@ -366,7 +366,7 @@ class TestEvolutionaryPersistentGridSearchCV(BaseEvolutionaryGridTestCase,
             self.small_grid,
             combiner=ec,
             mutator=em,
-            cross_val_score_kwargs={'scoring': 'neg_log_loss'}, # TODO: Smaller is better?
+            cross_val_score_kwargs={'scoring': 'neg_log_loss'},  # TODO: Smaller is better?
             population=5)
 
         # Create arguments.
