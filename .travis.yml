@@ -5,6 +5,7 @@ branches:
   only:
     - dev
     - master
+    - evolutionary_cv
 python:
     - "3.4"  # oldest python version supported by numpy
     - "3.5"

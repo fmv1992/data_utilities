@@ -1,5 +1,7 @@
 """Offer an evolutionary grid search object estimator.
 
+Optional file for deap functionality.
+
 This script follows the guidelines of the sklearn project:
 http://scikit-learn.org/stable/developers/contributing.html#apis-of-scikit-learn-objects
 
