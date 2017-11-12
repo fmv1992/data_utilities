@@ -1,6 +1,11 @@
 language: python
 env:
-    - PYTHONPATH=$PYTHONPATH:/home/travis/build/fmv1992/data_utilities/data_utilities/
+    global:
+        - PYTHONPATH=$PYTHONPATH:/home/travis/build/fmv1992/data_utilities/data_utilities/
+        - DISPLAY=:0.0
+    matrix:
+        - EXTRAS_REQUIRE=''
+        - EXTRAS_REQUIRE='[all]'
 branches:
   only:
     - dev
@@ -14,6 +19,6 @@ before_install:
     - sudo apt-get update
     - pip3 install --upgrade numpy matplotlib seaborn pandas scikit-learn
 install:
-    # - git clone 'https://github.com/fmv1992/data_utilities'
+    - pip3 install -e ".$EXTRAS_REQUIRE"
 script:
-    - python3 -c "import data_utilities as du; du.test(label='full', verbose=10)"
+    - python3 -c "import matplotlib;matplotlib.use('Agg');import data_utilities as du; du.test(label='full', verbose=10)"

@@ -98,7 +98,7 @@ setup(
     # },
     extras_require={
         'all': ['deap', 'xgboost'],
-        'deap': ['deap']
+        'deap': ['deap'],
         'xgboost': ['xgboost']}
 
     # If there are data files included in your packages that need to be
