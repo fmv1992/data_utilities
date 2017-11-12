@@ -6,25 +6,26 @@ Data utilities library focused on machine learning and data analysis.
 
 The library relies upon python's scientific/numeric stack to expand their
 capabilities. The dependecies are:
-    * numpy
-    * scipy
-    * pandas
-    * matplotlib
-    * seaborn
-    * scikit-learn
+* numpy
+* scipy
+* pandas
+* matplotlib
+* seaborn
+* scikit-learn
+
 Optional depencies are:
-    * XGBoost
-    * deap
+* XGBoost
+* deap
 
 Highlights are:
-    * matplotlib_utilities: out-of-the-shelf data description with
-      `histogram_of_dataframe`.
-    * pandas_utilities: easier dataframe preparation with
-      `rename_columns_to_lower`, `categorical_serie_to_binary_dataframe`,
-      `balance_ndframe` and `get_numeric_columns`.
-    * sklearn_utilities: multiprocessing and persistance support for hyper
-      parameter grid search, both exhaustive and using a genetic algorithmic
-      approach; convenience functions to the XGBoost module.
+* matplotlib_utilities: out-of-the-shelf data description with
+  `histogram_of_dataframe`.
+* pandas_utilities: easier dataframe preparation with
+  `rename_columns_to_lower`, `categorical_serie_to_binary_dataframe`,
+  `balance_ndframe` and `get_numeric_columns`.
+* sklearn_utilities: multiprocessing and persistance support for hyper
+  parameter grid search, both exhaustive and using a genetic algorithmic
+  approach; convenience functions to the XGBoost module.
 
 And much more.
 

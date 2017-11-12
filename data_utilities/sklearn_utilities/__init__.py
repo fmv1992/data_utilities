@@ -27,7 +27,8 @@ def multiprocessing_grid_search(queue, shared_list, persistent_object):
     # scores = cross_val_score(*cross_val_score_args, **cross_val_score_kwargs)
     # queue.put(scores)
     while True:
-        # All parameters from cross_val_score, i to compute pickle name and
+        # TODO: clean this comment.
+        # All parameters from cross_val_score, to compute pickle name and
         # persistent_path.
         passed_parameters = queue.get()
         if passed_parameters is None:
@@ -51,6 +52,16 @@ def multiprocessing_grid_search(queue, shared_list, persistent_object):
         shared_list.append(grid_result)
 
 
+# TODO: Do one thing and to it well.
+#       Yet try to add some flexibility in using the 'cross_validate' function
+#       to be able to synthesize artificial metrics (such as a combination of
+#       ROC AUC and KS-2-sample.
+#       Maybe add an artificial sorting function instead of the numpy.mean.
+#       For better API maybe change *args, **kwargs to their own arguments.
+#       This enables the cross_val_function to be a kwargs as well as the
+#       sorting function.
+#
+#       Add verbosity parameter to this function.
 def persistent_grid_search_cv(persistent_object,
                               grid_space,
                               *cross_val_score_args,
