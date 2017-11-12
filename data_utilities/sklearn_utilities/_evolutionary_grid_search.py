@@ -46,31 +46,29 @@ intermediate results in the persistent evolutionary object.
 
 """
 
-import random
-import os
-import multiprocessing as mp
+import copy
+import functools
 import hashlib
 import itertools
-import functools
-import copy
-
+import multiprocessing as mp
+import os
+import random
 
 import numpy as np
 
-from sklearn.model_selection import GridSearchCV
-from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
-from sklearn.utils.multiclass import unique_labels
+from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn.grid_search import _check_param_grid
 from sklearn.metrics import euclidean_distances
 from sklearn.metrics.scorer import get_scorer
-from sklearn.grid_search import _check_param_grid
+from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import cross_val_score
-from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn.utils.multiclass import unique_labels
+from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 
-
-from deap.algorithms import eaSimple
 import deap.base
 import deap.creator
 import deap.tools
+from deap.algorithms import eaSimple
 
 from data_utilities.sklearn_utilities.grid_search import BasePersistentGrid
 

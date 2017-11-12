@@ -1,11 +1,10 @@
 """Scikit-learn utilities for common machine learning procedures."""
 import hashlib
 import itertools
-import pickle
 import multiprocessing
-import threading
 import os
-
+import pickle
+import threading
 from importlib.util import find_spec  # to check for presence of optional deps.
 
 import numpy as np

@@ -1,11 +1,10 @@
 """Test sklearn_utilities from this module."""
+import datetime as dt
 import glob
 import multiprocessing
 import os
-import warnings
-import datetime as dt
 import unittest
-
+import warnings
 from importlib.util import find_spec
 
 import numpy as np
@@ -319,7 +318,7 @@ class TestXGBoostFunctions(TestSKLearnTestCase, metaclass=TestMetaClass):
                 booster = estimator.get_booster()
         else:
             booster = estimator.get_booster()
-        fi = su.xgboost_get_feature_importances_from_booster( booster)
+        fi = su.xgboost_get_feature_importances_from_booster(booster)
         assert isinstance(fi, pd.DataFrame)
 
 

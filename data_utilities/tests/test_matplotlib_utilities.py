@@ -5,17 +5,16 @@ import os
 import random
 import time
 
-from mpl_toolkits.mplot3d import Axes3D
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-
-from data_utilities.tests.test_support import (
-    TestDataUtilitiesTestCase, TestMetaClass)
+from mpl_toolkits.mplot3d import Axes3D
 
 from data_utilities import matplotlib_utilities as mu
+from data_utilities.tests.test_support import (
+    TestDataUtilitiesTestCase, TestMetaClass)
 
 
 class TestMatplotlibUtilities(TestDataUtilitiesTestCase,

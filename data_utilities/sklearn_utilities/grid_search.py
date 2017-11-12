@@ -7,12 +7,12 @@ This module:
     (3) Enable persistence.
 
 """
+import functools
 import hashlib
 import io
 import multiprocessing as mp
 import os
 import pickle
-import functools
 
 from data_utilities.sklearn_utilities import get_estimator_name
 
@@ -100,7 +100,6 @@ class BasePersistentGrid(object):
         for unwanted_attrs in mp_attrs:
             self_dict.pop(unwanted_attrs)
         return self_dict
-
 
     def compute_request_hash(self, estimator, grid):
         """Compute requested hash.

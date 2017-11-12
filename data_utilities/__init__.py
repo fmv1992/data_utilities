@@ -47,9 +47,9 @@ and much more.
 # User version numbering from here.
 # http://stackoverflow.com/questions/42259098/python-version-numbering-scheme/42259144
 
-import unittest
-import shutil
 import random
+import shutil
+import unittest
 
 import numpy as np
 

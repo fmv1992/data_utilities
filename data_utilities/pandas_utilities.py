@@ -16,15 +16,15 @@ All the functions should follow matplotlib, pandas and numpy's guidelines:
 
 """
 
-import itertools
-import pandas as pd
-import numpy as np
 import encodings
 import io
-import zipfile
-import string
+import itertools
+import numpy as np
+import pandas as pd
 import re
+import string
 import warnings
+import zipfile
 
 try:
     from unidecode import unidecode

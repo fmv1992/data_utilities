@@ -19,11 +19,11 @@ here:
 """
 
 
-import unittest
+import datetime as dt
 import inspect
 import os
 import tempfile
-import datetime as dt
+import unittest
 
 import numpy as np
 import pandas as pd
