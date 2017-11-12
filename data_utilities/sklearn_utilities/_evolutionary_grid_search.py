@@ -49,8 +49,9 @@ intermediate results in the persistent evolutionary object.
 import copy
 import hashlib
 import itertools
-import multiprocessing as mp
+import os
 import random
+import warnings
 
 import numpy as np
 
@@ -65,7 +66,17 @@ import deap.creator
 import deap.tools
 from deap.algorithms import eaSimple
 
+from data_utilities.sklearn_utilities import _get_n_jobs_as_joblib_parallel
 from data_utilities.sklearn_utilities.grid_search import BasePersistentGrid
+
+# If on windows use threading. Jesus, Windows...
+if os.name == 'nt':
+    warnings.warn('Mocking multiprocessing capabilities on Windows using '
+                  'threading.',
+                  UserWarning)
+    import multiprocessing.dummy as mp
+else:
+    import multiprocessing as mp
 
 # pylama: ignore=D103,D102,W0611
 
@@ -137,7 +148,7 @@ class EvolutionaryPersistentGrid(BasePersistentGrid):
 
         # Python3.4 does not allow for unpacking ef_args inside a tuple in
         # multiline.
-        self.hash_sequence = ((dataset_path,) + ef_args +
+        self.hash_sequence = ((dataset_path,) + tuple(ef_args) +
                               (ef_kwargs, ev_func.__name__,))
         self.base_hash = self.get_hash(b''.join(
             map(self.get_hash, map(self._transform_to_hashable,
@@ -164,6 +175,7 @@ class EvolutionaryPersistentGridSearchCV(BaseEstimator, ClassifierMixin):
                  pre_dispatch='2*n_jobs', error_score='raise'):
         """Initialize EvolutionaryPersistentGridSearchCV object."""
         super().__init__()
+        self.n_jobs = n_jobs
 
         self.epgo = persistent_evolutionary_object
         self.epgo.toolbox.estimator = estimator
@@ -212,7 +224,7 @@ class EvolutionaryPersistentGridSearchCV(BaseEstimator, ClassifierMixin):
 
     def _evolve(self):
         # Make individuals point to x and y.
-        with mp.Pool() as mp_pool:
+        with mp.Pool(_get_n_jobs_as_joblib_parallel(self.n_jobs)) as mp_pool:
             self.epgo.toolbox.register('map', mp_pool.map)
             # Execute evolution cycles.
             while self.epgo._ngen_count < self.epgo.ngen:
@@ -329,7 +341,7 @@ class EvolutionaryToolbox(deap.base.Toolbox):
         self.estimator.fit(_X_MATRIX, _Y_ARRAY)
         return self.cross_val_score_aggr_function(
             cross_val_score(self.estimator, _X_MATRIX, _Y_ARRAY,
-                            **self.cross_val_score_kwargs))
+                            **self.cross_val_score_kwargs)),   # As tuple.
 
     def __getstate__(self):
         """Remove multiprocessing objects and faulty use of decorators."""

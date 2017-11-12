@@ -39,19 +39,13 @@ class BasePersistentGrid(object):
                  persistent_grid_path=None,
                  dataset_path=None,
                  hash_function=hashlib.md5,
-                 save_every_n_interations=10,
-                 _loaded_through_load_from_path=False):
+                 save_every_n_interations=10):
         """Instantiate a BasePersistentGrid object.
 
         **It is not meant to be used directly. Use the method load_from_path
         instead.**
 
         """
-        if not self._loaded_thru_load_from_path:
-            warnings.warn(
-                'Instance creation should use `load_from_path` method.\nIt '
-                'ensures proper persistence handling.',
-                UserWarning)
         # These attributes are constant even between runs.
         self.hash_function = hash_function
         self.persistent_grid_path = persistent_grid_path
@@ -66,6 +60,8 @@ class BasePersistentGrid(object):
         self.mp_lock = self.mp_manager.Lock()
         self.mp_data = self.mp_manager.dict()
         self._mp_n_counter_value = self.mp_manager.Value(int, 0)
+        # TODO: add a way to warn if instance is being created directly or
+        # through load_from_path.
 
     @classmethod
     def load_from_path(cls, *args, **kwargs):

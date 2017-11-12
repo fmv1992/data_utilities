@@ -5,6 +5,7 @@ import multiprocessing
 import os
 import pickle
 import threading
+import warnings
 from importlib.util import find_spec  # Check for presence of optional deps.
 
 import numpy as np
@@ -98,6 +99,9 @@ def persistent_grid_search_cv(persistent_object,
     # Start parallel workers.
     jobs = []
     if os.name == 'nt':  # if on windows use threading. Jesus, Windows...
+        warnings.warn('Mocking multiprocessing capabilities on Windows using '
+                      'threading.',
+                      UserWarning)
         p = threading.Thread(
             target=multiprocessing_grid_search,
             args=(mp_queue, mp_scores_list, persistent_object),
