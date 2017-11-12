@@ -322,8 +322,8 @@ class BaseEvolutionaryGridTestCase(BaseGridTestCase,
         """
         # Call parent class super.
         super().setUpClass()
-        cls.small_grid = {'n_estimators': frozenset(range(5, 7)),
-                          'max_depth': frozenset([4, 9]),
+        cls.small_grid = {'n_estimators': frozenset(range(3, 7)),
+                          'max_depth': frozenset(range(3, 9)),
                           'min_samples_leaf': (0.0, .2),
                           }
         cls.small_grid_bounds = {'n_estimators': (1, 10),
@@ -335,8 +335,11 @@ class TestEvolutionaryPersistentGridSearchCV(BaseEvolutionaryGridTestCase,
                                              metaclass=TestMetaClass):
     """Test class to test evolutionary grid search strategies."""
 
+    # TODO: test for different algorithms and metrics.
     def test_simple(self):
-        """Simplest test to EvolutionaryPersistentGridSearchCV."""
+        """Test serialization and syntax for EPersistentGridSearchCV."""
+        classifier = RandomForestClassifier()
+
         em = su.evolutionary_grid_search.EvolutionaryMutator(
             self.small_grid,
             grid_bounds=self.small_grid_bounds)
@@ -347,41 +350,43 @@ class TestEvolutionaryPersistentGridSearchCV(BaseEvolutionaryGridTestCase,
             self.small_grid,
             combiner=ec,
             mutator=em,
+            cross_val_score_kwargs={'scoring': 'neg_log_loss'}, # Smaller is better.  # noqa
             population=5)
 
-        # EvolutionaryPersistentGrid.
         # Create arguments.
-        easimple_args = (et.pop, et, .6, .1, 11)
+        easimple_args = [et.pop, et, .6, .1, 11]
         easimple_kwargs = {'verbose': True}
-        # Instantiate.
-        epgo1 = su.evolutionary_grid_search.EvolutionaryPersistentGrid.load_from_path(
+
+        # Instantiate first round.
+        epgo1 = su.evolutionary_grid_search.EvolutionaryPersistentGrid.load_from_path(  # noqa
             eaSimple,
             ef_args=easimple_args,
             ef_kwargs=easimple_kwargs,
             dataset_path=self.csv_path,
             persistent_grid_path=os.path.join(self.test_directory.name,
                                               'epgo.pickle'))
-
-        classifier = RandomForestClassifier()
-        epgcv1 = su.evolutionary_grid_search.EvolutionaryPersistentGridSearchCV(
+        epgcv1 = su.evolutionary_grid_search.EvolutionaryPersistentGridSearchCV(  # noqa
             epgo1,
             classifier,
             self.small_grid)
         epgcv1.fit(self.data_ml_x, self.data_ml_y)
-        del epgo1, epgcv1
+        best_score1 = epgcv1.best_score_
+        del epgo1, epgcv1  # Clean first round.
 
-        epgo2 = su.evolutionary_grid_search.EvolutionaryPersistentGrid.load_from_path(
+        # Instantiate second round.
+        epgo2 = su.evolutionary_grid_search.EvolutionaryPersistentGrid.load_from_path(  # noqa
             eaSimple,
             ef_args=easimple_args,
             ef_kwargs=easimple_kwargs,
             dataset_path=self.csv_path,
             persistent_grid_path=os.path.join(self.test_directory.name,
                                               'epgo.pickle'))
-        epgcv2 = su.evolutionary_grid_search.EvolutionaryPersistentGridSearchCV(
+        epgo2.ngen += 5  # Do 5 more evaluations.
+        epgcv2 = su.evolutionary_grid_search.EvolutionaryPersistentGridSearchCV(  # noqa
             epgo2,
             classifier,
             self.small_grid)
         epgcv2.fit(self.data_ml_x, self.data_ml_y)
+        best_score2 = epgcv2.best_score_
 
-    def test_serialization(self):
-        pass
+        assert best_score1 <= best_score2

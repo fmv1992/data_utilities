@@ -59,6 +59,7 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 from sklearn.utils.multiclass import unique_labels
 from sklearn.metrics import euclidean_distances
+from sklearn.metrics.scorer import get_scorer
 from sklearn.grid_search import _check_param_grid
 from sklearn.model_selection import cross_val_score
 from sklearn.base import BaseEstimator, ClassifierMixin
@@ -73,12 +74,8 @@ from data_utilities.sklearn_utilities.grid_search import BasePersistentGrid
 
 # pylama: ignore=D103,D102,W0611
 
-
-def _func_args_to_dict(function, *func_args, **func_kwargs):
-    varnames = function.__code__.co_varnames
-    defaults = function.__defaults__
-    actual_call_values = func_args + defaults[len(func_args):]
-    return dict(zip(varnames, actual_call_values))
+X_MATRIX = None
+Y_ARRAY = None
 
 
 class EvolutionaryPersistentGrid(BasePersistentGrid):
@@ -100,6 +97,7 @@ class EvolutionaryPersistentGrid(BasePersistentGrid):
 
     """
 
+    # TODO: allow for statistics object (deap).
     def __init__(self,
                  ev_func,
                  ef_args=tuple(),
@@ -124,8 +122,7 @@ class EvolutionaryPersistentGrid(BasePersistentGrid):
         self.cxpb = ef_args[2]
         self.mutpb = ef_args[3]
         self.ngen = ef_args[4]
-        # Store correct value.
-        self._ngen = self.ngen
+        self._ngen_count = 0
         # Create a dictionary of the form:
         # {'argname': passed_value, ..., 'argname': default_if_non_passed}
         # Base hash:
@@ -174,52 +171,54 @@ class EvolutionaryPersistentGridSearchCV(BaseEstimator, ClassifierMixin):
         self.x_ = x
         self.y_ = y
 
+        global X_MATRIX
+        global Y_ARRAY
+        X_MATRIX = self.x_
+        Y_ARRAY = self.y_
+
         # Iterate over populations.
-        self._fit()
+        self._evolve()
 
         # Save best parameters.
-        _best_individual = deap.tools.selBest(self.epgo.pop, 1)[0]
-        self.best_params_ = _best_individual.data
-        self.epgo.toolbox.estimator.set_params(**self.best_params_)
-        self.epgo.toolbox.estimator.fit(self.x_, self.y_,)
-        self.best_estimator_ = self.epgo.toolbox.estimator
-        self.best_score_ = _best_individual.fitness.values[0]
+        self._save_best()
 
         # Return the classifier
         return self
-
-    def _fit(self):
-        self._evolve()
 
     def _evolve(self):
         # Make individuals point to x and y.
         with mp.Pool() as mp_pool:
             self.epgo.toolbox.register('map', mp_pool.map)
-            for ind in self.epgo.pop:
-                ind.x = self.x_
-                ind.y = self.y_
             # Execute evolution cycles.
-            evolution_full_cycles = (
-                self.epgo.ngen // self.epgo.save_every_n_interations)
-            remaining_cycles = (
-                self.epgo.ngen % self.epgo.save_every_n_interations)
-            for _ in range(evolution_full_cycles):
+            while self.epgo._ngen_count < self.epgo.ngen:
+                if self.epgo.save_every_n_interations < (
+                            self.epgo.ngen - self.epgo._ngen_count):
+                    nruns = self.epgo.save_every_n_interations
+                else:
+                    nruns = self.epgo.ngen - self.epgo._ngen_count
                 self.epgo.pop, logbook = eaSimple(
                     self.epgo.pop,
                     self.epgo.toolbox,
                     self.epgo.cxpb,
                     self.epgo.mutpb,
-                    self.epgo.save_every_n_interations)
+                    nruns)
                 self.epgo.save()
-            if remaining_cycles != 0:
-                self.epgo.pop, logbook = eaSimple(
-                    self.epgo.pop,
-                    self.epgo.toolbox,
-                    self.epgo.cxpb,
-                    self.epgo.mutpb,
-                    remaining_cycles)
-                self.epgo.save()
+                self.epgo._ngen_count += nruns
         return None
+
+    def _save_best(self):
+        _best_ind = deap.tools.selBest(self.epgo.pop, 1)[0]
+        _best_score = _best_ind.fitness.values[0]
+        if _best_score >= getattr(self.epgo, '_best_score', float('-inf')):
+            # Save important data to EvolutionaryPersistentGrid object.
+            self.epgo._best_score = _best_score
+            self.epgo._best_params = _best_ind.data.copy()
+            # Save data to EvolutionaryPersistentGridSearchCV.
+            self.best_params_ = _best_ind.data.copy()
+            self.epgo.toolbox.estimator.set_params(**self.best_params_)
+            self.epgo.toolbox.estimator.fit(self.x_, self.y_,)
+            self.best_estimator_ = self.epgo.toolbox.estimator
+            self.best_score_ = _best_score
 
     def predict(self, X):
 
@@ -243,21 +242,33 @@ class EvolutionaryToolbox(deap.base.Toolbox):
                  estimator=None,
                  mutator=None,
                  population=None,
+                 cross_val_score_kwargs=dict(),  # maybe required.
                  ):
+        """Initialize EvolutionaryToolbox object.
 
+        TODO: comment on initialization and flexibility. Evaluation? Scoring?
+        How customize?
+
+        Arguments:
+            scoring (TODO): argument to sklearn.get_scorer.
+        """
         self.grid = grid
         self.grid_bounds = grid_bounds
 
         super().__init__()
 
-        if mutator is None:
-            self.mutator = EvolutionaryMutator(grid, grid_bounds=grid_bounds)
-        else:
-            self.mutator = mutator
         if combiner is None:
             self.combiner = EvolutionaryCombiner(grid, grid_bounds=grid_bounds)
         else:
             self.combiner = combiner
+        if mutator is None:
+            self.mutator = EvolutionaryMutator(grid, grid_bounds=grid_bounds)
+        else:
+            self.mutator = mutator
+        self.cross_val_score_kwargs = cross_val_score_kwargs.copy()
+        self.cross_val_score_kwargs['scoring'] = cross_val_score_kwargs.get(
+            'scoring', 'roc_auc')
+
         self.estimator = estimator
 
         self.register('mutate', mutator.mutate)
@@ -272,19 +283,23 @@ class EvolutionaryToolbox(deap.base.Toolbox):
             self.pop = population
 
     def _create_population(self, grid, n_individuals):
-        deap.creator.create("FitnessMin", deap.base.Fitness, weights=(-1.0,))
+        # All sklearns scorer objects follow the conveion of
+        # 'greater_is_better'.
+        deap.creator.create('FitnessMax',
+                            deap.base.Fitness,
+                            weights=(1, ))
         return list(map(IndividualFromGrid, itertools.repeat(grid,
                                                              n_individuals)))
 
-    def evaluate(self,
-                 individual,
-                 *cross_val_score_args,
-                 **cross_val_score_kwargs):
+    # TODO: add flexibility in evaluation function.
+    def evaluate(self, individual):
+        global X_MATRIX
+        global Y_ARRAY
         self.estimator.set_params(**individual.data)
-        self.estimator.fit(individual.x, individual.y)
+        self.estimator.fit(X_MATRIX, Y_ARRAY)
         return (np.mean(
-            cross_val_score(self.estimator, individual.x, individual.y,
-                            *cross_val_score_args, **cross_val_score_kwargs)),
+            cross_val_score(self.estimator, X_MATRIX, Y_ARRAY,
+                            **self.cross_val_score_kwargs)),
                 )
 
     def __getstate__(self):
@@ -318,8 +333,7 @@ class IndividualFromGrid(object):
 
         """
         self.data = self._init_from_grid(grid)
-        self.fitness = deap.creator.FitnessMin()
-        self.fitness.weights = (-1.0, )
+        self.fitness = deap.creator.FitnessMax()
 
     def _init_from_grid(self, grid):
         return {k: self._switch_function(v) for k, v in grid.items()}
@@ -343,7 +357,12 @@ class IndividualFromGrid(object):
 
     def __getstate__(self):
         """Remove multiprocessing objects and faulty use of decorators."""
-        self_dict = self.__dict__.copy()
+        self_dict = copy.deepcopy(self.__dict__)
+        # TODO: this block if uncommented removes x and y from evaluation.
+        # if 'x' in self_dict.keys():
+        #     del self_dict['x']
+        # if 'y' in self_dict.keys():
+        #     del self_dict['y']
         return self_dict
 
 
