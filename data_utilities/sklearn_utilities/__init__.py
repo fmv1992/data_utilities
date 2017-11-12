@@ -5,7 +5,7 @@ import multiprocessing
 import os
 import pickle
 import threading
-from importlib.util import find_spec  # to check for presence of optional deps.
+from importlib.util import find_spec  # Check for presence of optional deps.
 
 import numpy as np
 import pandas as pd
@@ -27,12 +27,8 @@ def multiprocessing_grid_search(queue, shared_list, persistent_object):
     # scores = cross_val_score(*cross_val_score_args, **cross_val_score_kwargs)
     # queue.put(scores)
     while True:
-        # TODO: clean this comment.
-        # All parameters from cross_val_score, to compute pickle name and
-        # persistent_path.
         passed_parameters = queue.get()
         if passed_parameters is None:
-            persistent_object.save()
             break
         # Dismember arguments and values.
         grid, cvs_args, cvs_kwargs = passed_parameters
@@ -81,16 +77,8 @@ def persistent_grid_search_cv(persistent_object,
 
     """
     # Dismember arguments and values.
-    if 'n_jobs' in cross_val_score_kwargs.keys():
-        if cross_val_score_kwargs['n_jobs'] == -1:
-            n_workers = multiprocessing.cpu_count()
-        elif cross_val_score_kwargs['n_jobs'] < 0:
-            n_workers = (multiprocessing.cpu_count()
-                         + 1 + cross_val_score_kwargs['n_jobs'])
-        elif cross_val_score_kwargs['n_jobs'] > 0:
-            n_workers = cross_val_score_kwargs['n_jobs']
-    else:
-        n_workers = multiprocessing.cpu_count()
+    n_workers = _get_n_jobs_as_joblib_parallel(
+        cross_val_score_kwargs.get('n_jobs', -1))
     # This function already creates 4 parallel works. In order to avoid having
     # n**2 parallel workers then reset n_jobs.
     cross_val_score_kwargs['n_jobs'] = 1
@@ -188,6 +176,17 @@ def get_estimator_name(estimator):
     """Get a simple representation of an estimator's name."""
     estimator_name = pyu.process_string(estimator.__class__.__name__)
     return estimator_name
+
+
+def _get_n_jobs_as_joblib_parallel(n):
+    """Return the number of jobs according to joblib.Parallel rules."""
+    if n == -1:
+        n_workers = multiprocessing.cpu_count()
+    elif n < 0:
+        n_workers = (multiprocessing.cpu_count() + 1 + n)
+    elif n > 0:
+        n_workers = n
+    return n_workers
 
 
 if __name__ != '__main__':

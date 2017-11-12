@@ -47,20 +47,15 @@ intermediate results in the persistent evolutionary object.
 """
 
 import copy
-import functools
 import hashlib
 import itertools
 import multiprocessing as mp
-import os
 import random
 
 import numpy as np
 
 from sklearn.base import BaseEstimator, ClassifierMixin
-from sklearn.grid_search import _check_param_grid
 from sklearn.metrics import euclidean_distances
-from sklearn.metrics.scorer import get_scorer
-from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import cross_val_score
 from sklearn.utils.multiclass import unique_labels
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
@@ -107,6 +102,7 @@ class EvolutionaryPersistentGrid(BasePersistentGrid):
                  dataset_path=None,
                  hash_function=hashlib.md5,
                  save_every_n_interations=10):
+        """Initialize EvolutionaryPersistentGrid object."""
         # Call super init.
         super().__init__(
             persistent_grid_path=persistent_grid_path,
@@ -142,6 +138,7 @@ class EvolutionaryPersistentGrid(BasePersistentGrid):
                                    self.hash_sequence))))
 
 
+# TODO: clarify who sets what (toolbox, epgscv, etc).
 class EvolutionaryPersistentGridSearchCV(BaseEstimator, ClassifierMixin):
     """Perform an evolutionary grid search.
 
@@ -154,15 +151,32 @@ class EvolutionaryPersistentGridSearchCV(BaseEstimator, ClassifierMixin):
                  estimator, scoring=None, fit_params=None,
                  n_jobs=1, iid=True, refit=True, cv=None, verbose=0,
                  pre_dispatch='2*n_jobs', error_score='raise'):
-
+        """Initialize EvolutionaryPersistentGridSearchCV object."""
         super().__init__()
 
         self.epgo = persistent_evolutionary_object
         self.epgo.toolbox.estimator = estimator
-        self.scoring = scoring
+        if hasattr(self.epgo, '_best_score'):
+            self._update_from_epgo()
+
+    def _update_from_epgo(self):
+        self.best_score_ = self.epgo._best_score
+        self.best_params_ = self.epgo._best_params
+        self.epgo.toolbox.estimator.set_params(**self.best_params_)
+        if hasattr(self, 'x_'):
+            self.epgo.toolbox.estimator.fit(self.x_, self.y_,)
+            self.best_estimator_ = self.epgo.toolbox.estimator
+        else:
+            self.best_estimator_ = None
+
 
     def fit(self, x, y):
+        """Fit evolutionary object.
 
+        Fit the evolutionary object saving the best results in the
+        EvolutionaryPersistentGrid object attribute.
+
+        """
         # Check that x and y have correct shape
         x, y = check_X_y(x, y)
         # Store the classes seen during fit
@@ -202,7 +216,8 @@ class EvolutionaryPersistentGridSearchCV(BaseEstimator, ClassifierMixin):
                     self.epgo.toolbox,
                     self.epgo.cxpb,
                     self.epgo.mutpb,
-                    nruns)
+                    nruns,
+                    **self.epgo.ef_kwargs)
                 self.epgo.save()
                 self.epgo._ngen_count += nruns
         return None
@@ -211,18 +226,14 @@ class EvolutionaryPersistentGridSearchCV(BaseEstimator, ClassifierMixin):
         _best_ind = deap.tools.selBest(self.epgo.pop, 1)[0]
         _best_score = _best_ind.fitness.values[0]
         if _best_score >= getattr(self.epgo, '_best_score', float('-inf')):
-            # Save important data to EvolutionaryPersistentGrid object.
             self.epgo._best_score = _best_score
             self.epgo._best_params = _best_ind.data.copy()
-            # Save data to EvolutionaryPersistentGridSearchCV.
-            self.best_params_ = _best_ind.data.copy()
-            self.epgo.toolbox.estimator.set_params(**self.best_params_)
-            self.epgo.toolbox.estimator.fit(self.x_, self.y_,)
-            self.best_estimator_ = self.epgo.toolbox.estimator
-            self.best_score_ = _best_score
+            self._update_from_epgo()
 
     def predict(self, X):
-
+        """Predict input data."""
+        # TODO: implement this function.
+        raise NotImplementedError
         # Check is fit had been called
         check_is_fitted(self, ['X_', 'y_'])
 
@@ -240,7 +251,6 @@ class EvolutionaryToolbox(deap.base.Toolbox):
                  grid,
                  grid_bounds=dict(),
                  combiner=None,
-                 estimator=None,
                  mutator=None,
                  population=None,
                  cross_val_score_kwargs=dict(),  # maybe required.
@@ -270,8 +280,6 @@ class EvolutionaryToolbox(deap.base.Toolbox):
         self.cross_val_score_kwargs['scoring'] = cross_val_score_kwargs.get(
             'scoring', 'roc_auc')
 
-        self.estimator = estimator
-
         self.register('mutate', mutator.mutate)
         self.register('combine', combiner.combine)
         self.mate = self.combine
@@ -294,6 +302,7 @@ class EvolutionaryToolbox(deap.base.Toolbox):
 
     # TODO: add flexibility in evaluation function.
     def evaluate(self, individual):
+        """Evaluate the individual fitness."""
         global _X_MATRIX
         global _Y_ARRAY
         self.estimator.set_params(**individual.data)
@@ -320,7 +329,7 @@ class IndividualFromGrid(object):
 
     def __init__(self,
                  grid):
-        """Create an individuals to evolve from a grid dictionary.
+        """Create an individual to evolve from a grid dictionary.
 
         Arguments:
             grid (dict): dictionary mapping hyperparameters to either a two
@@ -383,6 +392,7 @@ class BasePersistentEvolutionaryOperator(object):
                  grid,
                  grid_bounds,
                  params_to_funcs):
+        """Initialize BasePersistentEvolutionaryOperator object."""
         self.grid = grid
         self.grid_bounds = grid_bounds
         self._key_to_dtypes = self._get_dtypes(grid)
@@ -433,6 +443,7 @@ class EvolutionaryMutator(BasePersistentEvolutionaryOperator):
                  grid,
                  grid_bounds=dict(),
                  params_to_funcs=dict()):
+        """Initialize EvolutionaryMutator object."""
         self._dynamic_function_prefix = '_mutate'
         self._dtypes_to_func = {
             int: self._mutate_int,
@@ -444,6 +455,11 @@ class EvolutionaryMutator(BasePersistentEvolutionaryOperator):
         super().__init__(grid, grid_bounds, params_to_funcs)
 
     def mutate(self, individual):
+        """Mutate individual returning a tuple (individual, ).
+
+        Indivual's parameters are changed inplace.
+
+        """
         for key in individual.data.keys():
             mutated_value = getattr(
                 self,
@@ -498,6 +514,7 @@ class EvolutionaryCombiner(BasePersistentEvolutionaryOperator):
                  grid,
                  grid_bounds=dict(),
                  params_to_funcs=dict()):
+        """Initialize EvolutionaryCombiner object."""
         self._dynamic_function_prefix = '_combine'
         self._dtypes_to_func = {
             int: self._combine_int,
@@ -509,6 +526,11 @@ class EvolutionaryCombiner(BasePersistentEvolutionaryOperator):
         super().__init__(grid, grid_bounds, params_to_funcs)
 
     def combine(self, ind1, ind2):
+        """Combine two individuals returning a tuple (ind1, ind2).
+
+        Indivual's parameters are changed inplace.
+
+        """
         for key in ind1.data.keys():
             new1, new2 = getattr(
                 self,

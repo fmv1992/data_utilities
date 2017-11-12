@@ -366,12 +366,12 @@ class TestEvolutionaryPersistentGridSearchCV(BaseEvolutionaryGridTestCase,
             self.small_grid,
             combiner=ec,
             mutator=em,
-            cross_val_score_kwargs={'scoring': 'neg_log_loss'}, # Smaller is better.  # noqa
+            cross_val_score_kwargs={'scoring': 'neg_log_loss'}, # TODO: Smaller is better?
             population=5)
 
         # Create arguments.
         easimple_args = [et.pop, et, .6, .1, 11]
-        easimple_kwargs = {'verbose': True}
+        easimple_kwargs = {'verbose': False}
 
         # Instantiate first round.
         epgo1 = su.evolutionary_grid_search.EvolutionaryPersistentGrid.load_from_path(  # noqa
@@ -406,7 +406,4 @@ class TestEvolutionaryPersistentGridSearchCV(BaseEvolutionaryGridTestCase,
         best_score2 = epgcv2.best_score_
 
         # TODO: check this error.
-        try:
-            assert best_score1 <= best_score2
-        except AssertionError:
-            import ipdb; ipdb.set_trace()  # XXX BREAKPOINT
+        assert best_score1 <= best_score2
