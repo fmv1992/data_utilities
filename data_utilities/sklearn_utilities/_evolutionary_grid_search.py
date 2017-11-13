@@ -216,8 +216,8 @@ class EvolutionaryPersistentGridSearchCV(BaseEstimator, ClassifierMixin):
         EvolutionaryPersistentGrid object attribute.
 
         """
-        # Check that x and y have correct shape
-        x, y = check_X_y(x, y)
+        # Check that x and y have correct shape and does not contain nans.
+        # x, y = check_X_y(x, y)
         # Store the classes seen during fit
         self.classes_ = unique_labels(y)
 
@@ -407,7 +407,14 @@ class IndividualFromGrid(object):
 
     @classmethod
     def _init_from_tuple(cls, arg_tup):
-        return random.uniform(*arg_tup)
+        if all(map(lambda x:isinstance(x, int), arg_tup)):
+            return random.randint(*arg_tup)
+        elif all(map(lambda x:isinstance(x, float), arg_tup)):
+            return random.uniform(*arg_tup)
+        else:
+            raise ValueError(
+                'Tuple {0} does not have either uniform integer types nor '
+                'uniform float types.')
 
     @classmethod
     def _init_from_set(cls, arg_set):
@@ -474,11 +481,20 @@ class BasePersistentEvolutionaryOperator(object):
                     'No dtype for {0} was found.'.format(value))
         return dtypes_dict
 
-    def _bound_function(self, result, lower, upper):
-        if result < lower:
-            return lower
-        elif result > upper:
-            return upper
+    def _bound_function(self, result, bounds):
+        if isinstance(bounds, frozenset):
+            assert result in bounds
+            return result
+        elif isinstance(bounds, tuple):
+            lower, upper = bounds
+            if result < lower:
+                return lower
+            elif result > upper:
+                return upper
+        else:
+            raise ValueError(
+                'Got {0} of type {1} but expecter either a frozenset or '
+                'a tuple.'.format(bounds, type(bounds)))
         return result
 
 
@@ -525,7 +541,7 @@ class EvolutionaryMutator(BasePersistentEvolutionaryOperator):
                 self,
                 self._get_func_name_from_param(key))(individual.data[key])
             mutated_value = self._bound_function(mutated_value,
-                                                 *self.grid_bounds[key])
+                                                 self.grid_bounds[key])
             if mutated_value is not None:  # That means object is not mutable.
                 individual.data[key] = mutated_value
         return (individual, )
@@ -603,10 +619,13 @@ class EvolutionaryCombiner(BasePersistentEvolutionaryOperator):
             new1, new2 = getattr(
                 self,
                 self._get_func_name_from_param(key))(key, ind1, ind2)
-            new1 = self._bound_function(new1,
-                                        *self.grid_bounds[key])
-            new2 = self._bound_function(new2,
-                                        *self.grid_bounds[key])
+            # TODO: bound part has a set as bounds. Maybe it is not necessary
+            # to bound mating?
+            # print('bound:', self.grid_bounds[key])
+            # new1 = self._bound_function(new1,
+            #                             *self.grid_bounds[key])
+            # new2 = self._bound_function(new2,
+            #                             *self.grid_bounds[key])
             ind1.data[key], ind2.data[key] = new1, new2
         return (ind1, ind2)
 
