@@ -634,6 +634,18 @@ def histogram_of_dataframe(dataframe,
     return tuple(list_of_figures)
 
 
+def change_axis_xticklabels(axis, dict_or_callable):
+    """Change axis xticklabels inplace."""
+    # TODO: Infer data type of dict.
+    dict_values_dtype = type(tuple(dict_or_callable.keys())[0])
+    # TODO: change from text to appropriate data type.
+    # x1 = axis.get_ticklabels()[0].get_text()
+    # import ipdb; ipdb.set_trace()  # XXX BREAKPOINT
+    axis.set_ticklabels(
+        map(lambda x: dict_or_callable[dict_values_dtype(float(x.get_text()))],
+            axis.get_ticklabels()))
+
+
 def add_summary_statistics_textbox(series,
                                    axes,
                                    include_mean=True,
