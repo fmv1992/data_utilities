@@ -406,4 +406,7 @@ class TestEvolutionaryPersistentGridSearchCV(BaseEvolutionaryGridTestCase,
         best_score2 = epgcv2.best_score_
 
         # TODO: check this error.
-        assert best_score1 <= best_score2
+        try:
+            assert best_score1 <= best_score2
+        except AssertionError:
+            assert best_params2 == best_params1

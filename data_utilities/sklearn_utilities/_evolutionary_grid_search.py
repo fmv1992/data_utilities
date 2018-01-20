@@ -1,4 +1,19 @@
-"""Offer an evolutionary grid search object estimator.
+"""Offer an evolutionary persistent parallel grid search functionality.
+
+This library offers a genetic/evolutionary approach for hyper parameter grid
+search in the marchine learning context (1). It also stores the evolution
+data (2), provides means of paralellization (3) and gives sane defaults (4).
+
+(1): It offers the simple genetic algorithm of cross-over and mutation
+(easimple from deap) giving the user freedom to define their own mating and
+mutating functions. It also takes bounds for each parameter and clips results
+that are outside the allowed range.
+
+(2): TODO
+
+(3): TODO
+
+(4): TODO
 
 Classes:
     EvolutionaryPersistentGrid: pickled object that stores evolution states.

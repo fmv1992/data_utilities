@@ -1,14 +1,17 @@
 """Optional file for XGBoost functionality."""
 import functools
+import copy
 
 import numpy as np
 import pandas as pd
 
 from sklearn.metrics import get_scorer
+# from sklearn.base import clone
 
 
 def xgboost_get_feature_importances_from_booster(booster):
     """Get a feature importances dataframe from a booster object."""
+    booster = copy.deepcopy(booster)
     score_types = ['weight',
                    'gain',
                    'cover']
@@ -54,6 +57,10 @@ def xgboost_get_learning_curve(estimator,
         the scoring function.
 
     """
+    # TODO: cloning the estimator removes its fitted parameters. On the one
+    # hand this may prevent changing the estimator state on the other hand it
+    # forces the estimator to be fit again (resource/consuming).
+    # estimator = clone(estimator)
     predict_original = estimator.predict_proba
     scorer = get_scorer(scoring)
     ntrees = getattr(estimator, 'best_ntree_limit', estimator.n_estimators)
