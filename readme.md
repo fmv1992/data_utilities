@@ -5,7 +5,7 @@
 Data utilities library focused on machine learning and data analysis.
 
 The library relies upon python's scientific/numeric stack to expand their
-capabilities. The dependecies are:
+capabilities. The dependencies are:
 * numpy
 * scipy
 * pandas
@@ -13,7 +13,7 @@ capabilities. The dependecies are:
 * seaborn
 * scikit-learn
 
-Optional depencies are:
+Optional dependencies are:
 * XGBoost
 * deap
 
@@ -23,7 +23,7 @@ Highlights are:
 * pandas_utilities: easier dataframe preparation with
   `rename_columns_to_lower`, `categorical_serie_to_binary_dataframe`,
   `balance_ndframe` and `get_numeric_columns`.
-* sklearn_utilities: multiprocessing and persistance support for hyper
+* sklearn_utilities: multiprocessing and persistence support for hyper
   parameter grid search, both exhaustive and using a genetic algorithmic
   approach; convenience functions to the XGBoost module.
 
@@ -60,7 +60,7 @@ figure out the best way to to develop the utilities.
 
 # What's new
 
-* xxx TODO xxx
+Check our [changelog](https://github.com/fmv1992/data_utilities/blob/master/changelog.md).
 
 # Development guidelines
 

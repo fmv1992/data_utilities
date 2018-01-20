@@ -2,9 +2,12 @@
 
 #### Version 1.2.9
 
+* **Added an evolutionary grid search strategy for hyperparemeter tunning** based on [deap](https://github.com/DEAP/deap). This strategy is also *serializable* (it saves states every n iterations).
 * Fixed: Output images if `save_figures == True` to a tempfolder (instead of
   `/tmp`).
 * Improved testing on PersitentGrid (a bug was found by a different project).
+* Use the module `threading` for windows and `multiprocessing` for unix (at `persistent_grid_search_cv`.).
+* Improved various functions at `sklearn_utilities`.
 
 #### Version 1.2.8
 
