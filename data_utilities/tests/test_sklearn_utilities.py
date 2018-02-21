@@ -410,3 +410,46 @@ class TestEvolutionaryPersistentGridSearchCV(BaseEvolutionaryGridTestCase,
             assert best_score1 <= best_score2
         except AssertionError:
             assert best_params2 == best_params1
+
+class TestPlot(TestSKLearnTestCase, metaclass=TestMetaClass):
+    """Test class of the module sklearn_utilitieis."""
+
+    def test_plot_precision_recall_curve(self):
+        """Test serialization and syntax for EPersistentGridSearchCV."""
+        su.plot.plot_precision_and_recall_curve(
+            self.ESTIMATORS,
+            self.x_test,
+            self.y_test,
+            os.path.join(self.test_directory.name,
+                         'plot_precision_recall_curve.png'))
+
+    def test__get_cm_based_score(self):
+        """TODO."""
+        estimator = self.ESTIMATORS[0]
+        probas_1 = estimator.predict_proba(self.x_test)[:, 1]
+        tpr = su.metrics.true_positive_rate(
+            self.y_test,
+            probas_1)
+        fpr = su.metrics.false_positive_rate(
+            self.y_test,
+            probas_1)
+        tnr = su.metrics.true_negative_rate(
+            self.y_test,
+            probas_1)
+        fnr = su.metrics.false_negative_rate(
+            self.y_test,
+            probas_1)
+
+    def test_plot_confusion_matrix_rates(self):
+        estimator = self.ESTIMATORS[0]
+        su.plot.plot_confusion_matrix_rates(
+            estimator,
+            self.x_test,
+            self.y_test,
+            os.path.join(self.test_directory.name,
+                         'plot_confusion_matrix_rates.png'))
+
+    def test_dummy(self):
+        estimator = self.ESTIMATORS[0]
+        probas1 = estimator.predict_proba(self.x_test)[:, 1]
+        su.get_confusion_matrix(self.y_test, probas1)
