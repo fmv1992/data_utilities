@@ -181,8 +181,8 @@ def test(label='fast',
                 updated_function_parameters[attr])
 
     # Update data.
-    TestDataUtilitiesTestCase.update_data()
-    TestSKLearnTestCase.update_data()
+    TestDataUtilitiesTestCase.update()
+    TestSKLearnTestCase.update()
 
     # Initial definitions.
     # TODO: change verbose to more correct 'verbosity'.
@@ -194,10 +194,12 @@ def test(label='fast',
     for module in (tpu, tmu, tpyu, ts, tsu):
         for defined_object in dir(module):
 
-            # # Uncomment this to make develop-test cycle faster.
-            # if 'evolutionary' not in defined_object.lower():
+            # Uncomment this to make develop-test cycle faster.
+            # if 'plot' not in defined_object.lower():
             #     print(defined_object)
             #     continue
+            # else:
+            #     print('Running for', defined_object)
 
             defined_object = getattr(module, defined_object)  # str -> object
             try:
