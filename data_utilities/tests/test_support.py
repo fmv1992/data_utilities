@@ -34,13 +34,18 @@ from sklearn.model_selection import train_test_split
 import data_utilities as du
 from data_utilities import pandas_utilities as pu
 
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.linear_model import LogisticRegression
+
 
 def setUpModule():
     """Set up TestDataUtilitiesTestCase 'data' attribute.
 
     Useful if there is a unittest being run.
     """
-    TestDataUtilitiesTestCase.update_data()
+    TestDataUtilitiesTestCase.update()
+    TestSKLearnTestCase.update()
 
 
 def time_function_call(func):
@@ -230,6 +235,10 @@ class TestDataUtilitiesTestCase(unittest.TestCase, metaclass=TestMetaClass):
         return y
 
     @classmethod
+    def update(cls):
+        cls.update_data()
+
+    @classmethod
     def update_data(cls):
         """Update the 'data' attribute.
 
@@ -259,6 +268,20 @@ class TestSKLearnTestCase(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
 
     """
 
+    ESTIMATORS = [RandomForestClassifier(),
+                  DecisionTreeClassifier(),
+                  LogisticRegression()]
+
+    @classmethod
+    def update(cls):
+        cls.update_data()
+        cls.update_estimators()
+
+    @classmethod
+    def update_estimators(cls):
+        for estimator in cls.ESTIMATORS:
+            estimator.fit(cls.x_train, cls.y_train)
+
     @classmethod
     def update_data(cls):
         """Update the 'data' attribute.
@@ -266,14 +289,21 @@ class TestSKLearnTestCase(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
         Most likely this is set during the execution of data_utilities.test().
 
         """
+        # TODO:
+        # Elaborate strategies to comply with those rules
+        # if 2 ** n_informative < n_classes * n_clusters_per_class:
+        # if n_informative + n_redundant + n_repeated > n_features:
+        #
         # Generate a data set with:
         #   * 20% of informative features.
         #   * 20% of redundant features.
+        _FIX_N_COLUMNS = 20
         x, y = sklearn.datasets.make_classification(
             n_samples=cls.n_lines_test_sklearn,
-            n_features=cls.n_columns,
-            n_informative=max((1, cls.n_columns//5)),
-            n_redundant=max((1, cls.n_columns//5)),
+            n_features=_FIX_N_COLUMNS,
+            n_informative=5,
+            n_redundant=5,
+            n_repeated=10,
             n_classes=2,
             n_clusters_per_class=5,
             weights=[0.8, 0.2],  # imbalanced classes.
@@ -282,7 +312,7 @@ class TestSKLearnTestCase(TestDataUtilitiesTestCase, metaclass=TestMetaClass):
         cls.data = pd.concat(
             map(pd.DataFrame, (x, y.ravel())),
             axis=1)
-        cls.data.columns = (['x_' + x for x in map(str, range(cls.n_columns))]
+        cls.data.columns = (['x_' + x for x in map(str, range(_FIX_N_COLUMNS))]
                             + ['y', ])
         cls.x = cls.data.filter(regex='^x')
         cls.y = cls.data.filter(regex='^y')

@@ -166,14 +166,13 @@ def execute_ks_2samp_over_time(time_series,
     return pd.Series(data=unzipped[1], index=unzipped[0])
 
 
-def get_sorted_feature_importances(classifier, attributes):
-    """Return a sorted list of feature importances."""
-    v = classifier.feature_importances_
-    k = attributes
-    assert(len(v) == len(k))
-    unordered = tuple(zip(k, v))
-    ordered = sorted(unordered, key=lambda x: x[1], reverse=False)
-    return ordered
+def get_feature_importances_dataframe(classifier, features):
+    """Return dataframe with features and their importances."""
+    df = pd.DataFrame(
+        data={'feature_importances': classifier.feature_importances_},
+        index=features)
+    df.index.name = 'feature'
+    return df
 
 
 def get_estimator_name(estimator):
@@ -193,9 +192,32 @@ def _get_n_jobs_as_joblib_parallel(n):
     return n_workers
 
 
+def get_confusion_matrix(*args, **kwargs):
+    """Get a confusion matrix with predefined names.
+
+    Remove ambiguity from confusion matrix by using fixed names for actual
+    labels and predicted labels.
+
+    The predicted axis will be set to 'predicted'.
+    The ground truth axis will be set to 'actual'.
+
+    The kwargs 'rownames' and 'colnames' are ignored.
+
+    """
+
+    index = args[0]
+    columns = args[1]
+
+    kwargs['rownames'] = np.sort(np.unique(index))
+    kwargs['colnames'] = np.sort(np.unique(columns))
+
+    raw_tab = pd.crosstab(*args, **kwargs)
+
 if __name__ != '__main__':
     # Running this file will cause import errors.
     from . import grid_search  # noqa
+    from . import plot  # noqa
+    from . import metrics  # noqa
 
     # Importing of optional dependencies.
     if find_spec('deap') is not None:
