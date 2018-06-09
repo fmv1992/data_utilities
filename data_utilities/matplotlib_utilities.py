@@ -406,7 +406,7 @@ def histogram_of_integers(a,
     # Specify default options for histogram.
     if 'hist_kws' not in sns_distplot_kwargs:
         sns_distplot_kwargs['hist_kws'] = dict()
-        hist_kws = sns_distplot_kwargs['hist_kws']
+    hist_kws = sns_distplot_kwargs['hist_kws']
     DEFAULT_HIST_KWARGS = {
                     'align': 'mid',
                     'rwidth': 0.5}
