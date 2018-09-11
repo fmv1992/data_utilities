@@ -28,8 +28,9 @@ from mpl_toolkits.mplot3d import Axes3D  # enable scale_axes_axis  # noqa
 import numpy as np
 import pandas as pd
 import seaborn as sns
-
 import sklearn.preprocessing
+
+from data_utilities import pandas_utilities as pu
 
 
 def scale_axes_axis(axes, scale_xy_axis=False, scale_z_axis=False):
@@ -123,14 +124,16 @@ def plot_3d(series,
 
     """
     # Create a copy of the list to avoid changing the original.
-    series = series.copy(deep=True)
-    series.sort_values(inplace=True, ascending=False)
     # Set constants.
     # Some groupby objects will produce a dataframe. Not nice going over duck
     # typing but oh well...
     # If it is a dataframe with one column then transform it to series.
     if isinstance(series, pd.DataFrame) and series.shape[1] == 1:
-        series = series.ix[:, 0]
+        series = series.ix[:, 0].copy(deep=True)
+    else:
+        series = series.copy(deep=True)
+
+    series.sort_values(inplace=True, ascending=False)
 
     # Error handling phase.
     # Track if index has correct shape.
@@ -170,6 +173,10 @@ def plot_3d(series,
     fig = plt.gcf()
     ax = fig.add_subplot(111, projection='3d')
 
+    # Create labels.
+    ax.set_xlabel(index_names[0])
+    ax.set_ylabel(index_names[1])
+
     # Create the axis and their labels
     xlabels = series.index.get_level_values(index_names[0]).unique().tolist()
     ylabels = series.index.get_level_values(index_names[1]).unique().tolist()
@@ -185,6 +192,7 @@ def plot_3d(series,
     ax.w_xaxis.set_ticks(x + 0.5/2.)
     ax.w_yaxis.set_ticks(y + 0.5/2.)
     ax.w_yaxis.set_ticklabels(ylabels)
+    ax.w_xaxis.set_ticklabels(xlabels)
 
     # Color.
     pp_color_values = sklearn.preprocessing.minmax_scale(z)
@@ -293,9 +301,7 @@ def label_containers(axes,
     return bar_labels
 
 
-def histogram_of_categorical(a,
-                             *args,
-                             **sns_distplot_kwargs):
+def histogram_of_categorical(a, *args, **sns_distplot_kwargs):
     """Plot a histogram of categorical with sane defauts.
 
     Arguments:
@@ -315,27 +321,12 @@ def histogram_of_categorical(a,
         ...     'histogram_of_categorical'), dpi=500)
 
     """
-    # Create a dictionary of labels from categories.
-    labels = dict(enumerate(a.cat.categories))
-    # Pass the arguments to the histogram of integers function.
-    axes = histogram_of_integers(a.cat.codes, *args, **sns_distplot_kwargs)
-    # Restore the labels.
-    new_labels = tuple(map(
-        lambda x: labels[x] if x in labels.keys() else '',
-        axes.get_xticks()))
-    # Set rotation for the ticklabels.
-    # TODO: only set rotation in one place.
-    if any(map(lambda x: x > 4, labels)):
-        rotation = -90
-    else:
-        rotation = 0
-    axes.set_xticklabels(new_labels, rotation=rotation)
+    axes = sns.countplot(a, *args, **sns_distplot_kwargs)
+    axes.set_xticklabels(axes.get_xticklabels(), rotation=-45)
     return axes
 
 
-def histogram_of_floats(a,
-                        *args,
-                        **sns_distplot_kwargs):
+def histogram_of_floats(a, *args, **sns_distplot_kwargs):
     """Plot a histogram of floats with sane defauts.
 
     Arguments:
@@ -355,16 +346,11 @@ def histogram_of_floats(a,
         ...     'histogram_of_floats'), dpi=500)
 
     """
-    axes = sns.distplot(
-        a,
-        *args,
-        **sns_distplot_kwargs)
+    axes = sns.distplot(a, *args, **sns_distplot_kwargs)
     return axes
 
 
-def histogram_of_integers(a,
-                          *args,
-                          **sns_distplot_kwargs):
+def histogram_of_integers(a, *args, **sns_distplot_kwargs):
     """Plot a histogram of integers with sane defauts.
 
     Arguments:
@@ -426,6 +412,7 @@ def histogram_of_integers(a,
         **sns_distplot_kwargs)
 
     axes.set_xticks(xlabels)
+
     # If it is the case of having mapped the values.
     try:
         mask_values
@@ -450,9 +437,9 @@ def histogram_of_integers(a,
 
 def histogram_of_dataframe(dataframe,
                            output_path=None,
-                           weights=None,
                            *args,
-                           **sns_distplot_kwargs):
+                           sns_distplot_kwargs=None,
+                           sns_countplot_kwargs=None):
     """Draw a histogram for each column of the dataframe.
 
     Provide a quick summary of each series in the dataframe:
@@ -465,21 +452,17 @@ def histogram_of_dataframe(dataframe,
             - nans
             - n
 
-    The dataframe may contain nans.
-
-    This function assumes that the input dataframe has already received
-    treatment such as outlier treatment.
+    Requirements for the dataframe:
+        - The dataframe may contain nans.
+        - Columns can be either numerical or non numerical.
 
     Arguments:
         dataframe (pandas.DataFrame): The dataframe whose columns will be
         plotted.
         output_path (str): The outputh path to place the plotted histograms.
         If None then no file is written.
-        weights (list): The list of numpy.array weights to weight each of the
-        histogram entry.
 
-    Returns:
-        tuple: a tuple containing a figure and an axes for each dataframe.
+    Returns: None.
 
     Examples:
         >>> from data_utilities import pandas_utilities as pu
@@ -492,19 +475,10 @@ def histogram_of_dataframe(dataframe,
         True
 
     """
-    # This function assumes that the dataframe has received treatment. If there
-    # is an object column then raise exceptions. However nan's are welcome as
-    # they are part of the informative box.
-    if (dataframe.dtypes == object).sum() > 0:
-        raise TypeError("Dataframe must not have object columns:\n{0:d}.",
-                        dataframe.dtypes)
-    n_nulls = dataframe.isnull().sum().sum()
-    if n_nulls > 0:
-        warnings.warn("Dataframe has {0:d} null values.".format(n_nulls),
-                      UserWarning)
-        del n_nulls
-
-    list_of_figures = list()
+    if sns_distplot_kwargs is None:
+        sns_distplot_kwargs = dict()
+    if sns_countplot_kwargs is None:
+        sns_countplot_kwargs = dict()
     # Iterate over columns.
     for i, column in enumerate(dataframe.columns):
         fig, axes = plt.subplots(nrows=1, ncols=1)
@@ -515,27 +489,9 @@ def histogram_of_dataframe(dataframe,
         # string representation of data types.
         series_str_dtype = str(series.dtypes)
 
-        # .
-        # ├── categorical (x)
-        # └── number
-        #     ├── bool
-        #     ├── float
-        #     ├── datetime
-        #     └── int
-        if series_str_dtype == 'category':
-            axes = histogram_of_categorical(
-                series, **sns_distplot_kwargs)
-
-        # .
-        # ├── categorical
-        # └── number (x)
-        #     ├── bool
-        #     ├── float
-        #     ├── datetime
-        #     └── int
-        #
-        # Series with nans cannot be passed to sns.distplot. So this should be
-        # sent separetely to add_summary_statistics_textbox
+        # Create an axes object for each case.
+        if series_str_dtype == 'category' or series_str_dtype == 'object':
+            axes = histogram_of_categorical(series, **sns_countplot_kwargs)
         elif ('bool' in series_str_dtype or 'int' in series_str_dtype or
               'float' in series_str_dtype or 'datetime' in series_str_dtype):
             # Null values if passed to seaborn.distplot raise ValueError.
@@ -546,67 +502,31 @@ def histogram_of_dataframe(dataframe,
                         column),
                     UserWarning)
                 continue
-            # .
-            # ├── categorical
-            # └── number
-            #     ├── bool (x)
-            #     ├── float
-            #     ├── datetime
-            #     └── int
-            if 'bool' in series_str_dtype:
+            elif 'bool' in series_str_dtype:
                 axes = histogram_of_categorical(
                     series_not_null.astype('category'),
-                    **sns_distplot_kwargs)
-
-            # .
-            # ├── categorical
-            # └── number
-            #     ├── bool
-            #     ├── float (x)
-            #     ├── datetime
-            #     └── int
-            if 'float' in series_str_dtype:
-                axes = histogram_of_floats(
-                    series_not_null,
-                    **sns_distplot_kwargs)
-
-            # TODO: improve
-            # .
-            # ├── categorical
-            # └── number
-            #     ├── bool
-            #     ├── float
-            #     ├── datetime (x)
-            #     └── int
-            if 'datetime' in series_str_dtype:
+                    **sns_countplot_kwargs)
+            elif 'float' in series_str_dtype:
+                axes = histogram_of_floats(series_not_null,
+                                           **sns_distplot_kwargs)
+            elif 'datetime' in series_str_dtype:
                 series_not_null = pd.to_numeric(series_not_null)
-                series = pd.to_numeric(series)  # TODO XXX to fix
-                                                # add_summ_tbox on datetime
-                axes = histogram_of_floats(
-                    series_not_null,
-                    **sns_distplot_kwargs)
-
-            # .
-            # ├── categorical
-            # └── number
-            #     ├── bool
-            #     ├── float
-            #     ├── datetime
-            #     └── int (x)
-            if 'int' in series_str_dtype:
-                axes = histogram_of_integers(
-                    series_not_null,
-                    **sns_distplot_kwargs)
-
-            # Add summary statistics for all numeric cases.
-            text = add_summary_statistics_textbox(series, axes)  # noqa
-            # TODO: having problems displays text boxes for Coursera Capstone
-            # Project.
-
+                # ??? Fix datetime treatment here.
+                series = pd.to_numeric(series)
+                axes = histogram_of_floats(series_not_null,
+                                           **sns_distplot_kwargs)
+            elif 'int' in series_str_dtype:
+                axes = histogram_of_integers(series_not_null,
+                                             **sns_distplot_kwargs)
+            else:
+                raise NotImplementedError
         # If it is neither a number nor a categorical data type raise error.
         else:
             raise TypeError("Datatype {0} not covered in this"
                             " function".format(series_str_dtype))
+
+        # Add summary statistics for all numeric cases.
+        # ??? Reimplement.
 
         # Adjust figure size.
         PATCHES_LEN = len(axes.patches)
@@ -619,7 +539,6 @@ def histogram_of_dataframe(dataframe,
 
         # TODO: add a low_memory argument to prevent figures using too much
         # memory.
-        list_of_figures.append(fig)
 
         # Save the plotting.
         if output_path is not None:
@@ -631,7 +550,7 @@ def histogram_of_dataframe(dataframe,
                 dpi=300)
             plt.close(fig)
 
-    return tuple(list_of_figures)
+    return None
 
 
 def change_axis_xticklabels(axis, dict_or_callable):
