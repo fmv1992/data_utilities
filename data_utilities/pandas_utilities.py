@@ -496,6 +496,14 @@ def get_numeric_columns(dataframe):
     return numeric_columns
 
 
+def get_non_numeric_columns(dataframe):
+    """Get numeric columns from a dataframe."""
+    numeric_columns = get_numeric_columns(dataframe)
+    non_numeric_columns = sorted(set(dataframe.columns.tolist())
+                                 - set(numeric_columns))
+    return non_numeric_columns
+
+
 def group_sorted_series_into_n_groups(series, n_groups=100):
     """Group sorted series into N groups.
 
