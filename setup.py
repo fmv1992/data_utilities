@@ -31,6 +31,7 @@ setup(
 
     description='A data analysis and visualization helper module.',
     long_description=long_description,
+    long_description_content_type='text/markdown',
 
     # The project's main homepage.
     url='https://github.com/fmv1992/data_utilities',

@@ -2,6 +2,13 @@
 
 #### Version 1.2.9
 
+* Fixed `get_confusion_matrix`.
+* Several other minor improvements.
+* Improved tests.
+* Fixed travis builds several times.
+
+#### Version 1.2.9
+
 * **Added an evolutionary grid search strategy for hyperparemeter tunning** based on [deap](https://github.com/DEAP/deap). This strategy is also *serializable* (it saves states every n iterations).
 * Fixed: Output images if `save_figures == True` to a tempfolder (instead of
   `/tmp`).
