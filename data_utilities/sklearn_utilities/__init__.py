@@ -205,13 +205,21 @@ def get_confusion_matrix(*args, **kwargs):
 
     """
 
+    # In case shapes are just 'unaligned', e.g.: (300,1) versus (1,300).
+    if (args[0].shape != args[1].shape) and (
+            np.prod(args[0].shape) == np.prod(args[1].shape)):
+        args = (np.ravel(args[0]), np.ravel(args[1])) + args[2:]
+
     index = args[0]
     columns = args[1]
 
-    kwargs['rownames'] = np.sort(np.unique(index))
-    kwargs['colnames'] = np.sort(np.unique(columns))
+    kwargs['rownames'] = ['actual', ]
+    kwargs['colnames'] = ['predicted', ]
 
     raw_tab = pd.crosstab(*args, **kwargs)
+
+    return raw_tab
+
 
 if __name__ != '__main__':
     # Running this file will cause import errors.

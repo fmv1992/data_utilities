@@ -449,7 +449,10 @@ class TestPlot(TestSKLearnTestCase, metaclass=TestMetaClass):
             os.path.join(self.test_directory.name,
                          'plot_confusion_matrix_rates.png'))
 
-    def test_dummy(self):
+    def test_get_confusion_matrix(self):
         estimator = self.ESTIMATORS[0]
         probas1 = estimator.predict_proba(self.x_test)[:, 1]
-        su.get_confusion_matrix(self.y_test, probas1)
+        result = su.get_confusion_matrix(self.y_test, probas1)
+        assert result.index.name == 'actual'
+        assert result.index.shape == (2, )
+        assert result.columns.shape != (2, )
