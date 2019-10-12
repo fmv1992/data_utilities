@@ -23,9 +23,10 @@ python:
 
 before_install:
     - sudo apt-get update
+    - sudo apt-get install --yes python3-pip python3-dev python3-setuptools
+    - sudo python3 -m pip install --upgrade pip
     - sudo python3 -m pip install --upgrade numpy matplotlib seaborn pandas scikit-learn
     - sudo apt-get install libgomp1
-    - sudo python3 -m pip || wget -qO- https://bootstrap.pypa.io/get-pip.py | python3
 
 install:
     - python3 -m pip install -e ".$EXTRAS_REQUIRE"
