@@ -61,7 +61,7 @@ import numpy as np
 # import data_utilities.tests.test_support as ts
 # from data_utilities.tests.test_support import TestDataUtilitiesTestCase
 
-__version__ = '1.2.9'
+__version__ = '1.2.10'
 
 # pylama: ignore=D406,D407
 
